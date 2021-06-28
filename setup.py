@@ -1,9 +1,9 @@
 from setuptools import setup
 
 setup(
-    name='json-rpc-2.0',
+    name='json-rpc2',
     version='0.0.1',
-    url='https://gitlab.com/mburkard/json-rpc-2.0',
+    url='https://gitlab.com/mburkard/json-rpc2',
     license='Custom',
     author='Matthew Burkard',
     author_email='matthewjburkard@gmail.com',
