@@ -1,2 +1,4 @@
+/dist/
 /venv/
 /.idea/
+*.egg-info
