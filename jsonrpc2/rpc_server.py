@@ -22,6 +22,7 @@ class RPCServer:
     def process(self, data: Union[bytes, str]) -> Optional[str]:
         try:
             parsed_json = json.loads(data)
+            print(data)
         except (TypeError, JSONDecodeError):
             return self._err(PARSE_ERROR, 'Parse error').to_json()
         if isinstance(parsed_json, dict):

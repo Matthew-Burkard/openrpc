@@ -21,6 +21,9 @@ class MathRPCClient:
     def subtract(self, x: float, y: float) -> Union[float, RPCError]:
         return self._call(RPCRequest('subtract', [x, y], str(uuid.uuid4())))
 
+    def divide(self, x: float, y: float) -> Union[float, RPCError]:
+        return self._call(RPCRequest('divide', [x, y], str(uuid.uuid4())))
+
     def _call(self, request: RPCRequest) -> Union[JSON, RPCError]:
         resp = RPCResponse.from_json(self.server.process(request.to_json()))
         return resp.error if resp.error else resp.result
