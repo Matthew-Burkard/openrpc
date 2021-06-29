@@ -2,7 +2,7 @@ import json
 from dataclasses import dataclass
 from typing import Optional, Union
 
-from json_types import JSON, JSONArray, JSONObject
+from jsonrpc2.json_types import JSON, JSONArray, JSONObject
 
 PARSE_ERROR = -32700
 INVALID_REQUEST = -32600

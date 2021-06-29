@@ -3,10 +3,11 @@ import json
 from json import JSONDecodeError
 from typing import Callable, Optional, Union, Any
 
-from json_types import JSONArray, JSONObject, JSON
-from rpc_objects import (RPCRequest, RPCError, RPCResponse, PARSE_ERROR,
-                         INVALID_REQUEST, METHOD_NOT_FOUND, INTERNAL_ERROR,
-                         INVALID_PARAMS)
+from jsonrpc2.json_types import JSONArray, JSONObject, JSON
+from jsonrpc2.rpc_objects import (
+    RPCRequest, RPCError, RPCResponse, PARSE_ERROR, INVALID_REQUEST,
+    METHOD_NOT_FOUND, INTERNAL_ERROR, INVALID_PARAMS
+)
 
 
 class RPCServer:
