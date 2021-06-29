@@ -20,30 +20,43 @@ class RPCTest(unittest.TestCase):
         self.server.register(add)
         self.server.register(subtract)
         self.server.register(divide)
+        self.server.register(summation)
+        self.server.register(pythagorean)
         self.server.register(get_none)
         super(RPCTest, self).__init__(*args)
 
-    def test_rpc_result_values(self) -> None:
-        # Array params.
+    def test_array_params(self) -> None:
         request = RPCRequest('add', [2, 2], id=1)
         resp = self.server.process(request.to_json())
         self.assertEqual(4, json.loads(resp)['result'])
-        # Object params.
-        request = RPCRequest('subtract', {'x': 2, 'y': 2}, id=1)
-        resp = self.server.process(request.to_json())
-        self.assertEqual(0, json.loads(resp)['result'])
-        # No params.
+
+    def test_no_params(self) -> None:
         request = RPCRequest('get_none', id=1)
         resp = self.server.process(request.to_json())
         self.assertEqual(None, json.loads(resp)['result'])
 
-    def test_rpc_absent_members(self) -> None:
-        # Error does not have result.
+    def test_object_params(self) -> None:
+        request = RPCRequest('subtract', {'x': 2, 'y': 2}, id=1)
+        resp = self.server.process(request.to_json())
+        self.assertEqual(0, json.loads(resp)['result'])
+
+    def test_vararg_method(self) -> None:
+        request = RPCRequest('summation', [1, 3, 5, 7, 11], id=1)
+        resp = self.server.process(request.to_json())
+        self.assertEqual(27, json.loads(resp)['result'])
+
+    def test_kwarg_method(self) -> None:
+        request = RPCRequest('pythagorean', {'a': 3, 'b': 4, 'c': 5}, id=1)
+        resp = self.server.process(request.to_json())
+        self.assertEqual(True, json.loads(resp)['result'])
+
+    def test_no_result(self) -> None:
         request = RPCRequest('does not exist', id=1)
         resp = self.server.process(request.to_json())
         self.assertNotIn('result', json.loads(resp).keys())
         self.assertIn('error', json.loads(resp).keys())
-        # Result does not have error.
+
+    def test_no_error(self) -> None:
         request = RPCRequest('add', [1, 2], id=1)
         resp = self.server.process(request.to_json())
         self.assertNotIn('error', json.loads(resp).keys())
@@ -118,6 +131,14 @@ class RPCTest(unittest.TestCase):
         self.assertEqual(4, add_resp.result)
         self.assertEqual(0, subtract_resp.result)
         self.assertEqual(INTERNAL_ERROR, divide_resp.error.code)
+
+
+def pythagorean(**kwargs) -> bool:
+    return (kwargs['a'] ** 2 + kwargs['b'] ** 2) == (kwargs['c'] ** 2)
+
+
+def summation(*args) -> float:
+    return sum(*args)
 
 
 def add(x: float, y: float) -> float:
