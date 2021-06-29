@@ -81,11 +81,17 @@ class RPCServer:
         fun_params = inspect.signature(method).parameters
         len_params = 0 if params is None else len(params)
         required = [not param.default for _, param in fun_params.items()]
+        varargs = any(it.kind == inspect.Parameter.VAR_POSITIONAL
+                      for it in fun_params.values())
+        var_kwargs = any(it.kind == inspect.Parameter.VAR_KEYWORD
+                         for it in fun_params.values())
         # It was a deliberate choice not to check type annotations,
         # there would be too much room for rejecting valid requests.
-        if len_params < len(required) or len_params > len(fun_params.keys()):
+        if len_params < len(required):
             return self._err(INVALID_PARAMS, 'Invalid params', req_id)
-        if isinstance(params, dict):
+        if len_params > len(fun_params.keys()) and not (varargs or var_kwargs):
+            return self._err(INVALID_PARAMS, 'Invalid params', req_id)
+        if isinstance(params, dict) and not var_kwargs:
             if not set(fun_params.keys()) == set(params.keys()):
                 return self._err(INVALID_PARAMS, 'Invalid params', req_id)
 

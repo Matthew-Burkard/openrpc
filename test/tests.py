@@ -143,7 +143,7 @@ def pythagorean(**kwargs) -> bool:
 
 
 def summation(*args) -> float:
-    return sum(*args)
+    return sum(args)
 
 
 def add(x: float, y: float) -> float:
