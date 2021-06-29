@@ -1,5 +1,6 @@
 import inspect
 import json
+import logging
 from json import JSONDecodeError
 from typing import Callable, Optional, Union, Any
 
@@ -9,7 +10,11 @@ from jsonrpc2.rpc_objects import (
     METHOD_NOT_FOUND, INTERNAL_ERROR, INVALID_PARAMS
 )
 
+__all__ = ('RPCServer',)
+log = logging.getLogger(__name__)
 
+
+# TODO Add logging..
 class RPCServer:
 
     def __init__(self, server_error_code: Optional[int] = None) -> None:
@@ -17,19 +22,22 @@ class RPCServer:
         self.server_error_code: Optional[int] = server_error_code
 
     def register(self, fun: Callable) -> Callable:
+        log.debug('Registering method [%s]', fun.__name__)
         self.methods[fun.__name__] = fun
         return fun
 
     def process(self, data: Union[bytes, str]) -> Optional[str]:
         try:
             parsed_json = json.loads(data)
-        except (TypeError, JSONDecodeError):
+        except (TypeError, JSONDecodeError) as e:
+            log.exception(msg=f'{type(e).__name__}:{e}', exc_info=e)
             return self._err(PARSE_ERROR, 'Parse error').to_json()
         if isinstance(parsed_json, dict):
             return self._process_request(parsed_json).to_json()
         elif isinstance(parsed_json, list):
             return f'[{self._process_requests(parsed_json)}]' or None
         else:
+            log.error('Invalid request [%s]', parsed_json)
             return self._err(INVALID_REQUEST, 'Invalid request').to_json()
 
     def _process_requests(self, data: JSONArray) -> str:
@@ -41,12 +49,14 @@ class RPCServer:
         # noinspection PyBroadException
         try:
             return self._process_method(RPCRequest(**data))
-        except Exception:
+        except Exception as e:
+            log.exception(msg=f'{type(e).__name__}:{e}', exc_info=e)
             return self._err(INVALID_REQUEST, 'Invalid request')
 
     def _process_method(self, request: RPCRequest) -> Any:
         method = self.methods.get(request.method)
         if not method:
+            log.error('Method not found [%s]', request)
             return self._err(METHOD_NOT_FOUND, 'Method not found', request.id)
 
         result: Any = None
@@ -61,7 +71,14 @@ class RPCServer:
                 else:
                     result = method()
                 result = RPCResponse(request.id, result)
+            else:
+                log.error(
+                    'Invalid params [%s] for method [%s]',
+                    request.params,
+                    method
+                )
         except Exception as e:
+            log.exception(msg=f'{type(e).__name__}:{e}', exc_info=e)
             if self.server_error_code:
                 error = self._err(
                     self.server_error_code,
