@@ -3,7 +3,7 @@
 ## Example Flask Server
 ```python
 from flask import Flask, Response, jsonify, request
-from rpc_server import RPCServer
+from jsonrpc2.rpc_server import RPCServer
 
 app = Flask(__name__)
 rpc = RPCServer()
