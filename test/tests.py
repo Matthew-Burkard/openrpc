@@ -2,8 +2,8 @@ import json
 import unittest
 import uuid
 
-from rpc_objects import RPCRequest, RPCResponse
-from rpc_server import RPCServer
+from jsonrpc2.rpc_objects import RPCRequest, RPCResponse
+from jsonrpc2.rpc_server import RPCServer
 
 PARSE_ERROR = -32700
 INVALID_REQUEST = -32600
