@@ -14,7 +14,6 @@ __all__ = ('RPCServer',)
 log = logging.getLogger(__name__)
 
 
-# TODO Add logging..
 class RPCServer:
 
     def __init__(self, server_error_code: Optional[int] = None) -> None:
