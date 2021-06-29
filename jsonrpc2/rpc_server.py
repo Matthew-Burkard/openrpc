@@ -80,7 +80,7 @@ class RPCServer:
     ) -> Optional[RPCResponse]:
         fun_params = inspect.signature(method).parameters
         len_params = 0 if params is None else len(params)
-        required = [not param.default for _, param in fun_params.items()]
+        required = [p for _, p in fun_params.items() if self.is_required(p)]
         varargs = any(it.kind == inspect.Parameter.VAR_POSITIONAL
                       for it in fun_params.values())
         var_kwargs = any(it.kind == inspect.Parameter.VAR_KEYWORD
@@ -102,3 +102,10 @@ class RPCServer:
             rpc_id: Optional[Union[str, int]] = None
     ) -> RPCResponse:
         return RPCResponse(rpc_id, error=RPCError(error_id, message))
+
+    @staticmethod
+    def is_required(param: inspect.Parameter) -> bool:
+        return not param.default and param.kind not in [
+            inspect.Parameter.VAR_POSITIONAL,
+            inspect.Parameter.VAR_KEYWORD
+        ]

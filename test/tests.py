@@ -1,6 +1,7 @@
 import json
 import unittest
 import uuid
+from typing import Any
 
 from jsonrpc2.rpc_objects import RPCRequest, RPCResponse
 from jsonrpc2.rpc_server import RPCServer
@@ -23,6 +24,7 @@ class RPCTest(unittest.TestCase):
         self.server.register(summation)
         self.server.register(pythagorean)
         self.server.register(get_none)
+        self.server.register(echo)
         super(RPCTest, self).__init__(*args)
 
     def test_array_params(self) -> None:
@@ -49,6 +51,16 @@ class RPCTest(unittest.TestCase):
         request = RPCRequest('pythagorean', {'a': 3, 'b': 4, 'c': 5}, id=1)
         resp = self.server.process(request.to_json())
         self.assertEqual(True, json.loads(resp)['result'])
+
+    def test_vararg_method_with_no_params(self) -> None:
+        request = RPCRequest('echo', id=1)
+        resp = self.server.process(request.to_json())
+        self.assertEqual([{}], json.loads(resp)['result'])
+
+    def test_kwarg_method_with_no_params(self) -> None:
+        request = RPCRequest('echo', id=1)
+        resp = self.server.process(request.to_json())
+        self.assertEqual([{}], json.loads(resp)['result'])
 
     def test_no_result(self) -> None:
         request = RPCRequest('does not exist', id=1)
@@ -160,3 +172,7 @@ def divide(x: float, y: float) -> float:
 
 def get_none() -> None:
     return None
+
+
+def echo(*args, **kwargs) -> Any:
+    return *args, {**kwargs}
