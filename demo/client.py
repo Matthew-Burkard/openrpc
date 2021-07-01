@@ -1,9 +1,9 @@
 import uuid
 from typing import Union
 
-from json_types import JSON
-from rpc_objects import RPCError, RPCRequest, RPCResponse
-from rpc_server import RPCServer
+from jsonrpc2.json_types import JSON
+from jsonrpc2.rpc_objects import RPCError, RPCRequest, RPCResponse
+from jsonrpc2.rpc_server import RPCServer
 
 
 def get_uuid() -> str:

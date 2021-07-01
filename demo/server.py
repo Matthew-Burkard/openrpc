@@ -1,4 +1,4 @@
-from rpc_server import RPCServer
+from jsonrpc2.rpc_server import RPCServer
 
 math_rpc = RPCServer()
 

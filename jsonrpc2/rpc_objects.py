@@ -19,13 +19,11 @@ class RPCRequest:
     jsonrpc: str = '2.0'
 
     def to_json(self) -> str:
-        ret_val = {'method': self.method}
+        ret_val = {'method': self.method, 'jsonrpc': self.jsonrpc}
         if self.id is not None:
             ret_val['id'] = self.id
         if self.params is not None:
             ret_val['params'] = self.params
-        if self.jsonrpc is not None:
-            ret_val['jsonrpc'] = self.jsonrpc
         return json.dumps(ret_val)
 
 
