@@ -29,15 +29,15 @@ class RPCServer:
         try:
             parsed_json = json.loads(data)
         except (TypeError, JSONDecodeError) as e:
-            log.exception(msg=f'{type(e).__name__}:{e}', exc_info=e)
-            return self._err(PARSE_ERROR, 'Parse error').to_json()
+            log.exception(f'{type(e).__name__}:')
+            return self._err(PARSE_ERROR).to_json()
         if isinstance(parsed_json, dict):
             return self._process_request(parsed_json).to_json()
         elif isinstance(parsed_json, list):
             return f'[{self._process_requests(parsed_json)}]' or None
         else:
             log.error('Invalid request [%s]', parsed_json)
-            return self._err(INVALID_REQUEST, 'Invalid request').to_json()
+            return self._err(INVALID_REQUEST).to_json()
 
     def _process_requests(self, data: JSONArray) -> str:
         # TODO Configurably async or threaded request handling for
@@ -49,14 +49,14 @@ class RPCServer:
         try:
             return self._process_method(RPCRequest(**data))
         except Exception as e:
-            log.exception(msg=f'{type(e).__name__}:{e}', exc_info=e)
-            return self._err(INVALID_REQUEST, 'Invalid request')
+            log.exception(f'{type(e).__name__}:')
+            return self._err(INVALID_REQUEST)
 
     def _process_method(self, request: RPCRequest) -> Any:
         method = self.methods.get(request.method)
         if not method:
             log.error('Method not found [%s]', request)
-            return self._err(METHOD_NOT_FOUND, 'Method not found', request.id)
+            return self._err(METHOD_NOT_FOUND, request.id)
 
         result: Any = None
         # noinspection PyBroadException
@@ -77,15 +77,15 @@ class RPCServer:
                     method
                 )
         except Exception as e:
-            log.exception(msg=f'{type(e).__name__}:{e}', exc_info=e)
+            log.exception(f'{type(e).__name__}:')
             if self.server_error_code:
                 error = self._err(
-                    self.server_error_code,
-                    f'{type(e).__name__}: {e}',
-                    request.id
+                    (self.server_error_code, 'Server error'),
+                    request.id,
+                    f'{type(e).__name__}: {e}'
                 )
             else:
-                error = self._err(INTERNAL_ERROR, 'Internal error', request.id)
+                error = self._err(INTERNAL_ERROR, request.id)
         return error if error else result
 
     def _check_params(
@@ -104,20 +104,20 @@ class RPCServer:
         # It was a deliberate choice not to check type annotations,
         # there would be too much room for rejecting valid requests.
         if len_params < len(required):
-            return self._err(INVALID_PARAMS, 'Invalid params', req_id)
+            return self._err(INVALID_PARAMS, req_id)
         if len_params > len(fun_params.keys()) and not (varargs or var_kwargs):
-            return self._err(INVALID_PARAMS, 'Invalid params', req_id)
+            return self._err(INVALID_PARAMS, req_id)
         if isinstance(params, dict) and not var_kwargs:
             if not set(fun_params.keys()) == set(params.keys()):
-                return self._err(INVALID_PARAMS, 'Invalid params', req_id)
+                return self._err(INVALID_PARAMS, req_id)
 
     @staticmethod
     def _err(
-            error_id: int,
-            message: str,
-            rpc_id: Optional[Union[str, int]] = None
+            err: tuple[int, str],
+            rpc_id: Optional[Union[str, int]] = None,
+            data: Optional[Any] = None
     ) -> RPCResponse:
-        return RPCResponse(rpc_id, error=RPCError(error_id, message))
+        return RPCResponse(rpc_id, error=RPCError(err[0], err[1], data))
 
     @staticmethod
     def is_required(param: inspect.Parameter) -> bool:
