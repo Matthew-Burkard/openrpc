@@ -1,6 +1,6 @@
 from jsonrpc2.rpc_server import RPCServer
 
-math_rpc = RPCServer()
+math_rpc = RPCServer(-32000)
 
 
 @math_rpc.register

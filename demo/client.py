@@ -1,8 +1,8 @@
 import uuid
-from typing import Union
+from typing import Union, Any
 
-from jsonrpc2.json_types import JSON
-from jsonrpc2.rpc_objects import RPCError, RPCRequest, RPCResponse
+from jsonrpc2.rpc_client import RPCClient
+from jsonrpc2.rpc_objects import RPCError, RPCRequest
 from jsonrpc2.rpc_server import RPCServer
 
 
@@ -10,7 +10,7 @@ def get_uuid() -> str:
     return str(uuid.uuid4())
 
 
-class MathRPCClient:
+class MathRPCClient(RPCClient):
 
     def __init__(self, server: RPCServer):
         self.server = server
@@ -24,6 +24,5 @@ class MathRPCClient:
     def divide(self, x: float, y: float) -> Union[float, RPCError]:
         return self._call(RPCRequest('divide', [x, y], str(uuid.uuid4())))
 
-    def _call(self, request: RPCRequest) -> Union[JSON, RPCError]:
-        resp = RPCResponse.from_json(self.server.process(request.to_json()))
-        return resp.error if resp.error else resp.result
+    def _call(self, request: RPCRequest) -> Any:
+        return self._handle_json(self.server.process(request.to_json()))
