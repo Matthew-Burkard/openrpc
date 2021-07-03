@@ -42,7 +42,7 @@ class RPCError:
 
 @dataclass
 class RPCResponse:
-    id: Optional[Union[str, int]]
+    id: Optional[Union[str, int]] = None
     result: JSON = None
     error: Optional[RPCError] = None
     jsonrpc: str = '2.0'
