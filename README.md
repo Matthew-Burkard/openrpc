@@ -13,8 +13,8 @@ rpc = RPCServer()
 def add(x: float, y: float) -> float:
     return x + y
 
-@app.route('/api/v1/operations/', methods=['POST'])
-def operations() -> Response:
+@app.route('/api/v1/', methods=['POST'])
+def process_rpc() -> Response:
     return jsonify(rpc.process(request.json))
 
 
@@ -46,8 +46,7 @@ Example Error Out
   "id": 1,
   "error": {
     "code": -32000,
-    "message": "TypeError: unsupported operand type(s) for +: 'int' and 'str'",
-    "data": null
+    "message": "TypeError: unsupported operand type(s) for +: 'int' and 'str'"
   },
   "jsonrpc": "2.0"
 }
