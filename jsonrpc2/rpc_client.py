@@ -1,9 +1,13 @@
 import abc
+import logging
 from json import JSONDecodeError
 from typing import Any, Union, Type
 
 from jsonrpc2.exceptions import get_exception, JSONRPCError, ServerError
 from jsonrpc2.rpc_objects import RPCRequest, RPCResponse
+
+__all__ = ('RPCClient',)
+log = logging.getLogger(__name__)
 
 
 class RPCClient(abc.ABC):
@@ -24,5 +28,6 @@ class RPCClient(abc.ABC):
                     raise er(resp.error)
                 raise get_exception(resp.error.code)
             return resp.result
-        except (JSONDecodeError, TypeError, AttributeError):
+        except (JSONDecodeError, TypeError, AttributeError) as e:
+            log.exception(f'{type(e).__name__}:')
             raise JSONRPCError('Unable to parse response.')
