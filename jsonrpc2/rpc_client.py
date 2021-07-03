@@ -1,5 +1,6 @@
 import abc
 import logging
+import uuid
 from json import JSONDecodeError
 from typing import Any, Union, Type
 
@@ -15,6 +16,10 @@ class RPCClient(abc.ABC):
     @property
     def server_errors(self) -> dict[int, Type]:
         return {}
+
+    @staticmethod
+    def _gen_id() -> Union[str, int]:
+        return str(uuid.uuid4())
 
     @abc.abstractmethod
     def _call(self, request: RPCRequest) -> Any: ...

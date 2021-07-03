@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='json-rpc2',
-    version='1.1.2',
+    version='1.2.2',
     url='https://gitlab.com/mburkard/json-rpc2',
     license='Custom',
     author='Matthew Burkard',
