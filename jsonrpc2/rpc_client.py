@@ -2,7 +2,7 @@ import abc
 import logging
 import uuid
 from json import JSONDecodeError
-from typing import Any, Union, Type
+from typing import Any, Union, Type, Optional
 
 from jsonrpc2.exceptions import get_exception, JSONRPCError, ServerError
 from jsonrpc2.rpc_objects import RPCRequest, RPCResponse
@@ -22,7 +22,11 @@ class RPCClient(abc.ABC):
         return str(uuid.uuid4())
 
     @abc.abstractmethod
-    def _call(self, request: RPCRequest) -> Any: ...
+    def _call(
+            self,
+            request: RPCRequest,
+            result_type: Optional[Type] = None
+    ) -> Any: ...
 
     def _handle_json(self, data: Union[bytes, str]) -> Any:
         try:
