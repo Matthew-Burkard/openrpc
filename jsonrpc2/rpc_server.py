@@ -40,8 +40,7 @@ class RPCServer:
             return self._err(INVALID_REQUEST).to_json()
 
     def _process_requests(self, data: JSONArray) -> str:
-        # TODO Configurably async or threaded request handling for
-        #  better performance?
+        # TODO async batch handling for better performance?
         return ','.join([self._process_request(req).to_json() for req in data])
 
     def _process_request(self, data: JSONObject) -> RPCResponse:
