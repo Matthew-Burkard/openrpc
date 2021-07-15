@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='json-rpc2',
-    version='1.3.4',
+    version='1.3.5',
     url='https://gitlab.com/mburkard/json-rpc2',
     license='Custom',
     author='Matthew Burkard',
@@ -11,8 +11,6 @@ setup(
     packages=['jsonrpc2'],
     long_description_content_type='text/markdown',
     long_description=open('README.md').read(),
-    classifiers=[
-        'Programming Language :: Python :: 3',
-    ],
+    classifiers=['Programming Language :: Python :: 3'],
     zip_safe=False
 )

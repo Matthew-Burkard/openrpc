@@ -7,7 +7,7 @@ from typing import Callable, Optional, Union, Any
 from jsonrpc2.json_types import JSONArray, JSONObject, JSON
 from jsonrpc2.rpc_objects import (
     RPCRequest, RPCError, RPCResponse, PARSE_ERROR, INVALID_REQUEST,
-    METHOD_NOT_FOUND, INTERNAL_ERROR, INVALID_PARAMS
+    METHOD_NOT_FOUND, INTERNAL_ERROR, INVALID_PARAMS,
 )
 
 __all__ = ('RPCServer',)
@@ -46,7 +46,12 @@ class RPCServer:
     def _process_request(self, data: JSONObject) -> RPCResponse:
         # noinspection PyBroadException
         try:
-            return self._process_method(RPCRequest(**data))
+            request = RPCRequest(**data)
+            try:
+                len(request.params)
+            except TypeError:
+                return self._err(INVALID_REQUEST, request.id)
+            return self._process_method(request)
         except Exception as e:
             log.exception(f'{type(e).__name__}:')
             return self._err(INVALID_REQUEST)
@@ -106,9 +111,9 @@ class RPCServer:
             return self._err(INVALID_PARAMS, req_id)
         if len_params > len(fun_params.keys()) and not (varargs or var_kwargs):
             return self._err(INVALID_PARAMS, req_id)
-        if isinstance(params, dict) and not var_kwargs:
-            if not set(fun_params.keys()) == set(params.keys()):
-                return self._err(INVALID_PARAMS, req_id)
+        if ((isinstance(params, dict) and not var_kwargs)
+                and not set(fun_params.keys()) == set(params.keys())):
+            return self._err(INVALID_PARAMS, req_id)
 
     @staticmethod
     def _err(

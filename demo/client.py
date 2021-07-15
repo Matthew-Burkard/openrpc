@@ -5,10 +5,6 @@ from jsonrpc2.rpc_client import RPCDirectClient
 from jsonrpc2.rpc_objects import RPCError, RPCRequest
 
 
-def get_uuid() -> str:
-    return str(uuid.uuid4())
-
-
 class MathRPCClient(RPCDirectClient):
 
     def add(self, x: float, y: float) -> Union[float, RPCError]:
