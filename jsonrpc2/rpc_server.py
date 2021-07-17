@@ -48,7 +48,8 @@ class RPCServer:
         try:
             request = RPCRequest(**data)
             try:
-                len(request.params)
+                if request.params is not None:
+                    len(request.params)
             except TypeError:
                 return self._err(INVALID_REQUEST, request.id)
             return self._process_method(request)
