@@ -1,7 +1,8 @@
 import abc
 import logging
-import uuid
+import sys
 from json import JSONDecodeError
+from random import randint
 from typing import Any, Union, Type, Optional, Callable
 
 from jsonrpc2.exceptions import get_exception, JSONRPCError, ServerError
@@ -22,7 +23,7 @@ class RPCClient(abc.ABC):
 
     @staticmethod
     def _gen_id() -> Union[str, int]:
-        return str(uuid.uuid4())
+        return randint(1, sys.maxsize)
 
     @abc.abstractmethod
     def _call(

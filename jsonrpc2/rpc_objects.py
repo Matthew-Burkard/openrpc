@@ -11,6 +11,8 @@ INVALID_PARAMS = (-32602, 'Invalid params')
 INTERNAL_ERROR = (-32603, 'Internal error')
 
 
+# TODO Separate these into different objects for Notifications and
+#  requests and responses that re missing optional members.
 @dataclass
 class RPCRequest:
     method: str
