@@ -70,7 +70,10 @@ class RPCServer:
         # noinspection PyBroadException
         try:
             # Call method.
-            if isinstance(request.params, list):
+            if (isinstance(request, RequestObject)
+                    or isinstance(request, NotificationObject)):
+                result = method()
+            elif isinstance(request.params, list):
                 result = method(*request.params)
             elif isinstance(request.params, dict):
                 result = method(**request.params)

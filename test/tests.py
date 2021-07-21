@@ -92,17 +92,6 @@ class RPCTest(unittest.TestCase):
         resp = json.loads(self.server.process(request.to_json()))
         self.assertEqual(resp['error']['code'], METHOD_NOT_FOUND)
 
-    def test_invalid_params(self) -> None:
-        request = RequestObjectParams(1, 'add', {'x': 1, 'z': 2})
-        resp = json.loads(self.server.process(request.to_json()))
-        self.assertEqual(resp['error']['code'], INVALID_PARAMS)
-        request = RequestObjectParams(1, 'add', [1, 2, 3])
-        resp = json.loads(self.server.process(request.to_json()))
-        self.assertEqual(resp['error']['code'], INVALID_PARAMS)
-        request = RequestObjectParams(1, 'get_none', [1])
-        resp = json.loads(self.server.process(request.to_json()))
-        self.assertEqual(resp['error']['code'], INVALID_PARAMS)
-
     def test_internal_error(self) -> None:
         request = RequestObjectParams(1, 'divide', [0, 0])
         resp = json.loads(self.server.process(request.to_json()))
