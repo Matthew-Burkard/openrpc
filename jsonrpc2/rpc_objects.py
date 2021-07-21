@@ -17,7 +17,7 @@ RequestType = Union[
     'NotificationObject',
     'NotificationObjectParams',
 ]
-ResponseType = [
+ResponseType = Union[
     'ErrorResponseObject',
     'ResultResponseObject',
 ]
