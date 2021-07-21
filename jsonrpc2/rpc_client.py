@@ -1,20 +1,15 @@
 import abc
-import json
 import logging
 import sys
-from json import JSONDecodeError
 from random import randint
-from typing import Any, Union, Type, Optional, Callable
+from typing import Any, Union, Type
 
-from jsonrpc2.exceptions import get_exception, JSONRPCError, ServerError
+import util
+from jsonrpc2.exceptions import get_exception, ServerError
+from jsonrpc2.rpc_server import RPCServer
+from rpc_objects import RequestType, ResultResponseObject
 
 __all__ = ('RPCClient', 'RPCDirectClient')
-
-from jsonrpc2.rpc_server import RPCServer
-from rpc_objects import (
-    RequestType, ResponseType, ResultResponseObject, ErrorResponseObject,
-)
-
 log = logging.getLogger(__name__)
 
 
@@ -29,14 +24,10 @@ class RPCClient(abc.ABC):
         return randint(1, sys.maxsize)
 
     @abc.abstractmethod
-    def _call(
-            self,
-            request: RequestType,
-            deserializer: Optional[Callable] = None
-    ) -> Any: ...
+    def _call(self, request: RequestType) -> Any: ...
 
     def _handle_json(self, data: Union[bytes, str]) -> Any:
-        resp = self._parse_response(data)
+        resp = util.parse_response(data)
         if isinstance(resp, ResultResponseObject):
             return resp.result
         if -32000 >= resp.error.code > -32100:
@@ -44,27 +35,10 @@ class RPCClient(abc.ABC):
             raise error(resp.error)
         raise get_exception(resp.error.code)
 
-    @staticmethod
-    def _parse_response(data: Union[bytes, str]) -> ResponseType:
-        try:
-            resp = json.loads(data)
-            if resp.get('error'):
-                return ErrorResponseObject.from_dict(resp)
-            if resp.get('result'):
-                return ResultResponseObject.from_dict(resp)
-            raise JSONRPCError('Unable to parse response.')
-        except (JSONDecodeError, TypeError, AttributeError) as e:
-            log.exception(f'{type(e).__name__}:')
-            raise JSONRPCError('Unable to parse response.')
-
 
 class RPCDirectClient(RPCClient):
     def __init__(self, server: RPCServer):
         self.server = server
 
-    def _call(
-            self,
-            request: RequestType,
-            deserializer: Optional[Callable] = None
-    ) -> Any:
+    def _call(self, request: RequestType) -> Any:
         return self._handle_json(self.server.process(request.to_json()))

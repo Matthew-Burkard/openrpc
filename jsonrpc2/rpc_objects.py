@@ -60,7 +60,7 @@ class NotificationObjectParams:
 class ErrorObjectData:
     code: int
     message: str
-    data: JSON = None
+    data: JSON
 
 
 @dataclass_json
@@ -82,5 +82,5 @@ class ErrorResponseObject:
 @dataclass
 class ResultResponseObject:
     id: Union[str, int]
-    result: JSON = None
+    result: JSON
     jsonrpc: str = '2.0'
