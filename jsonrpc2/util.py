@@ -15,7 +15,7 @@ def parse_response(data: Union[bytes, str]) -> ResponseType:
         resp = json.loads(data)
         if resp.get('error'):
             return ErrorResponseObject.from_dict(resp)
-        if resp.get('result'):
+        if 'result' in resp.keys():
             return ResultResponseObject.from_dict(resp)
         raise JSONRPCError('Unable to parse response.')
     except (JSONDecodeError, TypeError, AttributeError) as e:
