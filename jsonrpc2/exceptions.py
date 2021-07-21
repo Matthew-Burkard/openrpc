@@ -1,8 +1,8 @@
-from typing import Type, Optional
+from typing import Type, Optional, Union
 
 from jsonrpc2.rpc_objects import (
     INVALID_REQUEST, INTERNAL_ERROR, INVALID_PARAMS, METHOD_NOT_FOUND,
-    PARSE_ERROR, RPCError
+    PARSE_ERROR, ErrorObjectData, ErrorObject,
 )
 
 
@@ -47,9 +47,9 @@ class InternalError(JSONRPCError):
 
 
 class ServerError(JSONRPCError):
-    def __init__(self, error: RPCError) -> None:
+    def __init__(self, error: Union[ErrorObjectData, ErrorObject]) -> None:
         msg = f'{error.code}: {error.message}'
-        if error.data:
+        if isinstance(error, ErrorObjectData):
             msg += f'\nError Data: {error.data}'
         super(ServerError, self).__init__(msg)
 
