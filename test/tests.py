@@ -3,8 +3,9 @@ import unittest
 import uuid
 from typing import Any
 
-from jsonrpc2.rpc_objects import RPCRequest, RPCResponse
+import util
 from jsonrpc2.rpc_server import RPCServer
+from rpc_objects import RequestObjectParams, RequestObject
 
 PARSE_ERROR = -32700
 INVALID_REQUEST = -32600
@@ -28,48 +29,52 @@ class RPCTest(unittest.TestCase):
         super(RPCTest, self).__init__(*args)
 
     def test_array_params(self) -> None:
-        request = RPCRequest('add', [2, 2], id=1)
+        request = RequestObjectParams(1, 'add', [2, 2])
         resp = self.server.process(request.to_json())
         self.assertEqual(4, json.loads(resp)['result'])
 
     def test_no_params(self) -> None:
-        request = RPCRequest('get_none', id=1)
+        request = RequestObject(1, 'get_none')
         resp = self.server.process(request.to_json())
         self.assertEqual(None, json.loads(resp)['result'])
 
     def test_object_params(self) -> None:
-        request = RPCRequest('subtract', {'x': 2, 'y': 2}, id=1)
+        request = RequestObjectParams(1, 'subtract', {'x': 2, 'y': 2})
         resp = self.server.process(request.to_json())
         self.assertEqual(0, json.loads(resp)['result'])
 
     def test_vararg_method(self) -> None:
-        request = RPCRequest('summation', [1, 3, 5, 7, 11], id=1)
+        request = RequestObjectParams(1, 'summation', [1, 3, 5, 7, 11])
         resp = self.server.process(request.to_json())
         self.assertEqual(27, json.loads(resp)['result'])
 
     def test_kwarg_method(self) -> None:
-        request = RPCRequest('pythagorean', {'a': 3, 'b': 4, 'c': 5}, id=1)
+        request = RequestObjectParams(
+            1,
+            'pythagorean',
+            {'a': 3, 'b': 4, 'c': 5}
+        )
         resp = self.server.process(request.to_json())
         self.assertEqual(True, json.loads(resp)['result'])
 
     def test_vararg_method_with_no_params(self) -> None:
-        request = RPCRequest('echo', id=1)
+        request = RequestObject(1, 'echo')
         resp = self.server.process(request.to_json())
         self.assertEqual([{}], json.loads(resp)['result'])
 
     def test_kwarg_method_with_no_params(self) -> None:
-        request = RPCRequest('echo', id=1)
+        request = RequestObject(1, 'echo')
         resp = self.server.process(request.to_json())
         self.assertEqual([{}], json.loads(resp)['result'])
 
     def test_no_result(self) -> None:
-        request = RPCRequest('does not exist', id=1)
+        request = RequestObjectParams(1, 'does not exist', [])
         resp = self.server.process(request.to_json())
         self.assertNotIn('result', json.loads(resp).keys())
         self.assertIn('error', json.loads(resp).keys())
 
     def test_no_error(self) -> None:
-        request = RPCRequest('add', [1, 2], id=1)
+        request = RequestObjectParams(1, 'add', [1, 2])
         resp = self.server.process(request.to_json())
         self.assertNotIn('error', json.loads(resp).keys())
         self.assertIn('result', json.loads(resp).keys())
@@ -83,29 +88,18 @@ class RPCTest(unittest.TestCase):
         self.assertEqual(resp['error']['code'], INVALID_REQUEST)
 
     def test_method_not_found(self) -> None:
-        request = RPCRequest('does not exist', id=1)
+        request = RequestObject(1, 'does not exist')
         resp = json.loads(self.server.process(request.to_json()))
         self.assertEqual(resp['error']['code'], METHOD_NOT_FOUND)
 
-    def test_invalid_params(self) -> None:
-        request = RPCRequest('add', {'x': 1, 'z': 2}, id=1)
-        resp = json.loads(self.server.process(request.to_json()))
-        self.assertEqual(resp['error']['code'], INVALID_PARAMS)
-        request = RPCRequest('add', [1, 2, 3], id=1)
-        resp = json.loads(self.server.process(request.to_json()))
-        self.assertEqual(resp['error']['code'], INVALID_PARAMS)
-        request = RPCRequest('get_none', [1], id=1)
-        resp = json.loads(self.server.process(request.to_json()))
-        self.assertEqual(resp['error']['code'], INVALID_PARAMS)
-
     def test_internal_error(self) -> None:
-        request = RPCRequest('divide', [0, 0], id=1)
+        request = RequestObjectParams(1, 'divide', [0, 0])
         resp = json.loads(self.server.process(request.to_json()))
         self.assertEqual(resp['error']['code'], INTERNAL_ERROR)
 
     def test_server_error(self) -> None:
         uncaught_code = SERVER_ERROR
-        request = RPCRequest('divide', [0, 0], id=1)
+        request = RequestObjectParams(1, 'divide', [0, 0])
         server = RPCServer(uncaught_code)
         server.register(divide)
         resp = json.loads(server.process(request.to_json()))
@@ -114,13 +108,13 @@ class RPCTest(unittest.TestCase):
     def test_id_matching(self) -> None:
         # Result id.
         req_id = str(uuid.uuid4())
-        request = RPCRequest('add', [2, 2], id=req_id)
+        request = RequestObjectParams(req_id, 'add', [2, 2])
         resp = json.loads(self.server.process(request.to_json()))
         self.assertEqual(4, resp['result'])
         self.assertEqual(req_id, resp['id'])
         # Error id.
         req_id = str(uuid.uuid4())
-        request = RPCRequest('add', {'x': 1, 'z': 2}, id=req_id)
+        request = RequestObjectParams(req_id, 'add', {'x': 1, 'z': 2})
         resp = json.loads(self.server.process(request.to_json()))
         self.assertEqual(req_id, resp['id'])
 
@@ -130,18 +124,18 @@ class RPCTest(unittest.TestCase):
         divide_id = str(uuid.uuid4())
         requests = ','.join(
             [
-                RPCRequest('add', [2, 2], id=add_id).to_json(),
-                RPCRequest('subtract', [2, 2], id=subtract_id).to_json(),
-                RPCRequest('divide', [0, 0], id=divide_id).to_json(),
+                RequestObjectParams(add_id, 'add', [2, 2]).to_json(),
+                RequestObjectParams(subtract_id, 'subtract', [2, 2]).to_json(),
+                RequestObjectParams(divide_id, 'divide', [0, 0]).to_json(),
             ]
         )
         responses = json.loads(self.server.process(f'[{requests}]'))
         add_resp = [r for r in responses if r['id'] == add_id][0]
         subtract_resp = [r for r in responses if r['id'] == subtract_id][0]
         divide_resp = [r for r in responses if r['id'] == divide_id][0]
-        add_resp = RPCResponse.from_json(json.dumps(add_resp))
-        subtract_resp = RPCResponse.from_json(json.dumps(subtract_resp))
-        divide_resp = RPCResponse.from_json(json.dumps(divide_resp))
+        add_resp = util.parse_response(json.dumps(add_resp))
+        subtract_resp = util.parse_response(json.dumps(subtract_resp))
+        divide_resp = util.parse_response(json.dumps(divide_resp))
         self.assertEqual(add_id, add_resp.id)
         self.assertEqual(subtract_id, subtract_resp.id)
         self.assertEqual(divide_id, divide_resp.id)

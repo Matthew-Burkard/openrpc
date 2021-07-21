@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='jsonrpc2',
-    version='1.4.8',
+    version='1.5.8',
     url='https://gitlab.com/mburkard/jsonrpc2',
     license='Custom',
     author='Matthew Burkard',
