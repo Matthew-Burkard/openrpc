@@ -1,7 +1,7 @@
 import uuid
 from typing import Union
 
-from jsonrpc2.rpc_client import RPCDirectClient
+from openrpc.rpc_client import RPCDirectClient
 from rpc_objects import ErrorResponseObject, RequestObjectParams
 
 

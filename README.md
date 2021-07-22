@@ -1,9 +1,10 @@
 # Usage Examples
 
 ## Example Flask Server
+
 ```python
 from flask import Flask, Response, jsonify, request
-from jsonrpc2.rpc_server import RPCServer
+from openrpc.rpc_server import RPCServer
 
 app = Flask(__name__)
 rpc = RPCServer()

@@ -3,7 +3,7 @@ import logging
 from json import JSONDecodeError
 from typing import Callable, Optional, Union, Any
 
-from jsonrpc2.rpc_objects import (
+from openrpc.rpc_objects import (
     PARSE_ERROR, ErrorResponseObject,
     ErrorObjectData, ErrorObject, ResponseType, INVALID_REQUEST, RequestType,
     RequestObjectParams, RequestObject, NotificationObjectParams,

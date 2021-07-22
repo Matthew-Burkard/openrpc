@@ -2,9 +2,9 @@ import unittest
 import uuid
 from typing import Union
 
-from jsonrpc2.rpc_client import RPCDirectClient
-from jsonrpc2.rpc_objects import ErrorResponseObject, RequestObjectParams
-from jsonrpc2.rpc_server import RPCServer
+from openrpc.rpc_client import RPCDirectClient
+from openrpc.rpc_objects import ErrorResponseObject, RequestObjectParams
+from openrpc.rpc_server import RPCServer
 
 test_rpc = RPCServer(-32000)
 

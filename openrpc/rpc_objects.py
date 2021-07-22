@@ -3,7 +3,7 @@ from typing import Union
 
 from dataclasses_json import dataclass_json
 
-from jsonrpc2.json_types import JSON, JSONStructured
+from openrpc.json_types import JSON, JSONStructured
 
 PARSE_ERROR = (-32700, 'Parse error')
 INVALID_REQUEST = (-32600, 'Invalid Request')

@@ -4,7 +4,7 @@ import uuid
 from typing import Any
 
 import util
-from jsonrpc2.rpc_server import RPCServer
+from openrpc.rpc_server import RPCServer
 from rpc_objects import RequestObjectParams, RequestObject
 
 PARSE_ERROR = -32700

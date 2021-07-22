@@ -5,8 +5,8 @@ from random import randint
 from typing import Any, Union, Type
 
 import util
-from jsonrpc2.exceptions import get_exception, ServerError
-from jsonrpc2.rpc_server import RPCServer
+from openrpc.exceptions import get_exception, ServerError
+from openrpc.rpc_server import RPCServer
 from rpc_objects import RequestType, ResultResponseObject
 
 __all__ = ('RPCClient', 'RPCDirectClient')

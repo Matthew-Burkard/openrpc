@@ -3,7 +3,7 @@ import logging
 from json import JSONDecodeError
 from typing import Union
 
-from jsonrpc2.exceptions import JSONRPCError
+from openrpc.exceptions import JSONRPCError
 from rpc_objects import (
     ResponseType, ErrorResponseObject,
     ResultResponseObject, ErrorObjectData, ErrorObject,

@@ -1,5 +1,5 @@
 from client import MathRPCClient
-from jsonrpc2.exceptions import JSONRPCError
+from openrpc.exceptions import JSONRPCError
 from server import math_rpc
 
 math_rpc_client = MathRPCClient(math_rpc)
