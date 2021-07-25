@@ -6,7 +6,7 @@ from openrpc.rpc_client import RPCDirectClient
 from openrpc.rpc_objects import ErrorResponseObject, RequestObjectParams
 from openrpc.rpc_server import RPCServer
 
-test_rpc = RPCServer(-32000)
+test_rpc = RPCServer('Test RPC Server', '1.0.0', -32000)
 
 
 class TestRPCClient(RPCDirectClient):
@@ -17,7 +17,7 @@ class TestRPCClient(RPCDirectClient):
         )
 
 
-@test_rpc.register
+@test_rpc.method
 def echo(x: float) -> Union[float, tuple]:
     return x
 

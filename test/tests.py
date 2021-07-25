@@ -18,14 +18,14 @@ SERVER_ERROR = -32000
 class RPCTest(unittest.TestCase):
 
     def __init__(self, *args) -> None:
-        self.server = RPCServer()
-        self.server.register(add)
-        self.server.register(subtract)
-        self.server.register(divide)
-        self.server.register(summation)
-        self.server.register(pythagorean)
-        self.server.register(get_none)
-        self.server.register(echo)
+        self.server = RPCServer('Test RPC Server', '1.0.0')
+        self.server.method(add)
+        self.server.method(subtract)
+        self.server.method(divide)
+        self.server.method(summation)
+        self.server.method(pythagorean)
+        self.server.method(get_none)
+        self.server.method(echo)
         super(RPCTest, self).__init__(*args)
 
     def test_array_params(self) -> None:
@@ -100,8 +100,8 @@ class RPCTest(unittest.TestCase):
     def test_server_error(self) -> None:
         uncaught_code = SERVER_ERROR
         request = RequestObjectParams(1, 'divide', [0, 0])
-        server = RPCServer(uncaught_code)
-        server.register(divide)
+        server = RPCServer('Test RPC Server', '1.0.0', uncaught_code)
+        server.method(divide)
         resp = json.loads(server.process(request.to_json()))
         self.assertEqual(resp['error']['code'], uncaught_code)
 
