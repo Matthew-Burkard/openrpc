@@ -7,16 +7,18 @@ from rpc_objects import ErrorResponseObject, RequestObjectParams
 
 class MathRPCClient(RPCDirectClient):
 
+    def discover(self) -> str:
+        return self._call(
+            RequestObjectParams(str(uuid.uuid4()), 'rpc.discover', [])
+        )
+
     def add(self, x: float, y: float) -> Union[float, ErrorResponseObject]:
         return self._call(
             RequestObjectParams(str(uuid.uuid4()), 'add', [x, y])
         )
 
-    def subtract(
-            self,
-            x: float,
-            y: float
-    ) -> Union[float, ErrorResponseObject]:
+    def subtract(self, x: float, y: float) \
+            -> Union[float, ErrorResponseObject]:
         return self._call(
             RequestObjectParams(str(uuid.uuid4()), 'subtract', [x, y])
         )

@@ -2,11 +2,9 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Union, Optional
 
+from dataclasses_json import dataclass_json
+
 from json_types import JSON
-
-
-class SchemaObject:
-    pass
 
 
 class ParamStructure(Enum):
@@ -15,6 +13,30 @@ class ParamStructure(Enum):
     EITHER = 'either'
 
 
+# TODO Implement full JSON Schema specification.
+@dataclass_json
+@dataclass
+class SchemaObjectProperties:
+    type: str
+    description: Optional[str] = None
+    exclusiveMinimum: Optional[float] = None
+    items: Optional[dict] = None
+
+
+# TODO Implement full JSON Schema specification.
+@dataclass_json
+@dataclass
+class SchemaObject:
+    id: Optional[str] = None
+    # FIXME Expires 08/01/21
+    schema: str = 'https://json-schema.org/draft/2020-12/schema'
+    title: Optional[str] = None
+    type: Optional[str] = None
+    properties: Optional[dict[str, SchemaObjectProperties]] = None
+    required: Optional[list[str]] = None
+
+
+@dataclass_json
 @dataclass
 class ServerVariableObject:
     default: str
@@ -22,6 +44,7 @@ class ServerVariableObject:
     description: Optional[str] = None
 
 
+@dataclass_json
 @dataclass
 class ServerObject:
     name: str
@@ -31,6 +54,7 @@ class ServerObject:
     variables: Optional[dict[str, ServerVariableObject]] = None
 
 
+@dataclass_json
 @dataclass
 class ContactObject:
     name: Optional[str] = None
@@ -38,12 +62,14 @@ class ContactObject:
     email: Optional[str] = None
 
 
+@dataclass_json
 @dataclass
 class LicenseObject:
     name: str
     url: Optional[str] = None
 
 
+@dataclass_json
 @dataclass
 class InfoObject:
     title: str
@@ -54,6 +80,7 @@ class InfoObject:
     license: Optional[LicenseObject] = None
 
 
+@dataclass_json
 @dataclass
 class ContentDescriptorObject:
     name: str
@@ -64,12 +91,14 @@ class ContentDescriptorObject:
     deprecated: bool = False
 
 
+@dataclass_json
 @dataclass
 class ExternalDocumentationObject:
     url: str
     description: Optional[str] = None
 
 
+@dataclass_json
 @dataclass
 class TagObject:
     name: str
@@ -78,6 +107,7 @@ class TagObject:
     externalDocs: Optional[ExternalDocumentationObject] = None
 
 
+@dataclass_json
 @dataclass
 class ErrorObject:
     code: int
@@ -85,6 +115,7 @@ class ErrorObject:
     data: JSON = None
 
 
+@dataclass_json
 @dataclass
 class LinkObject:
     name: str
@@ -95,6 +126,7 @@ class LinkObject:
     server: Optional[ServerObject] = None
 
 
+@dataclass_json
 @dataclass
 class ExampleObject:
     name: Optional[str] = None
@@ -104,6 +136,7 @@ class ExampleObject:
     externalValue: Optional[str] = None
 
 
+@dataclass_json
 @dataclass
 class ExamplePairingObject:
     name: Optional[str] = None
@@ -113,11 +146,12 @@ class ExamplePairingObject:
     result: Optional[ExampleObject] = None
 
 
+@dataclass_json
 @dataclass
 class MethodObject:
-    name: str
-    params: list[ContentDescriptorObject]
-    result: ContentDescriptorObject
+    name: Optional[str] = None
+    params: Optional[list[ContentDescriptorObject]] = None
+    result: Optional[ContentDescriptorObject] = None
     tags: Optional[list[TagObject]] = None
     summary: Optional[str] = None
     description: Optional[str] = None
@@ -130,6 +164,7 @@ class MethodObject:
     examples: Optional[list[ExamplePairingObject]] = None
 
 
+@dataclass_json
 @dataclass
 class ComponentsObject:
     contentDescriptors: Optional[dict[str, ContentDescriptorObject]] = None
@@ -141,6 +176,7 @@ class ComponentsObject:
     tags: Optional[dict[str, TagObject]] = None
 
 
+@dataclass_json
 @dataclass
 class OpenRPCObject:
     info: InfoObject

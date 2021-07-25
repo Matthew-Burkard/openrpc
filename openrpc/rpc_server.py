@@ -1,29 +1,55 @@
 import json
 import logging
+from dataclasses import dataclass
 from json import JSONDecodeError
 from typing import Callable, Optional, Union, Any
 
+import util
+from open_rpc_objects import MethodObject, TagObject, OpenRPCObject, InfoObject
 from openrpc.rpc_objects import (
-    PARSE_ERROR, ErrorResponseObject,
-    ErrorObjectData, ErrorObject, ResponseType, INVALID_REQUEST, RequestType,
-    RequestObjectParams, RequestObject, NotificationObjectParams,
-    NotificationObject, METHOD_NOT_FOUND, ResultResponseObject, INTERNAL_ERROR,
+    PARSE_ERROR, ErrorResponseObject, ErrorObjectData, ErrorObject,
+    ResponseType, INVALID_REQUEST, RequestType, RequestObjectParams,
+    RequestObject, NotificationObjectParams, NotificationObject,
+    METHOD_NOT_FOUND, ResultResponseObject, INTERNAL_ERROR,
 )
 
 __all__ = ('RPCServer',)
 log = logging.getLogger(__name__)
 
 
+@dataclass
+class RegisteredMethod:
+    fun: Callable
+    method: MethodObject
+
+
 class RPCServer:
 
-    def __init__(self, uncaught_error_code: Optional[int] = None) -> None:
-        self.methods: dict[str, Callable] = {}
+    def __init__(
+            self,
+            title: str,
+            version: str,
+            uncaught_error_code: Optional[int] = None
+    ) -> None:
+        self.title = title
+        self.version = version
+        self.methods: dict[str, RegisteredMethod] = {}
         self.uncaught_error_code: Optional[int] = uncaught_error_code
+        self.method(MethodObject('rpc.discover'))(self._get_discover_method)
 
-    def register(self, fun: Callable) -> Callable:
-        log.debug('Registering method [%s]', fun.__name__)
-        self.methods[fun.__name__] = fun
-        return fun
+    def method(self, method: Optional[MethodObject] = None) -> Callable:
+        method = method or MethodObject()
+
+        def register(fun: Callable) -> Callable:
+            log.debug('Registering method [%s]', fun.__name__)
+            method.name = method.name or fun.__name__
+            method.params = method.params or util.get_openrpc_params(fun)
+            method.result = method.result or util.get_openrpc_result(fun)
+            method.tags = method.tags or [TagObject('name of module')]  # TODO
+            self.methods[method.name] = RegisteredMethod(fun, method)
+            return fun
+
+        return register
 
     def process(self, data: Union[bytes, str]) -> Optional[str]:
         # Parse JSON
@@ -62,13 +88,14 @@ class RPCServer:
             return self._err(INVALID_REQUEST)
 
     def _process_method(self, request: RequestType) -> Any:
-        method = self.methods.get(request.method)
-        if not method:
+        registered_method = self.methods.get(request.method)
+        if not registered_method:
             log.error('Method not found [%s]', request)
             return self._err(METHOD_NOT_FOUND, request.id)
 
         # noinspection PyBroadException
         try:
+            method = registered_method.fun
             # Call method.
             if (isinstance(request, RequestObject)
                     or isinstance(request, NotificationObject)):
@@ -97,7 +124,14 @@ class RPCServer:
                     request.id,
                     f'{type(e).__name__}: {e}'
                 )
-            return self._err(INTERNAL_ERROR, request.id, )
+            return self._err(INTERNAL_ERROR, request.id)
+
+    def _get_discover_method(self) -> OpenRPCObject:
+        return OpenRPCObject(
+            InfoObject(self.title, self.version),
+            [it.method for it in self.methods.values()
+             if it.method.name != 'rpc.discover']
+        )
 
     @staticmethod
     def _get_request(data: dict) -> RequestType:
