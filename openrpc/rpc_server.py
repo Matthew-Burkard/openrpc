@@ -35,9 +35,15 @@ class RPCServer:
         self.version = version
         self.methods: dict[str, RegisteredMethod] = {}
         self.uncaught_error_code: Optional[int] = uncaught_error_code
-        self.method(MethodObject('rpc.discover'))(self._get_discover_method)
+        self.method(
+            method=MethodObject('rpc.discover')
+        )(self._get_discover_method)
 
-    def method(self, method: Optional[MethodObject] = None) -> Callable:
+    def method(
+            self,
+            *args,
+            method: Optional[Union[Callable, MethodObject]] = None
+    ) -> Callable:
         method = method or MethodObject()
 
         def register(fun: Callable) -> Callable:
@@ -49,6 +55,8 @@ class RPCServer:
             self.methods[method.name] = RegisteredMethod(fun, method)
             return fun
 
+        if args:
+            return register(*args)
         return register
 
     def process(self, data: Union[bytes, str]) -> Optional[str]:
