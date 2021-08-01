@@ -9,21 +9,37 @@ class MathRPCClient(RPCDirectClient):
 
     def discover(self) -> str:
         return self._call(
-            RequestObjectParams(str(uuid.uuid4()), 'rpc.discover', [])
+            RequestObjectParams(
+                id=str(uuid.uuid4()),
+                method='rpc.discover',
+                params=[]
+            )
         )
 
     def add(self, x: float, y: float) -> Union[float, ErrorResponseObject]:
         return self._call(
-            RequestObjectParams(str(uuid.uuid4()), 'add', [x, y])
+            RequestObjectParams(
+                id=str(uuid.uuid4()),
+                method='add',
+                params=[x, y]
+            )
         )
 
     def subtract(self, x: float, y: float) \
             -> Union[float, ErrorResponseObject]:
         return self._call(
-            RequestObjectParams(str(uuid.uuid4()), 'subtract', [x, y])
+            RequestObjectParams(
+                id=str(uuid.uuid4()),
+                method='subtract',
+                params=[x, y]
+            )
         )
 
     def divide(self, x: float, y: float) -> Union[float, ErrorResponseObject]:
         return self._call(
-            RequestObjectParams(str(uuid.uuid4()), 'divide', [x, y])
+            RequestObjectParams(
+                id=str(uuid.uuid4()),
+                method='divide',
+                params=[x, y]
+            )
         )

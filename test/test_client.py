@@ -13,7 +13,11 @@ class TestRPCClient(RPCDirectClient):
 
     def echo(self, x: float) -> Union[float, list, ErrorResponseObject]:
         return self._call(
-            RequestObjectParams(str(uuid.uuid4()), 'echo', [x])
+            RequestObjectParams(
+                id=str(uuid.uuid4()),
+                method='echo',
+                params=[x]
+            )
         )
 
 

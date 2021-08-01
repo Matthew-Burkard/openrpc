@@ -1,10 +1,7 @@
-from dataclasses import dataclass
 from enum import Enum
-from typing import Union, Optional
+from typing import Union, Optional, Any
 
-from dataclasses_json import dataclass_json
-
-from json_types import JSON
+from pydantic import BaseModel, Field
 
 
 class ParamStructure(Enum):
@@ -13,40 +10,29 @@ class ParamStructure(Enum):
     EITHER = 'either'
 
 
-# TODO Implement full JSON Schema specification.
-@dataclass_json
-@dataclass
-class SchemaObjectProperties:
+class SchemaObjectProperty(BaseModel):
     type: str
     description: Optional[str] = None
     exclusiveMinimum: Optional[float] = None
     items: Optional[dict] = None
 
 
-# TODO Implement full JSON Schema specification.
-@dataclass_json
-@dataclass
-class SchemaObject:
-    id: Optional[str] = None
-    # FIXME Expires 08/01/21
-    schema: str = 'https://json-schema.org/draft/2020-12/schema'
+class SchemaObject(BaseModel):
+    id: Optional[str] = Field(alias='$id')
+    json_schema: Optional[str] = Field(alias='$schema')
     title: Optional[str] = None
     type: Optional[str] = None
-    properties: Optional[dict[str, SchemaObjectProperties]] = None
+    properties: Optional[dict[str, SchemaObjectProperty]] = None
     required: Optional[list[str]] = None
 
 
-@dataclass_json
-@dataclass
-class ServerVariableObject:
+class ServerVariableObject(BaseModel):
     default: str
     enum: Optional[list[str]] = None
     description: Optional[str] = None
 
 
-@dataclass_json
-@dataclass
-class ServerObject:
+class ServerObject(BaseModel):
     name: str
     url: str = 'localhost'
     summary: Optional[str] = None
@@ -54,24 +40,18 @@ class ServerObject:
     variables: Optional[dict[str, ServerVariableObject]] = None
 
 
-@dataclass_json
-@dataclass
-class ContactObject:
+class ContactObject(BaseModel):
     name: Optional[str] = None
     url: Optional[str] = None
     email: Optional[str] = None
 
 
-@dataclass_json
-@dataclass
-class LicenseObject:
+class LicenseObject(BaseModel):
     name: str
     url: Optional[str] = None
 
 
-@dataclass_json
-@dataclass
-class InfoObject:
+class InfoObject(BaseModel):
     title: str
     version: str
     description: Optional[str] = None
@@ -80,65 +60,51 @@ class InfoObject:
     license: Optional[LicenseObject] = None
 
 
-@dataclass_json
-@dataclass
-class ContentDescriptorObject:
+class ContentDescriptorObject(BaseModel):
     name: str
-    schema: SchemaObject
+    json_schema: SchemaObject = Field(alias='schema')
     summary: Optional[str] = None
     description: Optional[str] = None
     required: Optional[bool] = None
     deprecated: bool = False
 
 
-@dataclass_json
-@dataclass
-class ExternalDocumentationObject:
+class ExternalDocumentationObject(BaseModel):
     url: str
     description: Optional[str] = None
 
 
-@dataclass_json
-@dataclass
-class TagObject:
+class TagObject(BaseModel):
     name: str
     summary: Optional[str] = None
     description: Optional[str] = None
     externalDocs: Optional[ExternalDocumentationObject] = None
 
 
-@dataclass_json
-@dataclass
-class ErrorObject:
+class ErrorObject(BaseModel):
     code: int
     message: str
-    data: JSON = None
+    data: Any = None
 
 
-@dataclass_json
-@dataclass
-class LinkObject:
+class LinkObject(BaseModel):
     name: str
     description: Optional[str] = None
     summary: Optional[str] = None
     method: Optional[str] = None
-    params: Optional[dict[str, JSON]] = None
+    params: Optional[dict[str, Any]] = None
     server: Optional[ServerObject] = None
 
 
-@dataclass_json
-@dataclass
-class ExampleObject:
+class ExampleObject(BaseModel):
     name: Optional[str] = None
     summary: Optional[str] = None
     description: Optional[str] = None
-    value: JSON = None
+    value: Any = None
     externalValue: Optional[str] = None
 
 
-@dataclass_json
-@dataclass
-class ExamplePairingObject:
+class ExamplePairingObject(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     summary: Optional[str] = None
@@ -146,9 +112,7 @@ class ExamplePairingObject:
     result: Optional[ExampleObject] = None
 
 
-@dataclass_json
-@dataclass
-class MethodObject:
+class MethodObject(BaseModel):
     name: Optional[str] = None
     params: Optional[list[ContentDescriptorObject]] = None
     result: Optional[ContentDescriptorObject] = None
@@ -164,9 +128,7 @@ class MethodObject:
     examples: Optional[list[ExamplePairingObject]] = None
 
 
-@dataclass_json
-@dataclass
-class ComponentsObject:
+class ComponentsObject(BaseModel):
     contentDescriptors: Optional[dict[str, ContentDescriptorObject]] = None
     schemas: Optional[dict[str, SchemaObject]] = None
     examples: Optional[dict[str, ExampleObject]] = None
@@ -176,9 +138,7 @@ class ComponentsObject:
     tags: Optional[dict[str, TagObject]] = None
 
 
-@dataclass_json
-@dataclass
-class OpenRPCObject:
+class OpenRPCObject(BaseModel):
     info: InfoObject
     methods: list[MethodObject]
     servers: Optional[Union[ServerObject, list[ServerObject]]] = None

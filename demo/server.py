@@ -1,6 +1,15 @@
-from openrpc.rpc_server import RPCServer
+from dataclasses import dataclass
 
-math_rpc = RPCServer('Math RPC Server', '1.0.0', -32000)
+from openrpc_server import OpenRPCServer
+
+math_rpc = OpenRPCServer('Math RPC Server', '1.0.0', -32000)
+
+
+@dataclass
+class Vector3:
+    x: float
+    y: float
+    z: float
 
 
 @math_rpc.method
