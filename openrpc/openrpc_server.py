@@ -1,5 +1,4 @@
-import typing
-from typing import Callable, Type, Any
+from typing import Callable, Type, Any, Optional, Union, get_args
 
 from open_rpc_objects import (
     ContentDescriptorObject, SchemaObject,
@@ -13,7 +12,7 @@ class OpenRPCServer:
             self,
             title: str,
             version: str,
-            uncaught_error_code: typing.Optional[int] = None
+            uncaught_error_code: Optional[int] = None
     ) -> None:
         self.server = RPCServer(title, version, uncaught_error_code)
         self.schemas: dict[str, SchemaObject] = {}
@@ -24,13 +23,11 @@ class OpenRPCServer:
     def method(
             self,
             *args,
-            method: typing.Optional[
-                typing.Union[Callable, MethodObject]
-            ] = None
+            method: Optional[Union[Callable, MethodObject]] = None
     ) -> Callable:
         return self.server.method(*args, method=method)
 
-    def process(self, data: typing.Union[bytes, str]) -> typing.Optional[str]:
+    def process(self, data: Union[bytes, str]) -> Optional[str]:
         return self.server.process(data)
 
     def discover(self) -> str:
@@ -83,7 +80,7 @@ class OpenRPCServer:
 
     @staticmethod
     def _get_schema_type_from_py_type(annotation: Any) -> str:
-        if args := typing.get_args(annotation):
+        if args := get_args(annotation):
             # FIXME Kinda hacky.
             annotation = args[0]
         py_to_schema = {
@@ -97,4 +94,4 @@ class OpenRPCServer:
 
     @staticmethod
     def _is_required(annotation: Any) -> bool:
-        return 'NoneType' in [a.__name__ for a in typing.get_args(annotation)]
+        return 'NoneType' in [a.__name__ for a in get_args(annotation)]
