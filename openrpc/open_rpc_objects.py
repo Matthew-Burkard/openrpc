@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from enum import Enum
 from typing import Union, Optional, Any
 
@@ -10,20 +12,17 @@ class ParamStructure(Enum):
     EITHER = 'either'
 
 
-class SchemaObjectProperty(BaseModel):
-    type: str
-    description: Optional[str] = None
-    exclusiveMinimum: Optional[float] = None
-    items: Optional[dict] = None
-
-
 class SchemaObject(BaseModel):
     id: Optional[str] = Field(alias='$id')
     json_schema: Optional[str] = Field(alias='schema')
     title: Optional[str] = None
     type: Optional[str] = None
-    properties: Optional[dict[str, SchemaObjectProperty]] = None
+    properties: Optional[dict[str, SchemaObject]] = None
     required: Optional[list[str]] = None
+    definitions: Optional[dict[str, SchemaObject]]
+
+
+SchemaObject.update_forward_refs()
 
 
 class ServerVariableObject(BaseModel):
