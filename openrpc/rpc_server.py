@@ -152,8 +152,8 @@ class RPCServer:
     ) -> ErrorResponseObject:
         if data:
             error = ErrorObjectData(code=err[0], message=err[1], data=data)
-            return ErrorResponseObject(id=rpc_id, result=error)
+            return ErrorResponseObject(id=rpc_id, error=error)
         return ErrorResponseObject(
             id=rpc_id,
-            result=ErrorObject(code=err[0], message=err[1])
+            error=ErrorObject(code=err[0], message=err[1])
         )
