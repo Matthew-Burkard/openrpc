@@ -41,4 +41,8 @@ class RPCDirectClient(RPCClient):
         self.server = server
 
     def _call(self, request: RequestType) -> Any:
-        return self._handle_json(self.server.process(request.json()))
+        return self._handle_json(
+            self.server.process(
+                request.json(by_alias=True, exclude_unset=True)
+            )
+        )

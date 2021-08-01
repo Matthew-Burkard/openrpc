@@ -25,3 +25,12 @@ def subtract(x: float, y: float) -> float:
 @math_rpc.method
 def divide(x: float, y: float) -> float:
     return x / y
+
+
+@math_rpc.method
+def shift(position: Vector3, movement: Vector3) -> Vector3:
+    return Vector3(
+        position.x + movement.x,
+        position.y + movement.y,
+        position.z + movement.z,
+    )

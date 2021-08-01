@@ -58,26 +58,41 @@ class RPCServer:
             parsed_json = json.loads(data)
         except (TypeError, JSONDecodeError) as e:
             log.exception(f'{type(e).__name__}:')
-            return self._err(PARSE_ERROR).json()
+            return self._err(PARSE_ERROR).json(
+                by_alias=True,
+                exclude_unset=True
+            )
 
         # Process as single request or batch.
         # noinspection PyBroadException
         try:
             if isinstance(parsed_json, dict):
-                return self._process_request(parsed_json).json()
+                return self._process_request(parsed_json).json(
+                    by_alias=True,
+                    exclude_unset=True
+                )
             if isinstance(parsed_json, list):
                 return f'[{self._process_requests(parsed_json)}]' or None
         except Exception:
             log.error('Invalid request [%s]', parsed_json)
-            return self._err(INVALID_REQUEST).json()
+            return self._err(INVALID_REQUEST).json(
+                by_alias=True,
+                exclude_unset=True
+            )
 
         # Request must be a JSON primitive.
         log.error('Invalid request [%s]', parsed_json)
-        return self._err(INVALID_REQUEST).json()
+        return self._err(INVALID_REQUEST).json(
+            by_alias=True,
+            exclude_unset=True
+        )
 
     def _process_requests(self, data: list) -> str:
         # TODO async batch handling for better performance?
-        return ','.join([self._process_request(req).json() for req in data])
+        return ','.join(
+            [self._process_request(req).json(by_alias=True, exclude_unset=True)
+             for req in data]
+        )
 
     def _process_request(self, data: dict) -> Optional[ResponseType]:
         request = self._get_request(data)

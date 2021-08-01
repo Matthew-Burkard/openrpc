@@ -15,7 +15,7 @@ class OpenRPCServer:
             uncaught_error_code: Optional[int] = None
     ) -> None:
         self.server = RPCServer(title, version, uncaught_error_code)
-        self.schemas: dict[str, SchemaObject] = {}
+        self.schemas: list[SchemaObject] = []
         self.server.method(
             method=MethodObject(name='rpc.discover')
         )(self.discover)
@@ -40,13 +40,14 @@ class OpenRPCServer:
                 registered_method.fun
             )
         return OpenRPCObject(
+            openrpc='1.2.6',
             info=InfoObject(
                 title=self.server.title,
                 version=self.server.version
             ),
             methods=[it.method for it in self.server.methods.values()
                      if it.method.name != 'rpc.discover']
-        ).json()
+        ).json(by_alias=True, exclude_unset=True)
 
     def get_params(self, fun: Callable) -> list[ContentDescriptorObject]:
         # noinspection PyUnresolvedReferences
@@ -69,12 +70,15 @@ class OpenRPCServer:
     def _get_schema(self, annotation: Type) -> SchemaObject:
         schema = SchemaObject()
         schema_type = self._get_schema_type_from_py_type(annotation)
-        title = None
         if schema_type == 'object':
-            title = annotation.__name__
-            # TODO For property in annotation add SchemaObjectProperty.
-        # TODO If new schema add to self.schemas, else use existing one.
-        schema.title = title
+            # pydantic
+            if 'schema' in dir(annotation):
+                # noinspection PyUnresolvedReferences
+                schema = SchemaObject(**annotation.schema())
+                if schema not in self.schemas:
+                    self.schemas.append(schema)
+                return schema
+        schema.title = annotation.__name__
         schema.type = schema_type
         return schema
 

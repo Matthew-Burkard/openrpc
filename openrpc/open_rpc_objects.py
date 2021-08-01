@@ -19,7 +19,7 @@ class SchemaObjectProperty(BaseModel):
 
 class SchemaObject(BaseModel):
     id: Optional[str] = Field(alias='$id')
-    json_schema: Optional[str] = Field(alias='$schema')
+    json_schema: Optional[str] = Field(alias='schema')
     title: Optional[str] = None
     type: Optional[str] = None
     properties: Optional[dict[str, SchemaObjectProperty]] = None
@@ -139,9 +139,9 @@ class ComponentsObject(BaseModel):
 
 
 class OpenRPCObject(BaseModel):
+    openrpc: str
     info: InfoObject
     methods: list[MethodObject]
     servers: Optional[Union[ServerObject, list[ServerObject]]] = None
     components: Optional[ComponentsObject] = None
     externalDocs: Optional[ExternalDocumentationObject] = None
-    openrpc: str = '1.2.6'

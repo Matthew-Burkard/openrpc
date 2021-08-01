@@ -1,8 +1,16 @@
 import uuid
+from dataclasses import dataclass
 from typing import Union
 
 from openrpc.rpc_client import RPCDirectClient
 from rpc_objects import ErrorResponseObject, RequestObjectParams
+
+
+@dataclass
+class Vector3:
+    x: float
+    y: float
+    z: float
 
 
 class MathRPCClient(RPCDirectClient):
@@ -41,5 +49,18 @@ class MathRPCClient(RPCDirectClient):
                 id=str(uuid.uuid4()),
                 method='divide',
                 params=[x, y]
+            )
+        )
+
+    def shift(
+            self,
+            position: Vector3,
+            movement: Vector3
+    ) -> Union[Vector3, ErrorResponseObject]:
+        return self._call(
+            RequestObjectParams(
+                id=str(uuid.uuid4()),
+                method='shift',
+                params=[position, movement]
             )
         )
