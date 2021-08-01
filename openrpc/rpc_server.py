@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from json import JSONDecodeError
 from typing import Callable, Optional, Union, Any
 
-from open_rpc_objects import MethodObject, TagObject
+from open_rpc_objects import MethodObject
 from openrpc.rpc_objects import (
     PARSE_ERROR, ErrorResponseObject, ErrorObjectData, ErrorObject,
     ResponseType, INVALID_REQUEST, RequestType, RequestObjectParams,
@@ -45,11 +45,6 @@ class RPCServer:
         def register(fun: Callable) -> Callable:
             log.debug('Registering method [%s]', fun.__name__)
             method.name = method.name or fun.__name__
-
-            method.params = method.params
-            method.result = method.result
-            # TODO
-            method.tags = method.tags or [TagObject(name='name of module')]
             self.methods[method.name] = RegisteredMethod(fun, method)
             return fun
 
