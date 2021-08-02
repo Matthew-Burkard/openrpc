@@ -67,7 +67,12 @@ class OpenRPCServer:
             schema=self._get_schema(fun.__annotations__['return'])
         )
 
-    def _get_schema(self, annotation: Type) -> SchemaObject:
+    def _get_schema(
+            self,
+            annotation: Type,
+            name: Optional[str] = None
+    ) -> SchemaObject:
+        # TODO Create definitions and references.
         schema = SchemaObject()
         schema_type = self._get_schema_type_from_py_type(annotation)
         if schema_type == 'object':
@@ -78,7 +83,14 @@ class OpenRPCServer:
                 if schema not in self.schemas:
                     self.schemas.append(schema)
                 return schema
-        schema.title = annotation.__name__
+
+            # noinspection PyUnresolvedReferences
+            schema.properties = [
+                self._get_schema(v, k)
+                for k, v in annotation.__init__.__annotations__.items()
+                if k != 'return'
+            ]
+        schema.title = name or annotation.__name__
         schema.type = schema_type
         return schema
 
