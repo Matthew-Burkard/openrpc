@@ -2,7 +2,7 @@ import json
 import logging
 from dataclasses import dataclass
 from json import JSONDecodeError
-from typing import Callable, Optional, Union, Any
+from typing import Callable, Optional, Union, Any, Type
 
 from open_rpc_objects import MethodObject
 from openrpc.rpc_objects import (
@@ -112,14 +112,22 @@ class RPCServer:
         # noinspection PyBroadException
         try:
             method = registered_method.fun
+            # noinspection PyUnresolvedReferences
+            annotations = method.__annotations__
             # Call method.
             if (isinstance(request, RequestObject)
                     or isinstance(request, NotificationObject)):
                 result = method()
             elif isinstance(request.params, list):
-                result = method(*request.params)
+                result = method(
+                    *(self._deserialize_param(p, list(annotations.values())[i])
+                      for i, p in enumerate(request.params))
+                )
             elif isinstance(request.params, dict):
-                result = method(**request.params)
+                result = method(
+                    **{k: self._deserialize_param(v, annotations[k])
+                       for k, v in request.params.items()}
+                )
             else:
                 result = method()
 
@@ -141,6 +149,14 @@ class RPCServer:
                     f'{type(e).__name__}: {e}'
                 )
             return self._err(INTERNAL_ERROR, request.id)
+
+    def _deserialize_param(self, param: Any, p_type: Type) -> Any:
+        if not isinstance(param, dict):
+            return param
+        return p_type(
+            **{k: self._deserialize_param(v, type(p_type.__annotations__[k]))
+               for k, v in param.items()}
+        )
 
     @staticmethod
     def _get_request(data: dict) -> RequestType:
