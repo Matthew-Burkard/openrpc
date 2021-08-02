@@ -6,10 +6,10 @@ from typing import Callable, Optional, Union, Any, Type
 
 from open_rpc_objects import MethodObject
 from openrpc.rpc_objects import (
-    PARSE_ERROR, ErrorResponseObject, ErrorObjectData, ErrorObject,
-    ResponseType, INVALID_REQUEST, RequestType, RequestObjectParams,
-    RequestObject, NotificationObjectParams, NotificationObject,
-    METHOD_NOT_FOUND, ResultResponseObject, INTERNAL_ERROR,
+    ErrorResponseObject, ErrorObjectData, ErrorObject, ResponseType,
+    RequestType, RequestObjectParams, RequestObject, NotificationObjectParams,
+    NotificationObject, ResultResponseObject, PARSE_ERROR, INVALID_REQUEST,
+    METHOD_NOT_FOUND, INTERNAL_ERROR,
 )
 
 __all__ = ('RPCServer',)
@@ -114,19 +114,18 @@ class RPCServer:
             method = registered_method.fun
             # noinspection PyUnresolvedReferences
             annotations = method.__annotations__
+
             # Call method.
             if (isinstance(request, RequestObject)
                     or isinstance(request, NotificationObject)):
                 result = method()
             elif isinstance(request.params, list):
                 result = method(
-                    *(self._deserialize_param(p, list(annotations.values())[i])
-                      for i, p in enumerate(request.params))
+                    *self._get_list_params(request.params, annotations)
                 )
             elif isinstance(request.params, dict):
                 result = method(
-                    **{k: self._deserialize_param(v, annotations[k])
-                       for k, v in request.params.items()}
+                    **self._get_dict_params(request.params, annotations)
                 )
             else:
                 result = method()
@@ -149,6 +148,20 @@ class RPCServer:
                     f'{type(e).__name__}: {e}'
                 )
             return self._err(INTERNAL_ERROR, request.id)
+
+    def _get_list_params(self, params: list, annotations: dict) -> list:
+        try:
+            return [self._deserialize_param(p, list(annotations.values())[i])
+                    for i, p in enumerate(params)]
+        except IndexError:
+            return params
+
+    def _get_dict_params(self, params: dict, annotations: dict) -> dict:
+        try:
+            return {k: self._deserialize_param(p, annotations[k])
+                    for k, p in params.items()}
+        except KeyError:
+            return params
 
     def _deserialize_param(self, param: Any, p_type: Type) -> Any:
         if not isinstance(param, dict):
