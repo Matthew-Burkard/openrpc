@@ -4,7 +4,7 @@ import uuid
 from typing import Any
 
 import util
-from jsonrpc2.rpc_server import RPCServer
+from openrpc.rpc_server import RPCServer
 from rpc_objects import RequestObjectParams, RequestObject
 
 PARSE_ERROR = -32700
@@ -18,64 +18,90 @@ SERVER_ERROR = -32000
 class RPCTest(unittest.TestCase):
 
     def __init__(self, *args) -> None:
-        self.server = RPCServer()
-        self.server.register(add)
-        self.server.register(subtract)
-        self.server.register(divide)
-        self.server.register(summation)
-        self.server.register(pythagorean)
-        self.server.register(get_none)
-        self.server.register(echo)
+        self.server = RPCServer('Test RPC Server', '1.0.0')
+        self.server.method(add)
+        self.server.method(subtract)
+        self.server.method(divide)
+        self.server.method(summation)
+        self.server.method(pythagorean)
+        self.server.method(get_none)
+        self.server.method(echo)
         super(RPCTest, self).__init__(*args)
 
     def test_array_params(self) -> None:
-        request = RequestObjectParams(1, 'add', [2, 2])
-        resp = self.server.process(request.to_json())
+        request = RequestObjectParams(id=1, method='add', params=[2, 2])
+        resp = self.server.process(
+            request.json(by_alias=True, exclude_unset=True)
+        )
         self.assertEqual(4, json.loads(resp)['result'])
 
     def test_no_params(self) -> None:
-        request = RequestObject(1, 'get_none')
-        resp = self.server.process(request.to_json())
+        request = RequestObject(id=1, method='get_none')
+        resp = self.server.process(
+            request.json(by_alias=True, exclude_unset=True)
+        )
         self.assertEqual(None, json.loads(resp)['result'])
 
     def test_object_params(self) -> None:
-        request = RequestObjectParams(1, 'subtract', {'x': 2, 'y': 2})
-        resp = self.server.process(request.to_json())
+        request = RequestObjectParams(
+            id=1,
+            method='subtract',
+            params={'x': 2, 'y': 2}
+        )
+        resp = self.server.process(
+            request.json(by_alias=True, exclude_unset=True)
+        )
         self.assertEqual(0, json.loads(resp)['result'])
 
     def test_vararg_method(self) -> None:
-        request = RequestObjectParams(1, 'summation', [1, 3, 5, 7, 11])
-        resp = self.server.process(request.to_json())
+        request = RequestObjectParams(
+            id=1,
+            method='summation',
+            params=[1, 3, 5, 7, 11]
+        )
+        resp = self.server.process(
+            request.json(by_alias=True, exclude_unset=True)
+        )
         self.assertEqual(27, json.loads(resp)['result'])
 
     def test_kwarg_method(self) -> None:
         request = RequestObjectParams(
-            1,
-            'pythagorean',
-            {'a': 3, 'b': 4, 'c': 5}
+            id=1,
+            method='pythagorean',
+            params={'a': 3, 'b': 4, 'c': 5}
         )
-        resp = self.server.process(request.to_json())
+        resp = self.server.process(
+            request.json(by_alias=True, exclude_unset=True)
+        )
         self.assertEqual(True, json.loads(resp)['result'])
 
     def test_vararg_method_with_no_params(self) -> None:
-        request = RequestObject(1, 'echo')
-        resp = self.server.process(request.to_json())
+        request = RequestObject(id=1, method='echo')
+        resp = self.server.process(
+            request.json(by_alias=True, exclude_unset=True)
+        )
         self.assertEqual([{}], json.loads(resp)['result'])
 
     def test_kwarg_method_with_no_params(self) -> None:
-        request = RequestObject(1, 'echo')
-        resp = self.server.process(request.to_json())
+        request = RequestObject(id=1, method='echo')
+        resp = self.server.process(
+            request.json(by_alias=True, exclude_unset=True)
+        )
         self.assertEqual([{}], json.loads(resp)['result'])
 
     def test_no_result(self) -> None:
-        request = RequestObjectParams(1, 'does not exist', [])
-        resp = self.server.process(request.to_json())
+        request = RequestObjectParams(id=1, method='does not exist', params=[])
+        resp = self.server.process(
+            request.json(by_alias=True, exclude_unset=True)
+        )
         self.assertNotIn('result', json.loads(resp).keys())
         self.assertIn('error', json.loads(resp).keys())
 
     def test_no_error(self) -> None:
-        request = RequestObjectParams(1, 'add', [1, 2])
-        resp = self.server.process(request.to_json())
+        request = RequestObjectParams(id=1, method='add', params=[1, 2])
+        resp = self.server.process(
+            request.json(by_alias=True, exclude_unset=True)
+        )
         self.assertNotIn('error', json.loads(resp).keys())
         self.assertIn('result', json.loads(resp).keys())
 
@@ -88,34 +114,48 @@ class RPCTest(unittest.TestCase):
         self.assertEqual(resp['error']['code'], INVALID_REQUEST)
 
     def test_method_not_found(self) -> None:
-        request = RequestObject(1, 'does not exist')
-        resp = json.loads(self.server.process(request.to_json()))
+        request = RequestObject(id=1, method='does not exist')
+        resp = json.loads(self.server.process(
+            request.json(by_alias=True, exclude_unset=True)
+        ))
         self.assertEqual(resp['error']['code'], METHOD_NOT_FOUND)
 
     def test_internal_error(self) -> None:
-        request = RequestObjectParams(1, 'divide', [0, 0])
-        resp = json.loads(self.server.process(request.to_json()))
+        request = RequestObjectParams(id=1, method='divide', params=[0, 0])
+        resp = json.loads(self.server.process(
+            request.json(by_alias=True, exclude_unset=True)
+        ))
         self.assertEqual(resp['error']['code'], INTERNAL_ERROR)
 
     def test_server_error(self) -> None:
         uncaught_code = SERVER_ERROR
-        request = RequestObjectParams(1, 'divide', [0, 0])
-        server = RPCServer(uncaught_code)
-        server.register(divide)
-        resp = json.loads(server.process(request.to_json()))
+        request = RequestObjectParams(id=1, method='divide', params=[0, 0])
+        server = RPCServer('Test RPC Server', '1.0.0', uncaught_code)
+        server.method(divide)
+        resp = json.loads(server.process(
+            request.json(by_alias=True, exclude_unset=True)
+        ))
         self.assertEqual(resp['error']['code'], uncaught_code)
 
     def test_id_matching(self) -> None:
         # Result id.
         req_id = str(uuid.uuid4())
-        request = RequestObjectParams(req_id, 'add', [2, 2])
-        resp = json.loads(self.server.process(request.to_json()))
+        request = RequestObjectParams(id=req_id, method='add', params=[2, 2])
+        resp = json.loads(self.server.process(
+            request.json(by_alias=True, exclude_unset=True)
+        ))
         self.assertEqual(4, resp['result'])
         self.assertEqual(req_id, resp['id'])
         # Error id.
         req_id = str(uuid.uuid4())
-        request = RequestObjectParams(req_id, 'add', {'x': 1, 'z': 2})
-        resp = json.loads(self.server.process(request.to_json()))
+        request = RequestObjectParams(
+            id=req_id,
+            method='add',
+            params={'x': 1, 'z': 2}
+        )
+        resp = json.loads(self.server.process(
+            request.json(by_alias=True, exclude_unset=True)
+        ))
         self.assertEqual(req_id, resp['id'])
 
     def test_batch(self) -> None:
@@ -124,9 +164,21 @@ class RPCTest(unittest.TestCase):
         divide_id = str(uuid.uuid4())
         requests = ','.join(
             [
-                RequestObjectParams(add_id, 'add', [2, 2]).to_json(),
-                RequestObjectParams(subtract_id, 'subtract', [2, 2]).to_json(),
-                RequestObjectParams(divide_id, 'divide', [0, 0]).to_json(),
+                RequestObjectParams(
+                    id=add_id,
+                    method='add',
+                    params=[2, 2]
+                ).json(by_alias=True, exclude_unset=True),
+                RequestObjectParams(
+                    id=subtract_id,
+                    method='subtract',
+                    params=[2, 2]
+                ).json(by_alias=True, exclude_unset=True),
+                RequestObjectParams(
+                    id=divide_id,
+                    method='divide',
+                    params=[0, 0]
+                ).json(by_alias=True, exclude_unset=True),
             ]
         )
         responses = json.loads(self.server.process(f'[{requests}]'))

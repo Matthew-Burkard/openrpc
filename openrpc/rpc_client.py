@@ -5,8 +5,8 @@ from random import randint
 from typing import Any, Union, Type
 
 import util
-from jsonrpc2.exceptions import get_exception, ServerError
-from jsonrpc2.rpc_server import RPCServer
+from openrpc.exceptions import get_exception, ServerError
+from openrpc.rpc_server import RPCServer
 from rpc_objects import RequestType, ResultResponseObject
 
 __all__ = ('RPCClient', 'RPCDirectClient')
@@ -41,4 +41,8 @@ class RPCDirectClient(RPCClient):
         self.server = server
 
     def _call(self, request: RequestType) -> Any:
-        return self._handle_json(self.server.process(request.to_json()))
+        return self._handle_json(
+            self.server.process(
+                request.json(by_alias=True, exclude_unset=True)
+            )
+        )

@@ -1,9 +1,6 @@
-from dataclasses import dataclass
-from typing import Union
+from typing import Union, Optional, Any
 
-from dataclasses_json import dataclass_json
-
-from jsonrpc2.json_types import JSON, JSONStructured
+from pydantic import BaseModel
 
 PARSE_ERROR = (-32700, 'Parse error')
 INVALID_REQUEST = (-32600, 'Invalid Request')
@@ -23,64 +20,48 @@ ResponseType = Union[
 ]
 
 
-@dataclass_json
-@dataclass
-class RequestObjectParams:
+class RequestObjectParams(BaseModel):
     id: Union[str, int]
     method: str
-    params: JSONStructured
+    params: Union[list, dict]
     jsonrpc: str = '2.0'
 
 
-@dataclass_json
-@dataclass
-class RequestObject:
+class RequestObject(BaseModel):
     id: Union[str, int]
     method: str
     jsonrpc: str = '2.0'
 
 
-@dataclass_json
-@dataclass
-class NotificationObject:
+class NotificationObject(BaseModel):
     method: str
     jsonrpc: str = '2.0'
 
 
-@dataclass_json
-@dataclass
-class NotificationObjectParams:
+class NotificationObjectParams(BaseModel):
     method: str
-    params: JSONStructured
+    params: Union[list, dict]
     jsonrpc: str = '2.0'
 
 
-@dataclass_json
-@dataclass
-class ErrorObjectData:
+class ErrorObjectData(BaseModel):
     code: int
     message: str
-    data: JSON
+    data: Any
 
 
-@dataclass_json
-@dataclass
-class ErrorObject:
+class ErrorObject(BaseModel):
     code: int
     message: str
 
 
-@dataclass_json
-@dataclass
-class ErrorResponseObject:
-    id: Union[str, int]
+class ErrorResponseObject(BaseModel):
+    id: Optional[Union[str, int]]
     error: Union[ErrorObject, ErrorObjectData]
     jsonrpc: str = '2.0'
 
 
-@dataclass_json
-@dataclass
-class ResultResponseObject:
+class ResultResponseObject(BaseModel):
     id: Union[str, int]
-    result: JSON
+    result: Any
     jsonrpc: str = '2.0'

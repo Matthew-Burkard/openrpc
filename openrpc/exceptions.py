@@ -1,6 +1,6 @@
 from typing import Type, Optional, Union
 
-from jsonrpc2.rpc_objects import (
+from openrpc.rpc_objects import (
     INVALID_REQUEST, INTERNAL_ERROR, INVALID_PARAMS, METHOD_NOT_FOUND,
     PARSE_ERROR, ErrorObjectData, ErrorObject,
 )
