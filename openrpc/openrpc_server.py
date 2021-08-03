@@ -110,4 +110,5 @@ class OpenRPCServer:
 
     @staticmethod
     def _is_required(annotation: Any) -> bool:
-        return 'NoneType' in [a.__name__ for a in get_args(annotation)]
+        return 'NoneType' in [a.__name__ for a in get_args(annotation)
+                              if '__name__' in dir(a)]
