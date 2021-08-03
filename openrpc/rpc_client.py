@@ -4,10 +4,10 @@ import sys
 from random import randint
 from typing import Any, Union, Type
 
-import util
+from openrpc import util
 from openrpc.exceptions import get_exception, ServerError
+from openrpc.rpc_objects import RequestType, ResultResponseObject
 from openrpc.rpc_server import RPCServer
-from rpc_objects import RequestType, ResultResponseObject
 
 __all__ = ('RPCClient', 'RPCDirectClient')
 log = logging.getLogger(__name__)

@@ -1,10 +1,10 @@
 from typing import Callable, Type, Any, Optional, Union, get_args
 
-from open_rpc_objects import (
+from openrpc.open_rpc_objects import (
     ContentDescriptorObject, SchemaObject,
     OpenRPCObject, InfoObject, MethodObject,
 )
-from rpc_server import RPCServer
+from openrpc.rpc_server import RPCServer
 
 
 class OpenRPCServer:

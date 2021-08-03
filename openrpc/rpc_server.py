@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from json import JSONDecodeError
 from typing import Callable, Optional, Union, Any, Type
 
-from open_rpc_objects import MethodObject
+from openrpc.open_rpc_objects import MethodObject
 from openrpc.rpc_objects import (
     ErrorResponseObject, ErrorObjectData, ErrorObject, ResponseType,
     RequestType, RequestObjectParams, RequestObject, NotificationObjectParams,

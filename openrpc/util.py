@@ -4,7 +4,7 @@ from json import JSONDecodeError
 from typing import Union
 
 from openrpc.exceptions import JSONRPCError
-from rpc_objects import (
+from openrpc.rpc_objects import (
     ResponseType, ErrorResponseObject, ResultResponseObject, ErrorObjectData,
     ErrorObject,
 )

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Union
 
 from openrpc.rpc_client import RPCDirectClient
-from rpc_objects import ErrorResponseObject, RequestObjectParams
+from openrpc.rpc_objects import ErrorResponseObject, RequestObjectParams
 
 
 @dataclass

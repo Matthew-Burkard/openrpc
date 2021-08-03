@@ -3,9 +3,9 @@ import unittest
 import uuid
 from typing import Any
 
-import util
+from openrpc import util
 from openrpc.rpc_server import RPCServer
-from rpc_objects import RequestObjectParams, RequestObject
+from openrpc.rpc_objects import RequestObjectParams, RequestObject
 
 PARSE_ERROR = -32700
 INVALID_REQUEST = -32600
