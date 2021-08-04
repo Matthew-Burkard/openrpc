@@ -1,4 +1,4 @@
-from typing import Callable, Type, Any, Optional, Union, get_args
+from typing import Callable, Type, Any, Optional, Union, get_args, get_origin
 
 from openrpc.open_rpc_objects import (
     ContentDescriptorObject, SchemaObject,
@@ -30,7 +30,7 @@ class OpenRPCServer:
     def process(self, data: Union[bytes, str]) -> Optional[str]:
         return self.server.process(data)
 
-    def discover(self) -> str:
+    def discover(self) -> OpenRPCObject:
         for name, registered_method in self.server.methods.items():
             method = registered_method.method
             method.params = method.params or self.get_params(
@@ -47,7 +47,7 @@ class OpenRPCServer:
             ),
             methods=[it.method for it in self.server.methods.values()
                      if it.method.name != 'rpc.discover']
-        ).json(by_alias=True, exclude_unset=True)
+        )
 
     def get_params(self, fun: Callable) -> list[ContentDescriptorObject]:
         # noinspection PyUnresolvedReferences
@@ -58,6 +58,7 @@ class OpenRPCServer:
                 required=self._is_required(annotation)
             )
             for name, annotation in fun.__annotations__.items()
+            if name != 'return'
         ]
 
     def get_result(self, fun: Callable) -> ContentDescriptorObject:
@@ -74,7 +75,7 @@ class OpenRPCServer:
     ) -> SchemaObject:
         # TODO Create definitions and references.
         schema = SchemaObject()
-        schema_type = self._get_schema_type_from_py_type(annotation)
+        schema_type = self._schema_type_from_py_type(annotation)
         if schema_type == 'object':
             # pydantic
             if 'schema' in dir(annotation):
@@ -90,15 +91,21 @@ class OpenRPCServer:
                 for k, v in annotation.__init__.__annotations__.items()
                 if k != 'return'
             ]
-        schema.title = name or annotation.__name__
+        if name:
+            schema.title = name
         schema.type = schema_type
         return schema
 
     @staticmethod
-    def _get_schema_type_from_py_type(annotation: Any) -> str:
+    def _schema_type_from_py_type(annotation: Any) -> Union[str, list[str]]:
+        origin = get_origin(annotation)
+        iterables = [list, set, tuple]
+        if origin in iterables or annotation in iterables:
+            # TODO Need an item for each arg in get_args(annotation)
+            return 'array'
         if args := get_args(annotation):
-            # FIXME Kinda hacky.
-            annotation = args[0]
+            return [OpenRPCServer._schema_type_from_py_type(arg)
+                    if arg.__name__ != 'NoneType' else 'null' for arg in args]
         py_to_schema = {
             None: 'null',
             str: 'string',

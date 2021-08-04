@@ -1,11 +1,11 @@
 import json
 import unittest
 import uuid
-from typing import Any
+from typing import Any, Union
 
 from openrpc import util
-from openrpc.rpc_server import RPCServer
 from openrpc.rpc_objects import RequestObjectParams, RequestObject
+from openrpc.rpc_server import RPCServer
 
 PARSE_ERROR = -32700
 INVALID_REQUEST = -32600
@@ -19,6 +19,7 @@ class RPCTest(unittest.TestCase):
 
     def __init__(self, *args) -> None:
         self.server = RPCServer('Test RPC Server', '1.0.0')
+        self.server.method(increment_list)
         self.server.method(add)
         self.server.method(subtract)
         self.server.method(divide)
@@ -115,16 +116,20 @@ class RPCTest(unittest.TestCase):
 
     def test_method_not_found(self) -> None:
         request = RequestObject(id=1, method='does not exist')
-        resp = json.loads(self.server.process(
-            request.json(by_alias=True, exclude_unset=True)
-        ))
+        resp = json.loads(
+            self.server.process(
+                request.json(by_alias=True, exclude_unset=True)
+            )
+        )
         self.assertEqual(resp['error']['code'], METHOD_NOT_FOUND)
 
     def test_internal_error(self) -> None:
         request = RequestObjectParams(id=1, method='divide', params=[0, 0])
-        resp = json.loads(self.server.process(
-            request.json(by_alias=True, exclude_unset=True)
-        ))
+        resp = json.loads(
+            self.server.process(
+                request.json(by_alias=True, exclude_unset=True)
+            )
+        )
         self.assertEqual(resp['error']['code'], INTERNAL_ERROR)
 
     def test_server_error(self) -> None:
@@ -132,18 +137,22 @@ class RPCTest(unittest.TestCase):
         request = RequestObjectParams(id=1, method='divide', params=[0, 0])
         server = RPCServer('Test RPC Server', '1.0.0', uncaught_code)
         server.method(divide)
-        resp = json.loads(server.process(
-            request.json(by_alias=True, exclude_unset=True)
-        ))
+        resp = json.loads(
+            server.process(
+                request.json(by_alias=True, exclude_unset=True)
+            )
+        )
         self.assertEqual(resp['error']['code'], uncaught_code)
 
     def test_id_matching(self) -> None:
         # Result id.
         req_id = str(uuid.uuid4())
         request = RequestObjectParams(id=req_id, method='add', params=[2, 2])
-        resp = json.loads(self.server.process(
-            request.json(by_alias=True, exclude_unset=True)
-        ))
+        resp = json.loads(
+            self.server.process(
+                request.json(by_alias=True, exclude_unset=True)
+            )
+        )
         self.assertEqual(4, resp['result'])
         self.assertEqual(req_id, resp['id'])
         # Error id.
@@ -153,9 +162,11 @@ class RPCTest(unittest.TestCase):
             method='add',
             params={'x': 1, 'z': 2}
         )
-        resp = json.loads(self.server.process(
-            request.json(by_alias=True, exclude_unset=True)
-        ))
+        resp = json.loads(
+            self.server.process(
+                request.json(by_alias=True, exclude_unset=True)
+            )
+        )
         self.assertEqual(req_id, resp['id'])
 
     def test_batch(self) -> None:
@@ -194,6 +205,23 @@ class RPCTest(unittest.TestCase):
         self.assertEqual(4, add_resp.result)
         self.assertEqual(0, subtract_resp.result)
         self.assertEqual(INTERNAL_ERROR, divide_resp.error.code)
+
+    def test_list_param(self) -> None:
+        request = RequestObjectParams(
+            id=1,
+            method='increment_list',
+            params=[[1, 2, 3]]
+        )
+        resp = json.loads(
+            self.server.process(
+                request.json(by_alias=True, exclude_unset=True)
+            )
+        )
+        self.assertEqual(resp['result'], [2, 3, 4])
+
+
+def increment_list(numbers: list[Union[int, float]]) -> list:
+    return [it + 1 for it in numbers]
 
 
 def pythagorean(**kwargs) -> bool:
