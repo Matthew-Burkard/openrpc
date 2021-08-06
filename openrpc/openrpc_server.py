@@ -2,7 +2,7 @@ from typing import Callable, Type, Any, Optional, Union, get_args, get_origin
 
 from openrpc.open_rpc_objects import (
     ContentDescriptorObject, SchemaObject,
-    OpenRPCObject, InfoObject, MethodObject,
+    OpenRPCObject, InfoObject, MethodObject, ComponentsObject,
 )
 from openrpc.rpc_server import RPCServer
 
@@ -15,7 +15,7 @@ class OpenRPCServer:
             uncaught_error_code: Optional[int] = None
     ) -> None:
         self.server = RPCServer(title, version, uncaught_error_code)
-        self.schemas: list[SchemaObject] = []
+        self.components: ComponentsObject = ComponentsObject(schemas={})
         self.server.method(
             method=MethodObject(name='rpc.discover')
         )(self.discover)
@@ -32,6 +32,8 @@ class OpenRPCServer:
 
     def discover(self) -> OpenRPCObject:
         for name, registered_method in self.server.methods.items():
+            if name == 'rpc.discover':
+                continue
             method = registered_method.method
             method.params = method.params or self.get_params(
                 registered_method.fun
@@ -46,7 +48,8 @@ class OpenRPCServer:
                 version=self.server.version
             ),
             methods=[it.method for it in self.server.methods.values()
-                     if it.method.name != 'rpc.discover']
+                     if it.method.name != 'rpc.discover'],
+            components=self.components
         )
 
     def get_params(self, fun: Callable) -> list[ContentDescriptorObject]:
@@ -68,29 +71,31 @@ class OpenRPCServer:
             schema=self._get_schema(fun.__annotations__['return'])
         )
 
+    # noinspection PyUnresolvedReferences
     def _get_schema(
             self,
             annotation: Type,
             name: Optional[str] = None
     ) -> SchemaObject:
-        # TODO Create definitions and references.
-        schema = SchemaObject()
         schema_type = self._schema_type_from_py_type(annotation)
         if schema_type == 'object':
+            name = (name or annotation.__name__).lower()
             # pydantic
             if 'schema' in dir(annotation):
-                # noinspection PyUnresolvedReferences
                 schema = SchemaObject(**annotation.schema())
-                if schema not in self.schemas:
-                    self.schemas.append(schema)
-                return schema
+            else:
+                schema = SchemaObject()
+                schema.properties = {
+                    k: self._get_schema(v)
+                    for k, v in annotation.__init__.__annotations__.items()
+                    if k != 'return'
+                }
+                schema.type = schema_type
+            if schema not in self.components.schemas.values():
+                self.components.schemas[name] = schema
+            return SchemaObject(**{'$ref': f'#/components/schemas/{name}'})
 
-            # noinspection PyUnresolvedReferences
-            schema.properties = [
-                self._get_schema(v, k)
-                for k, v in annotation.__init__.__annotations__.items()
-                if k != 'return'
-            ]
+        schema = SchemaObject()
         if name:
             schema.title = name
         schema.type = schema_type
@@ -99,13 +104,14 @@ class OpenRPCServer:
     @staticmethod
     def _schema_type_from_py_type(annotation: Any) -> Union[str, list[str]]:
         origin = get_origin(annotation)
-        iterables = [list, set, tuple]
-        if origin in iterables or annotation in iterables:
+        flat_collections = [list, set, tuple]
+        if origin in flat_collections or annotation in flat_collections:
             # TODO Need an item for each arg in get_args(annotation)
             return 'array'
         if args := get_args(annotation):
             return [OpenRPCServer._schema_type_from_py_type(arg)
-                    if arg.__name__ != 'NoneType' else 'null' for arg in args]
+                    if '__name__' in dir(arg) and arg.__name__ != 'NoneType'
+                    else 'null' for arg in args]
         py_to_schema = {
             None: 'null',
             str: 'string',
