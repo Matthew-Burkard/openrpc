@@ -71,13 +71,14 @@ class OpenRPCServer:
             schema=self._get_schema(fun.__annotations__['return'])
         )
 
-    # noinspection PyUnresolvedReferences
+    # noinspection PyUnresolvedReferencess
     def _get_schema(
             self,
             annotation: Type,
             name: Optional[str] = None
     ) -> SchemaObject:
         schema_type = self._schema_type_from_py_type(annotation)
+
         if schema_type == 'object':
             name = (name or annotation.__name__).lower()
             # pydantic
@@ -95,6 +96,18 @@ class OpenRPCServer:
                 self.components.schemas[name] = schema
             return SchemaObject(**{'$ref': f'#/components/schemas/{name}'})
 
+        if schema_type == 'array':
+            schema = SchemaObject()
+            schema.type = schema_type
+            schema.items = {}
+            for arg in get_args(annotation):
+                arg_schema = self._get_schema(arg)
+                if arg_schema.ref:
+                    schema.items['$ref'] = arg_schema.ref
+                else:
+                    schema.items['type'] = arg_schema.type
+            return schema
+
         schema = SchemaObject()
         if name:
             schema.title = name
@@ -106,7 +119,6 @@ class OpenRPCServer:
         origin = get_origin(annotation)
         flat_collections = [list, set, tuple]
         if origin in flat_collections or annotation in flat_collections:
-            # TODO Need an item for each arg in get_args(annotation)
             return 'array'
         if args := get_args(annotation):
             return [OpenRPCServer._schema_type_from_py_type(arg)

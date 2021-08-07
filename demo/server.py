@@ -34,3 +34,8 @@ def shift(position: Vector3, movement: Vector3) -> Vector3:
         position.y + movement.y,
         position.z + movement.z,
     )
+
+
+@math_rpc.method
+def get_vector3s(count: int) -> list[Vector3]:
+    return [Vector3(1, 1, 1) for _ in range(count)]
