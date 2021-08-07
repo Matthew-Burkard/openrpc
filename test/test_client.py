@@ -34,4 +34,3 @@ class RPCClientTest(unittest.TestCase):
 
     def test_client(self) -> None:
         self.assertEqual(9, self.client.echo(9))
-        print(self.client.echo(5))

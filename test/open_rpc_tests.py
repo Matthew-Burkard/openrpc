@@ -29,8 +29,6 @@ class OpenRPCTest(unittest.TestCase):
                 request.json(by_alias=True, exclude_unset=True)
             )
         )
-        print(json.dumps(resp))
-        print(resp)
         self.assertEqual(
             resp,
             {
