@@ -1,8 +1,8 @@
 import json
 
-from client import MathRPCClient, Vector3
+from demo_client import MathRPCClient, Vector3
 from openrpc.exceptions import JSONRPCError
-from server import math_rpc
+from demo_server import math_rpc
 
 math_rpc_client = MathRPCClient(math_rpc)
 

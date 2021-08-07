@@ -4,9 +4,10 @@ from typing import Union
 
 from openrpc.rpc_client import RPCDirectClient
 from openrpc.rpc_objects import ErrorResponseObject, RequestObjectParams
-from openrpc.rpc_server import RPCServer
+# noinspection PyProtectedMember
+from openrpc._rpc_server import RPCServer
 
-test_rpc = RPCServer('Test RPC Server', '1.0.0', -32000)
+test_rpc = RPCServer(-32000)
 
 
 class TestRPCClient(RPCDirectClient):

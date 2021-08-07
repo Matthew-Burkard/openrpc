@@ -7,7 +7,7 @@ from typing import Any, Union, Type
 from openrpc import util
 from openrpc.exceptions import get_exception, ServerError
 from openrpc.rpc_objects import RequestType, ResultResponseObject
-from openrpc.rpc_server import RPCServer
+from openrpc._rpc_server import RPCServer
 
 __all__ = ('RPCClient', 'RPCDirectClient')
 log = logging.getLogger(__name__)

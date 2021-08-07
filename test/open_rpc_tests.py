@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import json
 import unittest
 from dataclasses import dataclass
-from typing import Union
 
-from openrpc.openrpc_server import OpenRPCServer
 from openrpc.rpc_objects import RequestObject
+from openrpc.server import OpenRPCServer
 
 
 @dataclass
@@ -29,60 +30,57 @@ class OpenRPCTest(unittest.TestCase):
                 request.json(by_alias=True, exclude_unset=True)
             )
         )
+        print(resp)
         self.assertEqual(
-            resp,
+            resp['result'],
             {
-                'id': '1',
-                'result': {
-                    'openrpc': '1.2.6',
-                    'info': {
-                        'title': 'Open RPC Test Server',
-                        'version': '1.0.0'
-                    },
-                    'methods': [{
-                        'name': 'increment_list',
-                        'params': [{
-                            'name': 'numbers',
-                            'schema': {
-                                'type': 'array'
-                            },
-                            'required': False
-                        }],
-                        'result': {
-                            'name': 'result',
-                            'schema': {'type': 'array'}
-                        }
-                    }, {
-                        'name': 'get_distance',
-                        'params': [{
-                            'name': 'position',
-                            'schema': {
-                                '$ref': '#/components/schemas/vector3'
-                            },
-                            'required': False
-                        }, {
-                            'name': 'target',
-                            'schema': {
-                                '$ref': '#/components/schemas/vector3'
-                            },
-                            'required': False
-                        }],
-                        'result': {
-                            'name': 'result',
-                            'schema': {
-                                '$ref': '#/components/schemas/vector3'
+                'openrpc': '1.2.6',
+                'info': {'title': 'Open RPC Test Server', 'version': '1.0.0'},
+                'methods': [{
+                    'name': 'increment_list',
+                    'params': [{
+                        'name': 'numbers',
+                        'schema': {
+                            'type': 'array',
+                            'items': {
+                                'type': 'number'
                             }
-                        }
+                        },
+                        'required': False
                     }],
-                    'components': {
-                        'schemas': {
-                            'vector3': {
-                                'type': 'object',
-                                'properties': {
-                                    'x': {'type': 'number'},
-                                    'y': {'type': 'number'},
-                                    'z': {'type': 'number'}
-                                }
+                    'result': {
+                        'name': 'result',
+                        'schema': {'type': 'array', 'items': {}}
+                    }
+                }, {
+                    'name': 'get_distance',
+                    'params': [{
+                        'name': 'position',
+                        'schema': {
+                            '$ref': '#/components/schemas/vector3'
+                        },
+                        'required': False
+                    }, {
+                        'name': 'target',
+                        'schema': {
+                            '$ref': '#/components/schemas/vector3'
+                        },
+                        'required': False
+                    }],
+                    'result': {
+                        'name': 'result', 'schema': {
+                            '$ref': '#/components/schemas/vector3'
+                        }
+                    }
+                }],
+                'components': {
+                    'schemas': {
+                        'vector3': {
+                            'type': 'object',
+                            'properties': {
+                                'x': {'type': 'number'},
+                                'y': {'type': 'number'},
+                                'z': {'type': 'number'}
                             }
                         }
                     }
@@ -91,7 +89,7 @@ class OpenRPCTest(unittest.TestCase):
         )
 
 
-def increment_list(numbers: list[Union[int, float]]) -> list:
+def increment_list(numbers: list[int | float]) -> list[int | float]:
     return [it + 1 for it in numbers]
 
 

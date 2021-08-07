@@ -4,15 +4,16 @@
 
 ```python
 from flask import Flask, Response, jsonify, request
-from openrpc.rpc_server import RPCServer
+from openrpc.server import OpenRPCServer
 
 app = Flask(__name__)
-rpc = RPCServer()
+rpc = OpenRPCServer('Demo Server', '1.0.0')
 
 
-@rpc.register
+@rpc.method
 def add(x: float, y: float) -> float:
     return x + y
+
 
 @app.route('/api/v1/', methods=['POST'])
 def process_rpc() -> Response:

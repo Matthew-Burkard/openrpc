@@ -24,14 +24,7 @@ class RegisteredMethod:
 
 class RPCServer:
 
-    def __init__(
-            self,
-            title: str,
-            version: str,
-            uncaught_error_code: Optional[int] = None
-    ) -> None:
-        self.title = title
-        self.version = version
+    def __init__(self, uncaught_error_code: Optional[int] = None) -> None:
         self.methods: dict[str, RegisteredMethod] = {}
         self.uncaught_error_code: Optional[int] = uncaught_error_code
 

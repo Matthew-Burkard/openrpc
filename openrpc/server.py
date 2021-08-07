@@ -4,7 +4,7 @@ from openrpc.open_rpc_objects import (
     ContentDescriptorObject, SchemaObject,
     OpenRPCObject, InfoObject, MethodObject, ComponentsObject,
 )
-from openrpc.rpc_server import RPCServer
+from openrpc._rpc_server import RPCServer
 
 
 class OpenRPCServer:
@@ -14,7 +14,9 @@ class OpenRPCServer:
             version: str,
             uncaught_error_code: Optional[int] = None
     ) -> None:
-        self.server = RPCServer(title, version, uncaught_error_code)
+        self.server = RPCServer(uncaught_error_code)
+        self.title: str = title
+        self.version: str = version
         self.components: ComponentsObject = ComponentsObject(schemas={})
         self.server.method(
             method=MethodObject(name='rpc.discover')
@@ -44,8 +46,8 @@ class OpenRPCServer:
         return OpenRPCObject(
             openrpc='1.2.6',
             info=InfoObject(
-                title=self.server.title,
-                version=self.server.version
+                title=self.title,
+                version=self.version
             ),
             methods=[it.method for it in self.server.methods.values()
                      if it.method.name != 'rpc.discover'],
@@ -123,18 +125,7 @@ class OpenRPCServer:
         schema.type = schema_type
         return schema
 
-    @staticmethod
-    def _schema_type_from_py_type(annotation: Any) -> Union[str, list[str]]:
-        origin = get_origin(annotation)
-        flat_collections = [list, set, tuple]
-        if origin in flat_collections or annotation in flat_collections:
-            return 'array'
-        if dict in [origin, annotation]:
-            return 'object'
-        if args := get_args(annotation):
-            return [OpenRPCServer._schema_type_from_py_type(arg)
-                    if '__name__' in dir(arg) and arg.__name__ != 'NoneType'
-                    else 'null' for arg in args]
+    def _schema_type_from_py_type(self, annotation: Any) -> Union[str, list[str]]:
         py_to_schema = {
             None: 'null',
             str: 'string',
@@ -142,6 +133,19 @@ class OpenRPCServer:
             float: 'number',
             bool: 'boolean',
         }
+        origin = get_origin(annotation)
+        flat_collections = [list, set, tuple]
+        if origin in flat_collections or annotation in flat_collections:
+            return 'array'
+        if dict in [origin, annotation]:
+            return 'object'
+        if Union in [origin, annotation]:
+            # FIXME A refactor needs to be made to handle union types.
+            return self._schema_type_from_py_type(get_args(annotation)[0])
+        if args := get_args(annotation):
+            return [self._schema_type_from_py_type(arg)
+                    if '__name__' in dir(arg) and arg.__name__ != 'NoneType'
+                    else 'null' for arg in args]
         return py_to_schema.get(annotation) or 'object'
 
     @staticmethod
