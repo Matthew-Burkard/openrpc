@@ -71,7 +71,7 @@ class OpenRPCServer:
             schema=self._get_schema(fun.__annotations__['return'])
         )
 
-    # noinspection PyUnresolvedReferencess
+    # noinspection PyUnresolvedReferences
     def _get_schema(
             self,
             annotation: Type,
@@ -81,17 +81,26 @@ class OpenRPCServer:
 
         if schema_type == 'object':
             name = (name or annotation.__name__).lower()
-            # pydantic
             if 'schema' in dir(annotation):
                 schema = SchemaObject(**annotation.schema())
+            elif get_origin(annotation) == dict:
+                schema = SchemaObject()
+                schema.type = schema_type
+                if (arg := get_args(annotation)) and len(arg) > 1:
+                    arg_schema = self._get_schema(arg[1])
+                    schema.additional_properties = {}
+                    if arg_schema.ref:
+                        schema.additional_properties['$ref'] = arg_schema.ref
+                    else:
+                        schema.additional_properties['type'] = arg_schema.type
             else:
                 schema = SchemaObject()
+                schema.type = schema_type
                 schema.properties = {
                     k: self._get_schema(v)
                     for k, v in annotation.__init__.__annotations__.items()
                     if k != 'return'
                 }
-                schema.type = schema_type
             if schema not in self.components.schemas.values():
                 self.components.schemas[name] = schema
             return SchemaObject(**{'$ref': f'#/components/schemas/{name}'})
@@ -120,6 +129,8 @@ class OpenRPCServer:
         flat_collections = [list, set, tuple]
         if origin in flat_collections or annotation in flat_collections:
             return 'array'
+        if dict in [origin, annotation]:
+            return 'object'
         if args := get_args(annotation):
             return [OpenRPCServer._schema_type_from_py_type(arg)
                     if '__name__' in dir(arg) and arg.__name__ != 'NoneType'
