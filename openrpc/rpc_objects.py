@@ -57,7 +57,7 @@ class ErrorObject(BaseModel):
 
 class ErrorResponseObject(BaseModel):
     id: Optional[Union[str, int]]
-    error: Union[ErrorObject, ErrorObjectData]
+    error: Union[ErrorObjectData, ErrorObject]
     jsonrpc: str = '2.0'
 
 
