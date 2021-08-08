@@ -74,25 +74,25 @@ class OpenRPCServer:
         )
 
     # noinspection PyUnresolvedReferences
-    def _get_schema(self, annotation: Type) -> SchemaObject:
-        name = None
+    def _get_schema(self, annotation: Type) -> \
+            Union[SchemaObject, list[SchemaObject]]:
+        if get_origin(annotation) == Union:
+            return [self._get_schema(arg) for arg in get_args(annotation)]
+
         schema_type = self._py_to_schema_type(annotation)
 
         if schema_type == 'object':
-            if '__name__' in dir(annotation):
+            try:
                 name = annotation.__name__.lower()
+            except AttributeError:
+                name = None
             if 'schema' in dir(annotation):
                 schema = SchemaObject(**annotation.schema())
             elif get_origin(annotation) == dict:
                 schema = SchemaObject()
                 schema.type = schema_type
                 if (arg := get_args(annotation)) and len(arg) > 1:
-                    arg_schema = self._get_schema(arg[1])
-                    schema.additional_properties = {}
-                    if arg_schema.ref:
-                        schema.additional_properties['$ref'] = arg_schema.ref
-                    else:
-                        schema.additional_properties['type'] = arg_schema.type
+                    schema.additional_properties = self._get_properties(arg[1])
             else:
                 schema = SchemaObject()
                 schema.type = schema_type
@@ -101,7 +101,7 @@ class OpenRPCServer:
                     for k, v in annotation.__init__.__annotations__.items()
                     if k != 'return'
                 }
-            if schema not in self.components.schemas.values() and name:
+            if schema not in self.components.schemas.values():
                 self.components.schemas[name] = schema
             return SchemaObject(**{'$ref': f'#/components/schemas/{name}'})
 
@@ -109,17 +109,12 @@ class OpenRPCServer:
             schema = SchemaObject()
             schema.type = schema_type
             schema.items = {}
+            # FIXME items will be overridden each iteration.
             for arg in get_args(annotation):
-                arg_schema = self._get_schema(arg)
-                if arg_schema.ref:
-                    schema.items['$ref'] = arg_schema.ref
-                else:
-                    schema.items['type'] = arg_schema.type
+                schema.items = self._get_properties(arg)
             return schema
 
         schema = SchemaObject()
-        if name:
-            schema.title = name
         schema.type = schema_type
         return schema
 
@@ -138,13 +133,28 @@ class OpenRPCServer:
         if dict in [origin, annotation]:
             return 'object'
         if Union in [origin, annotation]:
-            # FIXME A refactor needs to be made to handle union types.
             return self._py_to_schema_type(get_args(annotation)[0])
         if args := get_args(annotation):
             return [self._py_to_schema_type(arg)
                     if '__name__' in dir(arg) and arg.__name__ != 'NoneType'
                     else 'null' for arg in args]
         return py_to_schema.get(annotation) or 'object'
+
+    def _get_properties(self, annotation: Type) -> dict:
+        schema = self._get_schema(annotation)
+        properties = {}
+        if isinstance(schema, list):
+            types = [arg.ref if arg.ref else arg.type for arg in schema]
+            types = list(dict.fromkeys(types))
+            if len(types) > 1:
+                properties['type'] = types
+                return properties
+            schema = schema[0]
+        if schema.ref:
+            properties['$ref'] = schema.ref
+        else:
+            properties['type'] = schema.type
+        return properties
 
     @staticmethod
     def _is_required(annotation: Any) -> bool:

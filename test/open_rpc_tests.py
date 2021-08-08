@@ -1,8 +1,7 @@
-from __future__ import annotations
-
 import json
 import unittest
 from dataclasses import dataclass
+from typing import Union
 
 from openrpc.rpc_objects import RequestObject
 from openrpc.server import OpenRPCServer
@@ -19,7 +18,7 @@ class OpenRPCTest(unittest.TestCase):
 
     def __init__(self, *args) -> None:
         self.server = OpenRPCServer('Open RPC Test Server', '1.0.0')
-        self.server.method(increment_list)
+        self.server.method(increment)
         self.server.method(get_distance)
         super(OpenRPCTest, self).__init__(*args)
 
@@ -30,7 +29,7 @@ class OpenRPCTest(unittest.TestCase):
                 request.json(by_alias=True, exclude_unset=True)
             )
         )
-        print(resp)
+        print(json.dumps(resp['result']))
         self.assertEqual(
             resp['result'],
             {
@@ -89,7 +88,7 @@ class OpenRPCTest(unittest.TestCase):
         )
 
 
-def increment_list(numbers: list[int | float]) -> list[int | float]:
+def increment(numbers: list[Union[int, float]]) -> list[Union[int, str]]:
     return [it + 1 for it in numbers]
 
 
