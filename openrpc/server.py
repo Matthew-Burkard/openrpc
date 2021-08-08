@@ -74,15 +74,13 @@ class OpenRPCServer:
         )
 
     # noinspection PyUnresolvedReferences
-    def _get_schema(
-            self,
-            annotation: Type,
-            name: Optional[str] = None
-    ) -> SchemaObject:
+    def _get_schema(self, annotation: Type) -> SchemaObject:
+        name = None
         schema_type = self._py_to_schema_type(annotation)
 
         if schema_type == 'object':
-            name = (name or annotation.__name__).lower()
+            if '__name__' in dir(annotation):
+                name = annotation.__name__.lower()
             if 'schema' in dir(annotation):
                 schema = SchemaObject(**annotation.schema())
             elif get_origin(annotation) == dict:
@@ -103,7 +101,7 @@ class OpenRPCServer:
                     for k, v in annotation.__init__.__annotations__.items()
                     if k != 'return'
                 }
-            if schema not in self.components.schemas.values():
+            if schema not in self.components.schemas.values() and name:
                 self.components.schemas[name] = schema
             return SchemaObject(**{'$ref': f'#/components/schemas/{name}'})
 
