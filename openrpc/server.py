@@ -1,10 +1,10 @@
 from typing import Callable, Type, Any, Optional, Union, get_args, get_origin
 
+from openrpc._rpc_server import RPCServer
 from openrpc.open_rpc_objects import (
     ContentDescriptorObject, SchemaObject,
     OpenRPCObject, InfoObject, MethodObject, ComponentsObject,
 )
-from openrpc._rpc_server import RPCServer
 
 
 class OpenRPCServer:
@@ -79,7 +79,7 @@ class OpenRPCServer:
             annotation: Type,
             name: Optional[str] = None
     ) -> SchemaObject:
-        schema_type = self._schema_type_from_py_type(annotation)
+        schema_type = self._py_to_schema_type(annotation)
 
         if schema_type == 'object':
             name = (name or annotation.__name__).lower()
@@ -125,7 +125,7 @@ class OpenRPCServer:
         schema.type = schema_type
         return schema
 
-    def _schema_type_from_py_type(self, annotation: Any) -> Union[str, list[str]]:
+    def _py_to_schema_type(self, annotation: Any) -> Union[str, list[str]]:
         py_to_schema = {
             None: 'null',
             str: 'string',
@@ -141,9 +141,9 @@ class OpenRPCServer:
             return 'object'
         if Union in [origin, annotation]:
             # FIXME A refactor needs to be made to handle union types.
-            return self._schema_type_from_py_type(get_args(annotation)[0])
+            return self._py_to_schema_type(get_args(annotation)[0])
         if args := get_args(annotation):
-            return [self._schema_type_from_py_type(arg)
+            return [self._py_to_schema_type(arg)
                     if '__name__' in dir(arg) and arg.__name__ != 'NoneType'
                     else 'null' for arg in args]
         return py_to_schema.get(annotation) or 'object'
