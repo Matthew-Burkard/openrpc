@@ -27,9 +27,6 @@ class SchemaObject(BaseModel):
     ref: Optional[str] = Field(alias='$ref')
 
 
-SchemaObject.update_forward_refs()
-
-
 class ServerVariableObject(BaseModel):
     default: str
     enum: Optional[list[str]] = None
@@ -149,3 +146,6 @@ class OpenRPCObject(BaseModel):
     servers: Optional[Union[ServerObject, list[ServerObject]]] = None
     components: Optional[ComponentsObject] = None
     externalDocs: Optional[ExternalDocumentationObject] = None
+
+
+SchemaObject.update_forward_refs()

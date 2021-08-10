@@ -1,9 +1,10 @@
+import re
 from typing import Callable, Type, Any, Optional, Union, get_args, get_origin
 
 from openrpc._rpc_server import RPCServer
 from openrpc.open_rpc_objects import (
-    ContentDescriptorObject, SchemaObject,
-    OpenRPCObject, InfoObject, MethodObject, ComponentsObject,
+    ContentDescriptorObject, SchemaObject, OpenRPCObject, InfoObject,
+    MethodObject, ComponentsObject,
 )
 
 
@@ -88,6 +89,18 @@ class OpenRPCServer:
                 name = None
             if 'schema' in dir(annotation):
                 schema = SchemaObject(**annotation.schema())
+                for k, v in (schema.definitions or {}).items():
+                    if k not in self.components.schemas:
+                        self.components.schemas[k] = v
+                # pydantic creates definitions, move them to components.
+                for prop in schema.properties.values():
+                    if prop.ref:
+                        prop.ref = re.sub(
+                            r'^#/definitions',
+                            '#/components/schemas',
+                            prop.ref
+                        )
+                del schema.definitions
             elif get_origin(annotation) == dict:
                 schema = SchemaObject()
                 schema.type = schema_type

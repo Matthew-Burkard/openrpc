@@ -1,16 +1,32 @@
 from dataclasses import dataclass
 from typing import Union
 
+import pydantic
+
 from server import OpenRPCServer
 
 math_rpc = OpenRPCServer('Math RPC Server', '1.0.0', -32000)
 
 
 @dataclass
-class Vector3:
+class Vector3(pydantic.BaseModel):
     x: float
     y: float
     z: float
+
+
+# To test replacing definitions, should be in a real test.
+@dataclass
+class Vector3Clone(pydantic.BaseModel):
+    x: float
+    y: float
+    z: float
+
+
+@dataclass
+class Model(pydantic.BaseModel):
+    name: str
+    position: Vector3Clone
 
 
 @math_rpc.method
@@ -34,11 +50,11 @@ def increment_list(numbers: list[Union[int, float]]) -> list:
 
 
 @math_rpc.method
-def shift(position: Vector3, movement: Vector3) -> Vector3:
+def distance(model: Model, target: Vector3) -> Vector3:
     return Vector3(
-        position.x + movement.x,
-        position.y + movement.y,
-        position.z + movement.z,
+        model.position.x - target.x,
+        model.position.y - target.y,
+        model.position.z - target.z,
     )
 
 
