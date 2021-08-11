@@ -18,7 +18,7 @@ class SchemaObject(BaseModel):
     title: Optional[str] = None
     type: Optional[str] = None
     properties: Optional[dict[str, SchemaObject]] = None
-    additional_properties: Optional[dict[str, Any]] = Field(
+    additional_properties: Optional[Union[bool, dict[str, Any]]] = Field(
         alias='additionalProperties'
     )
     required: Optional[list[str]] = None

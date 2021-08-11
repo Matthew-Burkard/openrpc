@@ -104,8 +104,8 @@ class OpenRPCServer:
             elif get_origin(annotation) == dict:
                 schema = SchemaObject()
                 schema.type = schema_type
-                if (arg := get_args(annotation)) and len(arg) > 1:
-                    schema.additional_properties = self._get_properties(arg[1])
+                schema.additional_properties = True
+                return schema
             else:
                 schema = SchemaObject()
                 schema.type = schema_type
