@@ -71,7 +71,8 @@ class OpenRPCServer:
         # noinspection PyUnresolvedReferences
         return ContentDescriptorObject(
             name='result',
-            schema=self._get_schema(fun.__annotations__['return'])
+            schema=self._get_schema(fun.__annotations__['return']),
+            required=self._is_required(fun.__annotations__['return'])
         )
 
     # noinspection PyUnresolvedReferences
