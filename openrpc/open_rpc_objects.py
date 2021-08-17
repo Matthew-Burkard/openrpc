@@ -16,6 +16,7 @@ class SchemaObject(BaseModel):
     id: Optional[str] = Field(alias='$id')
     json_schema: Optional[str] = Field(alias='schema')
     title: Optional[str] = None
+    description: Optional[str] = None
     type: Optional[str] = None
     properties: Optional[dict[str, SchemaObject]] = None
     additional_properties: Optional[Union[bool, dict[str, Any]]] = Field(

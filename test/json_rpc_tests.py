@@ -1,7 +1,7 @@
 import json
 import unittest
 import uuid
-from typing import Any, Union
+from typing import Any, Union, Optional
 
 from openrpc import util
 from openrpc.rpc_objects import RequestObjectParams, RequestObject
@@ -27,6 +27,7 @@ class RPCTest(unittest.TestCase):
         self.server.method(summation)
         self.server.method(pythagorean)
         self.server.method(get_none)
+        self.server.method(optional_params)
         self.server.method(echo)
         super(RPCTest, self).__init__(*args)
 
@@ -220,6 +221,25 @@ class RPCTest(unittest.TestCase):
         )
         self.assertEqual(resp['result'], [2, 3, 4])
 
+    def test_optional_params(self) -> None:
+        req_id = str(uuid.uuid4())
+        # No params.
+        req = RequestObject(id=req_id, method='optional_params')
+        resp = json.loads(
+            self.server.process(req.json(by_alias=True, exclude_unset=True))
+        )
+        self.assertEqual(resp['result'], [None, None])
+        # With params.
+        req = RequestObjectParams(
+            id=req_id,
+            method='optional_params',
+            params=['three', 3]
+        )
+        resp = json.loads(
+            self.server.process(req.json(by_alias=True, exclude_unset=True))
+        )
+        self.assertEqual(resp['result'], ['three', 3])
+
 
 def increment_list(numbers: list[Union[int, float]]) -> list:
     return [it + 1 for it in numbers]
@@ -247,6 +267,13 @@ def divide(x: float, y: float) -> float:
 
 def get_none() -> None:
     return None
+
+
+def optional_params(
+        opt_str: Optional[str] = None,
+        opt_int: Optional[int] = None
+) -> list:
+    return [opt_str, opt_int]
 
 
 def echo(*args, **kwargs) -> Any:

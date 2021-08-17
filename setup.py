@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='openrpc',
-    version='3.0.7',
+    version='3.0.8',
     url='https://gitlab.com/mburkard/openrpc',
     license='Custom',
     author='Matthew Burkard',
