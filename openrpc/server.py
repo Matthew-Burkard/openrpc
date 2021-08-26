@@ -1,11 +1,19 @@
 import re
+from functools import partial
 from typing import Callable, Type, Any, Optional, Union, get_args, get_origin
 
 from openrpc._rpc_server import RPCServer
 from openrpc.open_rpc_objects import (
-    ContentDescriptorObject, SchemaObject, OpenRPCObject, InfoObject,
-    MethodObject, ComponentsObject,
+    ContentDescriptorObject,
+    SchemaObject,
+    OpenRPCObject,
+    InfoObject,
+    MethodObject,
+    ComponentsObject,
 )
+
+__all__ = ('OpenRPCServer',)
+T = Type[Callable]
 
 
 class OpenRPCServer:
@@ -20,15 +28,16 @@ class OpenRPCServer:
         self.version: str = version
         self.components: ComponentsObject = ComponentsObject(schemas={})
         self.server.method(
+            self.discover,
             method=MethodObject(name='rpc.discover')
-        )(self.discover)
+        )
 
-    def method(
-            self,
-            *args,
-            method: Optional[Union[Callable, MethodObject]] = None
-    ) -> Callable:
-        return self.server.method(*args, method=method)
+    def method(self, *f: tuple[T], method: Optional[MethodObject] = None) -> T:
+        if f:
+            func = f[0]
+            method = MethodObject()
+            return self.server.method(func, method)
+        return partial(self.method, method=method)
 
     def process(self, data: Union[bytes, str]) -> Optional[str]:
         return self.server.process(data)
@@ -85,7 +94,7 @@ class OpenRPCServer:
 
         if schema_type == 'object':
             try:
-                name = annotation.__name__.lower()
+                name = annotation.__name__
             except AttributeError:
                 name = None
             if 'schema' in dir(annotation):

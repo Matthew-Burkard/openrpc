@@ -6,13 +6,24 @@ from typing import Callable, Optional, Union, Any, Type
 
 from openrpc.open_rpc_objects import MethodObject
 from openrpc.rpc_objects import (
-    ErrorResponseObject, ErrorObjectData, ErrorObject, ResponseType,
-    RequestType, RequestObjectParams, RequestObject, NotificationObjectParams,
-    NotificationObject, ResultResponseObject, PARSE_ERROR, INVALID_REQUEST,
-    METHOD_NOT_FOUND, INTERNAL_ERROR,
+    ErrorResponseObject,
+    ErrorObjectData,
+    ErrorObject,
+    ResponseType,
+    RequestType,
+    RequestObjectParams,
+    RequestObject,
+    NotificationObjectParams,
+    NotificationObject,
+    ResultResponseObject,
+    PARSE_ERROR,
+    INVALID_REQUEST,
+    METHOD_NOT_FOUND,
+    INTERNAL_ERROR,
 )
 
 __all__ = ('RPCServer',)
+T = Type[Callable]
 log = logging.getLogger(__name__)
 
 
@@ -28,22 +39,11 @@ class RPCServer:
         self.methods: dict[str, RegisteredMethod] = {}
         self.uncaught_error_code: Optional[int] = uncaught_error_code
 
-    def method(
-            self,
-            *args,
-            method: Optional[Union[Callable, MethodObject]] = None
-    ) -> Callable:
-        method = method or MethodObject()
-
-        def register(fun: Callable) -> Callable:
-            log.debug('Registering method [%s]', fun.__name__)
-            method.name = method.name or fun.__name__
-            self.methods[method.name] = RegisteredMethod(fun, method)
-            return fun
-
-        if args:
-            return register(*args)
-        return register
+    def method(self, func: T, method: MethodObject) -> T:
+        log.debug('Registering method [%s]', func.__name__)
+        method.name = method.name or func.__name__
+        self.methods[method.name] = RegisteredMethod(func, method)
+        return func
 
     def process(self, data: Union[bytes, str]) -> Optional[str]:
         # Parse JSON
@@ -57,7 +57,6 @@ class RPCServer:
             )
 
         # Process as single request or batch.
-        # noinspection PyBroadException
         try:
             if isinstance(parsed_json, dict):
                 return self._process_request(parsed_json).json(
@@ -66,8 +65,9 @@ class RPCServer:
                 )
             if isinstance(parsed_json, list):
                 return f'[{self._process_requests(parsed_json)}]' or None
-        except Exception:
+        except Exception as e:
             log.error('Invalid request [%s]', parsed_json)
+            log.exception(f'{type(e).__name__}:')
             return self._err(INVALID_REQUEST).json(
                 by_alias=True,
                 exclude_unset=True
@@ -89,7 +89,6 @@ class RPCServer:
 
     def _process_request(self, data: dict) -> Optional[ResponseType]:
         request = self._get_request(data)
-        # noinspection PyBroadException
         try:
             return self._process_method(request)
         except Exception as e:
@@ -102,7 +101,6 @@ class RPCServer:
             log.error('Method not found [%s]', request)
             return self._err(METHOD_NOT_FOUND, request.id)
 
-        # noinspection PyBroadException
         try:
             method = registered_method.fun
             # noinspection PyUnresolvedReferences

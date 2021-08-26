@@ -5,8 +5,7 @@ from typing import Any, Union, Optional
 
 from openrpc import util
 from openrpc.rpc_objects import RequestObjectParams, RequestObject
-# noinspection PyProtectedMember
-from openrpc._rpc_server import RPCServer
+from server import OpenRPCServer
 
 PARSE_ERROR = -32700
 INVALID_REQUEST = -32600
@@ -19,7 +18,7 @@ SERVER_ERROR = -32000
 class RPCTest(unittest.TestCase):
 
     def __init__(self, *args) -> None:
-        self.server = RPCServer()
+        self.server = OpenRPCServer('Test JSON RPC', '1.0.0')
         self.server.method(increment_list)
         self.server.method(add)
         self.server.method(subtract)
@@ -137,7 +136,7 @@ class RPCTest(unittest.TestCase):
     def test_server_error(self) -> None:
         uncaught_code = SERVER_ERROR
         request = RequestObjectParams(id=1, method='divide', params=[0, 0])
-        server = RPCServer(uncaught_code)
+        server = OpenRPCServer('Test JSON RPC', '1.0.0', uncaught_code)
         server.method(divide)
         resp = json.loads(
             server.process(

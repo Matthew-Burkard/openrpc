@@ -4,10 +4,9 @@ from typing import Union
 
 from openrpc.rpc_client import RPCDirectClient
 from openrpc.rpc_objects import ErrorResponseObject, RequestObjectParams
-# noinspection PyProtectedMember
-from openrpc._rpc_server import RPCServer
+from server import OpenRPCServer
 
-test_rpc = RPCServer(-32000)
+test_rpc = OpenRPCServer('Test Client', '1.0.0', -32000)
 
 
 class TestRPCClient(RPCDirectClient):
@@ -30,7 +29,7 @@ def echo(x: float) -> Union[float, tuple]:
 class RPCClientTest(unittest.TestCase):
 
     def __init__(self, *args) -> None:
-        self.client = TestRPCClient(test_rpc)
+        self.client = TestRPCClient(test_rpc.server)
         super(RPCClientTest, self).__init__(*args)
 
     def test_client(self) -> None:
