@@ -3,6 +3,7 @@ import unittest
 import uuid
 from typing import Any, Union, Optional
 
+from open_rpc_objects import MethodObject
 from openrpc import util
 from openrpc.rpc_objects import RequestObjectParams, RequestObject
 from server import OpenRPCServer
@@ -238,6 +239,20 @@ class RPCTest(unittest.TestCase):
             self.server.process(req.json(by_alias=True, exclude_unset=True))
         )
         self.assertEqual(resp['result'], ['three', 3])
+
+    def test_including_method_object(self) -> None:
+        def multiply(a: int, b: int) -> int:
+            return a * b
+        self.server.method(method=MethodObject())(multiply)
+        req = RequestObjectParams(
+            id=1,
+            method='multiply',
+            params=[2, 4]
+        )
+        resp = json.loads(
+            self.server.process(req.json(by_alias=True, exclude_unset=True))
+        )
+        self.assertEqual(resp['result'], 8)
 
 
 def increment_list(numbers: list[Union[int, float]]) -> list:

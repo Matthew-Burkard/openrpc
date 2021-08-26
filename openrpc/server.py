@@ -37,7 +37,7 @@ class OpenRPCServer:
             func = f[0]
             method = MethodObject()
             return self.server.method(func, method)
-        return partial(self.method, method=method)
+        return partial(self.server.method, method=method)
 
     def process(self, data: Union[bytes, str]) -> Optional[str]:
         return self.server.process(data)
