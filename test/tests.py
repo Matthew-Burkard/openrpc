@@ -1,12 +1,17 @@
 import json
 import unittest
 import uuid
+from dataclasses import dataclass
 from typing import Any, Union, Optional
 
-from open_rpc_objects import MethodObject
+from openrpc.open_rpc_objects import MethodObject
 from openrpc import util
-from openrpc.rpc_objects import RequestObjectParams, RequestObject
-from server import OpenRPCServer
+from openrpc.rpc_client import RPCDirectClient
+from openrpc.rpc_objects import (
+    RequestObjectParams, RequestObject,
+    ErrorResponseObject,
+)
+from openrpc.server import OpenRPCServer
 
 PARSE_ERROR = -32700
 INVALID_REQUEST = -32600
@@ -28,7 +33,7 @@ class RPCTest(unittest.TestCase):
         self.server.method(pythagorean)
         self.server.method(get_none)
         self.server.method(optional_params)
-        self.server.method(echo)
+        self.server.method(args_and_kwargs)
         super(RPCTest, self).__init__(*args)
 
     def test_array_params(self) -> None:
@@ -79,14 +84,14 @@ class RPCTest(unittest.TestCase):
         self.assertEqual(True, json.loads(resp)['result'])
 
     def test_vararg_method_with_no_params(self) -> None:
-        request = RequestObject(id=1, method='echo')
+        request = RequestObject(id=1, method='args_and_kwargs')
         resp = self.server.process(
             request.json(by_alias=True, exclude_unset=True)
         )
         self.assertEqual([{}], json.loads(resp)['result'])
 
     def test_kwarg_method_with_no_params(self) -> None:
-        request = RequestObject(id=1, method='echo')
+        request = RequestObject(id=1, method='args_and_kwargs')
         resp = self.server.process(
             request.json(by_alias=True, exclude_unset=True)
         )
@@ -290,5 +295,126 @@ def optional_params(
     return [opt_str, opt_int]
 
 
-def echo(*args, **kwargs) -> Any:
+def args_and_kwargs(*args, **kwargs) -> Any:
     return *args, {**kwargs}
+
+
+########################################################################
+# Client Tests
+test_rpc = OpenRPCServer('Test Client', '1.0.0', -32000)
+
+
+class TestRPCClient(RPCDirectClient):
+
+    def echo(self, x: float) -> Union[float, list, ErrorResponseObject]:
+        return self._call(
+            RequestObjectParams(
+                id=str(uuid.uuid4()),
+                method='echo',
+                params=[x]
+            )
+        )
+
+
+@test_rpc.method
+def echo(x: float) -> Union[float, tuple]:
+    return x
+
+
+class RPCClientTest(unittest.TestCase):
+
+    def __init__(self, *args) -> None:
+        self.client = TestRPCClient(test_rpc.server)
+        super(RPCClientTest, self).__init__(*args)
+
+    def test_client(self) -> None:
+        self.assertEqual(9, self.client.echo(9))
+
+
+########################################################################
+# OpenRPC Tests
+@dataclass
+class Vector3:
+    x: float
+    y: float
+    z: float
+
+
+class OpenRPCTest(unittest.TestCase):
+
+    def __init__(self, *args) -> None:
+        self.server = OpenRPCServer('Open RPC Test Server', '1.0.0')
+        self.server.method(increment)
+        self.server.method(get_distance)
+        super(OpenRPCTest, self).__init__(*args)
+
+    def test_list_param(self) -> None:
+        request = RequestObject(id=1, method='rpc.discover')
+        resp = json.loads(
+            self.server.process(
+                request.json(by_alias=True, exclude_unset=True)
+            )
+        )
+        self.assertEqual(
+            resp['result'],
+            {
+                'openrpc': '1.2.6',
+                'info': {'title': 'Open RPC Test Server', 'version': '1.0.0'},
+                'methods': [{
+                    'name': 'increment', 'params': [{
+                        'name': 'numbers',
+                        'schema': {
+                            'type': 'array',
+                            'items': {'type': 'number'}
+                        },
+                        'required': False
+                    }],
+                    'result': {
+                        'name': 'result',
+                        'schema': {
+                            'type': 'array',
+                            'items': {'type': ['number', 'string']}
+                        },
+                        'required': False
+                    }
+                }, {
+                    'name': 'get_distance', 'params': [{
+                        'name': 'position',
+                        'schema': {'$ref': '#/components/schemas/Vector3'},
+                        'required': False
+                    }, {
+                        'name': 'target',
+                        'schema': {'$ref': '#/components/schemas/Vector3'},
+                        'required': False
+                    }],
+                    'result': {
+                        'name': 'result',
+                        'schema': {'$ref': '#/components/schemas/Vector3'},
+                        'required': False
+                    }
+                }],
+                'components': {
+                    'schemas': {
+                        'Vector3': {
+                            'type': 'object', 'properties': {
+                                'x': {'type': 'number'},
+                                'y': {'type': 'number'},
+                                'z': {'type': 'number'}
+                            }
+                        }
+                    }
+                }
+            }
+        )
+
+
+def increment(numbers: list[Union[int, float]]) -> list[Union[int, str]]:
+    return [it + 1 for it in numbers]
+
+
+def get_distance(position: Vector3, target: Vector3) -> Vector3:
+    return Vector3(
+        position.x - target.x,
+        position.y - target.y,
+        position.z - target.z,
+    )
