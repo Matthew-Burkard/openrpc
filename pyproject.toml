@@ -1,5 +1,7 @@
 [build-system]
 requires = [
+    "wheel",
+    "setuptools",
     "pydantic>=1.8.2",
     "setuptools>=57.0.0"
 ]
