@@ -1,0 +1,6 @@
+[build-system]
+requires = [
+    "pydantic>=1.8.2",
+    "setuptools>=57.0.0"
+]
+build-backend = "setuptools.build_meta"
