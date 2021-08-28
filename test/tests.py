@@ -231,7 +231,9 @@ class RPCTest(unittest.TestCase):
         # No params.
         req = RequestObject(id=req_id, method='optional_params')
         resp = json.loads(
-            self.server.process_request(req.json(by_alias=True, exclude_unset=True))
+            self.server.process_request(
+                req.json(by_alias=True, exclude_unset=True)
+            )
         )
         self.assertEqual(resp['result'], [None, None])
         # With params.
@@ -241,7 +243,9 @@ class RPCTest(unittest.TestCase):
             params=['three', 3]
         )
         resp = json.loads(
-            self.server.process_request(req.json(by_alias=True, exclude_unset=True))
+            self.server.process_request(
+                req.json(by_alias=True, exclude_unset=True)
+            )
         )
         self.assertEqual(resp['result'], ['three', 3])
 
@@ -255,7 +259,9 @@ class RPCTest(unittest.TestCase):
             params=[2, 4]
         )
         resp = json.loads(
-            self.server.process_request(req.json(by_alias=True, exclude_unset=True))
+            self.server.process_request(
+                req.json(by_alias=True, exclude_unset=True)
+            )
         )
         self.assertEqual(resp['result'], 8)
 
