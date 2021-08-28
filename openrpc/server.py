@@ -1,6 +1,15 @@
 import re
 from functools import partial
-from typing import Callable, Type, Any, Optional, Union, get_args, get_origin
+from typing import (
+    Callable,
+    Type,
+    Any,
+    Optional,
+    Union,
+    get_args,
+    get_origin,
+    get_type_hints,
+)
 
 from openrpc._rpc_server import RPCServer
 from openrpc.open_rpc_objects import (
@@ -32,9 +41,13 @@ class OpenRPCServer:
             method=MethodObject(name='rpc.discover')
         )
 
-    def method(self, *f: tuple[T], method: Optional[MethodObject] = None) -> T:
-        if f:
-            func = f[0]
+    def method(
+            self,
+            *args: Union[T, tuple[T]],
+            method: Optional[MethodObject] = None
+    ) -> T:
+        if args:
+            func = args[0]
             method = MethodObject()
             return self.server.method(func, method)
         return partial(self.server.method, method=method)
@@ -43,16 +56,12 @@ class OpenRPCServer:
         return self.server.process(data)
 
     def discover(self) -> OpenRPCObject:
-        for name, registered_method in self.server.methods.items():
+        for name, rpc_method in self.server.methods.items():
             if name == 'rpc.discover':
                 continue
-            method = registered_method.method
-            method.params = method.params or self.get_params(
-                registered_method.fun
-            )
-            method.result = method.result or self.get_result(
-                registered_method.fun
-            )
+            method = rpc_method.method
+            method.params = method.params or self.get_params(rpc_method.fun)
+            method.result = method.result or self.get_result(rpc_method.fun)
         return OpenRPCObject(
             openrpc='1.2.6',
             info=InfoObject(
@@ -65,23 +74,21 @@ class OpenRPCServer:
         )
 
     def get_params(self, fun: Callable) -> list[ContentDescriptorObject]:
-        # noinspection PyUnresolvedReferences
         return [
             ContentDescriptorObject(
                 name=name,
                 schema=self._get_schema(annotation),
                 required=self._is_required(annotation)
             )
-            for name, annotation in fun.__annotations__.items()
+            for name, annotation in get_type_hints(fun).items()
             if name != 'return'
         ]
 
     def get_result(self, fun: Callable) -> ContentDescriptorObject:
-        # noinspection PyUnresolvedReferences
         return ContentDescriptorObject(
             name='result',
-            schema=self._get_schema(fun.__annotations__['return']),
-            required=self._is_required(fun.__annotations__['return'])
+            schema=self._get_schema(get_type_hints(fun)['return']),
+            required=self._is_required(get_type_hints(fun)['return'])
         )
 
     # noinspection PyUnresolvedReferences
@@ -121,7 +128,7 @@ class OpenRPCServer:
                 schema.type = schema_type
                 schema.properties = {
                     k: self._get_schema(v)
-                    for k, v in annotation.__init__.__annotations__.items()
+                    for k, v in get_type_hints(annotation).items()
                     if k != 'return'
                 }
             if schema not in self.components.schemas.values():
@@ -163,13 +170,14 @@ class OpenRPCServer:
                     else 'null' for arg in args]
         return py_to_schema.get(annotation) or 'object'
 
-    def _get_properties(self, annotation: Type) -> dict:
+    def _get_properties(self, annotation: Type) -> dict[str, Any]:
         schema = self._get_schema(annotation)
         properties = {}
         if isinstance(schema, list):
             types = [arg.ref if arg.ref else arg.type for arg in schema]
             types = list(dict.fromkeys(types))
             if len(types) > 1:
+                # noinspection PyTypedDict
                 properties['type'] = types
                 return properties
             schema = schema[0]
