@@ -52,7 +52,7 @@ class OpenRPCServer:
             return self.server.method(func, method)
         return partial(self.server.method, method=method)
 
-    def process(self, data: Union[bytes, str]) -> Optional[str]:
+    def process_request(self, data: Union[bytes, str]) -> Optional[str]:
         return self.server.process(data)
 
     def discover(self) -> OpenRPCObject:

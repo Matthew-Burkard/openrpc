@@ -17,7 +17,7 @@ def add(x: float, y: float) -> float:
 
 @app.route('/api/v1/', methods=['POST'])
 def process_rpc() -> Response:
-    return jsonify(rpc.process(request.json))
+    return jsonify(rpc.process_request(request.json))
 
 
 if __name__ == '__main__':
