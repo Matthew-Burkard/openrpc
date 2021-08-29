@@ -4,11 +4,12 @@ import uuid
 from dataclasses import dataclass
 from typing import Any, Union, Optional
 
-from openrpc.open_rpc_objects import MethodObject
 from openrpc import util
+from openrpc.open_rpc_objects import MethodObject
 from openrpc.rpc_client import RPCDirectClient
 from openrpc.rpc_objects import (
-    RequestObjectParams, RequestObject,
+    RequestObjectParams,
+    RequestObject,
     ErrorResponseObject,
 )
 from openrpc.server import OpenRPCServer
@@ -34,6 +35,7 @@ class RPCTest(unittest.TestCase):
         self.server.method(get_none)
         self.server.method(optional_params)
         self.server.method(args_and_kwargs)
+        self.server.method(default_values)
         super(RPCTest, self).__init__(*args)
 
     def test_array_params(self) -> None:
@@ -252,18 +254,41 @@ class RPCTest(unittest.TestCase):
     def test_including_method_object(self) -> None:
         def multiply(a: int, b: int) -> int:
             return a * b
+
         self.server.method(method=MethodObject())(multiply)
-        req = RequestObjectParams(
-            id=1,
-            method='multiply',
-            params=[2, 4]
-        )
+        req = RequestObjectParams(id=1, method='multiply', params=[2, 4])
         resp = json.loads(
             self.server.process_request(
                 req.json(by_alias=True, exclude_unset=True)
             )
         )
         self.assertEqual(resp['result'], 8)
+
+    def test_default_values(self) -> None:
+        # No params.
+        req = RequestObject(id=1, method='default_values')
+        resp = json.loads(
+            self.server.process_request(
+                req.json(by_alias=True, exclude_unset=True)
+            )
+        )
+        self.assertEqual(resp['result'], 2)
+        # First param.
+        req = RequestObjectParams(id=1, method='default_values', params=[2])
+        resp = json.loads(
+            self.server.process_request(
+                req.json(by_alias=True, exclude_unset=True)
+            )
+        )
+        # Both params.
+        self.assertEqual(resp['result'], 3)
+        req = RequestObjectParams(id=1, method='default_values', params=[2, 2])
+        resp = json.loads(
+            self.server.process_request(
+                req.json(by_alias=True, exclude_unset=True)
+            )
+        )
+        self.assertEqual(resp['result'], 4)
 
 
 def increment_list(numbers: list[Union[int, float]]) -> list:
@@ -292,6 +317,10 @@ def divide(x: float, y: float) -> float:
 
 def get_none() -> None:
     return None
+
+
+def default_values(a: int = 1, b: Optional[int] = None) -> int:
+    return a + (b or 1)
 
 
 def optional_params(
