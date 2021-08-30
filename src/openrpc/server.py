@@ -138,10 +138,8 @@ class OpenRPCServer:
         if schema_type == 'array':
             schema = SchemaObject()
             schema.type = schema_type
-            schema.items = {}
-            # FIXME items will be overridden each iteration.
-            for arg in get_args(annotation):
-                schema.items = self._get_properties(arg)
+            if args := get_args(annotation):
+                schema.items = SchemaObject(**self._get_properties(args[0]))
             return schema
 
         schema = SchemaObject()
@@ -165,9 +163,12 @@ class OpenRPCServer:
         if Union in [origin, annotation]:
             return self._py_to_schema_type(get_args(annotation)[0])
         if args := get_args(annotation):
-            return [self._py_to_schema_type(arg)
-                    if '__name__' in dir(arg) and arg.__name__ != 'NoneType'
-                    else 'null' for arg in args]
+            return [
+                self._py_to_schema_type(arg)
+                if '__name__' in dir(arg) and arg.__name__ != 'NoneType'
+                else 'null'
+                for arg in args
+            ]
         return py_to_schema.get(annotation) or 'object'
 
     def _get_properties(self, annotation: Type) -> dict[str, Any]:
