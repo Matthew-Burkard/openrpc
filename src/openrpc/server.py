@@ -60,8 +60,8 @@ class OpenRPCServer:
             if name == 'rpc.discover':
                 continue
             method = rpc_method.method
-            method.params = method.params or self.get_params(rpc_method.fun)
-            method.result = method.result or self.get_result(rpc_method.fun)
+            method.params = method.params or self._get_params(rpc_method.fun)
+            method.result = method.result or self._get_result(rpc_method.fun)
         return OpenRPCObject(
             openrpc='1.2.6',
             info=InfoObject(
@@ -73,7 +73,7 @@ class OpenRPCServer:
             components=self.components
         )
 
-    def get_params(self, fun: Callable) -> list[ContentDescriptorObject]:
+    def _get_params(self, fun: Callable) -> list[ContentDescriptorObject]:
         return [
             ContentDescriptorObject(
                 name=name,
@@ -84,7 +84,7 @@ class OpenRPCServer:
             if name != 'return'
         ]
 
-    def get_result(self, fun: Callable) -> ContentDescriptorObject:
+    def _get_result(self, fun: Callable) -> ContentDescriptorObject:
         return ContentDescriptorObject(
             name='result',
             schema=self._get_schema(get_type_hints(fun)['return']),
@@ -106,6 +106,7 @@ class OpenRPCServer:
                 name = None
             if 'schema' in dir(annotation):
                 schema = SchemaObject(**annotation.schema())
+                schema.title = schema.title or name
                 for k, v in (schema.definitions or {}).items():
                     if k not in self.components.schemas:
                         self.components.schemas[k] = v
