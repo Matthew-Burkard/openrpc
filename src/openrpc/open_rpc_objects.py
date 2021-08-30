@@ -24,7 +24,7 @@ class SchemaObject(BaseModel):
     )
     required: Optional[list[str]] = None
     definitions: Optional[dict[str, SchemaObject]]
-    items: Optional[dict[str, SchemaObject]]
+    items: Optional[SchemaObject]
     ref: Optional[str] = Field(alias='$ref')
 
 
