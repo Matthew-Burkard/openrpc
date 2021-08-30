@@ -14,7 +14,7 @@ class ParamStructure(Enum):
 
 class SchemaObject(BaseModel):
     id: Optional[str] = Field(alias='$id')
-    json_schema: Optional[str] = Field(alias='schema')
+    json_schema: Optional[str] = Field(alias='$schema')
     title: Optional[str] = None
     description: Optional[str] = None
     type: Optional[str] = None
