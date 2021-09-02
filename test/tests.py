@@ -290,6 +290,24 @@ class RPCTest(unittest.TestCase):
         )
         self.assertEqual(resp['result'], 4)
 
+    def test_json_rpc(self) -> None:
+        # Result object.
+        request = RequestObjectParams(id=1, method='add', params=[1, 2])
+        resp = json.loads(
+            self.server.process_request(
+                request.json(by_alias=True, exclude_unset=True)
+            )
+        )
+        self.assertEqual(resp['jsonrpc'], '2.0')
+        # Error object.
+        request = RequestObjectParams(id=1, method='divide', params=[0, 0])
+        resp = json.loads(
+            self.server.process_request(
+                request.json(by_alias=True, exclude_unset=True)
+            )
+        )
+        self.assertEqual(resp['jsonrpc'], '2.0')
+
 
 def increment_list(numbers: list[Union[int, float]]) -> list:
     return [it + 1 for it in numbers]

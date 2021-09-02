@@ -127,8 +127,16 @@ class RPCServer:
                 return None
             if (isinstance(result, ErrorObjectData)
                     or isinstance(result, ErrorObject)):
-                return ErrorResponseObject(id=request.id, result=result)
-            return ResultResponseObject(id=request.id, result=result)
+                return ErrorResponseObject(
+                    id=request.id,
+                    result=result,
+                    jsonrpc='2.0'
+                )
+            return ResultResponseObject(
+                id=request.id,
+                result=result,
+                jsonrpc='2.0'
+            )
 
         except Exception as e:
             log.exception(f'{type(e).__name__}:')
@@ -182,8 +190,9 @@ class RPCServer:
     ) -> ErrorResponseObject:
         if data:
             error = ErrorObjectData(code=err[0], message=err[1], data=data)
-            return ErrorResponseObject(id=rpc_id, error=error)
+            return ErrorResponseObject(id=rpc_id, error=error, jsonrpc='2.0')
         return ErrorResponseObject(
             id=rpc_id,
-            error=ErrorObject(code=err[0], message=err[1])
+            error=ErrorObject(code=err[0], message=err[1]),
+            jsonrpc='2.0'
         )
