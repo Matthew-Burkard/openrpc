@@ -170,6 +170,8 @@ class OpenRPCServer:
                 else 'null'
                 for arg in args
             ]
+        if type(None) is annotation:
+            return 'null'
         return py_to_schema.get(annotation) or 'object'
 
     def _get_properties(self, annotation: Type) -> dict[str, Any]:

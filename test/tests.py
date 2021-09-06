@@ -399,6 +399,7 @@ class OpenRPCTest(unittest.TestCase):
         self.server = OpenRPCServer('Open RPC Test Server', '1.0.0')
         self.server.method(increment)
         self.server.method(get_distance)
+        self.server.method(return_none)
         super(OpenRPCTest, self).__init__(*args)
 
     def test_list_param(self) -> None:
@@ -445,6 +446,14 @@ class OpenRPCTest(unittest.TestCase):
                         'schema': {'$ref': '#/components/schemas/Vector3'},
                         'required': False
                     }
+                }, {
+                    'name': 'return_none',
+                    'params': [],
+                    'result': {
+                        'name': 'result',
+                        'schema': {'type': 'null'},
+                        'required': False
+                    }
                 }],
                 'components': {
                     'schemas': {
@@ -471,3 +480,7 @@ def get_distance(position: Vector3, target: Vector3) -> Vector3:
         position.y - target.y,
         position.z - target.z,
     )
+
+
+def return_none() -> None:
+    return None
