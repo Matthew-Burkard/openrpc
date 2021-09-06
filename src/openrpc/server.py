@@ -55,7 +55,7 @@ class OpenRPCServer:
     def process_request(self, data: Union[bytes, str]) -> Optional[str]:
         return self.server.process(data)
 
-    def discover(self) -> OpenRPCObject:
+    def discover(self) -> dict[str, Any]:
         for name, rpc_method in self.server.methods.items():
             if name == 'rpc.discover':
                 continue
@@ -64,14 +64,11 @@ class OpenRPCServer:
             method.result = method.result or self._get_result(rpc_method.fun)
         return OpenRPCObject(
             openrpc='1.2.6',
-            info=InfoObject(
-                title=self.title,
-                version=self.version
-            ),
+            info=InfoObject(title=self.title, version=self.version),
             methods=[it.method for it in self.server.methods.values()
                      if it.method.name != 'rpc.discover'],
             components=self.components
-        )
+        ).dict(by_alias=True, exclude_unset=True)
 
     def _get_params(self, fun: Callable) -> list[ContentDescriptorObject]:
         return [

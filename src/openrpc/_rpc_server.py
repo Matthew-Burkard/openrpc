@@ -51,39 +51,27 @@ class RPCServer:
             parsed_json = json.loads(data)
         except (TypeError, JSONDecodeError) as e:
             log.exception(f'{type(e).__name__}:')
-            return self._err(PARSE_ERROR).json(
-                by_alias=True,
-                exclude_unset=True
-            )
+            return self._err(PARSE_ERROR).json(by_alias=True)
 
         # Process as single request or batch.
         try:
             if isinstance(parsed_json, dict):
-                return self._process_request(parsed_json).json(
-                    by_alias=True,
-                    exclude_unset=True
-                )
+                return self._process_request(parsed_json).json(by_alias=True)
             if isinstance(parsed_json, list):
                 return f'[{self._process_requests(parsed_json)}]' or None
         except Exception as e:
             log.error('Invalid request [%s]', parsed_json)
             log.exception(f'{type(e).__name__}:')
-            return self._err(INVALID_REQUEST).json(
-                by_alias=True,
-                exclude_unset=True
-            )
+            return self._err(INVALID_REQUEST).json(by_alias=True)
 
         # Request must be a JSON primitive.
         log.error('Invalid request [%s]', parsed_json)
-        return self._err(INVALID_REQUEST).json(
-            by_alias=True,
-            exclude_unset=True
-        )
+        return self._err(INVALID_REQUEST).json(by_alias=True)
 
     def _process_requests(self, data: list) -> str:
         # TODO async batch handling for better performance?
         return ','.join(
-            [self._process_request(req).json(by_alias=True, exclude_unset=True)
+            [self._process_request(req).json(by_alias=True)
              for req in data]
         )
 
@@ -127,16 +115,8 @@ class RPCServer:
                 return None
             if (isinstance(result, ErrorObjectData)
                     or isinstance(result, ErrorObject)):
-                return ErrorResponseObject(
-                    id=request.id,
-                    result=result,
-                    jsonrpc='2.0'
-                )
-            return ResultResponseObject(
-                id=request.id,
-                result=result,
-                jsonrpc='2.0'
-            )
+                return ErrorResponseObject(id=request.id, result=result)
+            return ResultResponseObject(id=request.id, result=result)
 
         except Exception as e:
             log.exception(f'{type(e).__name__}:')
@@ -190,9 +170,8 @@ class RPCServer:
     ) -> ErrorResponseObject:
         if data:
             error = ErrorObjectData(code=err[0], message=err[1], data=data)
-            return ErrorResponseObject(id=rpc_id, error=error, jsonrpc='2.0')
+            return ErrorResponseObject(id=rpc_id, error=error)
         return ErrorResponseObject(
             id=rpc_id,
-            error=ErrorObject(code=err[0], message=err[1]),
-            jsonrpc='2.0'
+            error=ErrorObject(code=err[0], message=err[1])
         )
