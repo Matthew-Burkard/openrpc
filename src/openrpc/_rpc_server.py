@@ -4,11 +4,15 @@ from dataclasses import dataclass
 from json import JSONDecodeError
 from typing import Callable, Optional, Union, Any, Type
 
-from openrpc.open_rpc_objects import MethodObject
-from openrpc.rpc_objects import (
+from jsonrpcobjects.errors import (
+    PARSE_ERROR,
+    INVALID_REQUEST,
+    METHOD_NOT_FOUND,
+    INTERNAL_ERROR,
+)
+from jsonrpcobjects.objects import (
     ErrorResponseObject,
     ErrorObjectData,
-    ErrorObject,
     ResponseType,
     RequestType,
     RequestObjectParams,
@@ -16,11 +20,11 @@ from openrpc.rpc_objects import (
     NotificationObjectParams,
     NotificationObject,
     ResultResponseObject,
-    PARSE_ERROR,
-    INVALID_REQUEST,
-    METHOD_NOT_FOUND,
-    INTERNAL_ERROR,
+    NotificationType,
+    ErrorObject,
 )
+
+from openrpc.objects import MethodObject
 
 __all__ = ('RPCServer',)
 T = Type[Callable]
@@ -51,7 +55,7 @@ class RPCServer:
             parsed_json = json.loads(data)
         except (TypeError, JSONDecodeError) as e:
             log.exception(f'{type(e).__name__}:')
-            return self._err(PARSE_ERROR).json(by_alias=True)
+            return ErrorResponseObject(error=PARSE_ERROR).json(by_alias=True)
 
         # Process as single request or batch.
         try:
@@ -62,11 +66,13 @@ class RPCServer:
         except Exception as e:
             log.error('Invalid request [%s]', parsed_json)
             log.exception(f'{type(e).__name__}:')
-            return self._err(INVALID_REQUEST).json(by_alias=True)
+            return ErrorResponseObject(
+                error=INVALID_REQUEST
+            ).json(by_alias=True)
 
         # Request must be a JSON primitive.
         log.error('Invalid request [%s]', parsed_json)
-        return self._err(INVALID_REQUEST).json(by_alias=True)
+        return ErrorResponseObject(error=INVALID_REQUEST).json(by_alias=True)
 
     def _process_requests(self, data: list) -> str:
         # TODO async batch handling for better performance?
@@ -81,13 +87,13 @@ class RPCServer:
             return self._process_method(request)
         except Exception as e:
             log.exception(f'{type(e).__name__}:')
-            return self._err(INVALID_REQUEST)
+            return ErrorResponseObject(error=INVALID_REQUEST)
 
     def _process_method(self, request: RequestType) -> Any:
         registered_method = self.methods.get(request.method)
         if not registered_method:
             log.error('Method not found [%s]', request)
-            return self._err(METHOD_NOT_FOUND, request.id)
+            return ErrorResponseObject(id=request.id, error=METHOD_NOT_FOUND)
 
         try:
             method = registered_method.fun
@@ -95,8 +101,7 @@ class RPCServer:
             annotations = method.__annotations__
 
             # Call method.
-            if (isinstance(request, RequestObject)
-                    or isinstance(request, NotificationObject)):
+            if isinstance(request, (RequestObject, NotificationObject)):
                 result = method()
             elif isinstance(request.params, list):
                 result = method(
@@ -110,23 +115,26 @@ class RPCServer:
                 result = method()
 
             # Return proper response object.
-            if (isinstance(request, NotificationObject)
-                    or isinstance(request, NotificationObjectParams)):
+            if isinstance(
+                    request, (NotificationObject, NotificationObjectParams)
+            ):
                 return None
-            if (isinstance(result, ErrorObjectData)
-                    or isinstance(result, ErrorObject)):
+            if isinstance(result, (ErrorObjectData, ErrorObject)):
                 return ErrorResponseObject(id=request.id, result=result)
             return ResultResponseObject(id=request.id, result=result)
 
         except Exception as e:
             log.exception(f'{type(e).__name__}:')
             if self.uncaught_error_code:
-                return self._err(
-                    (self.uncaught_error_code, 'Server error'),
-                    request.id,
-                    f'{type(e).__name__}: {e}'
+                return ErrorResponseObject(
+                    id=request.id,
+                    error=ErrorObjectData(
+                        code=self.uncaught_error_code,
+                        message='Server error',
+                        data=f'{type(e).__name__}: {e}'
+                    )
                 )
-            return self._err(INTERNAL_ERROR, request.id)
+            return ErrorResponseObject(id=request.id, error=INTERNAL_ERROR)
 
     def _get_list_params(self, params: list, annotations: dict) -> list:
         try:
@@ -151,7 +159,7 @@ class RPCServer:
         )
 
     @staticmethod
-    def _get_request(data: dict) -> RequestType:
+    def _get_request(data: dict) -> Union[RequestType, NotificationType]:
         if data.get('id'):
             return (
                 RequestObjectParams if data.get('params') else RequestObject
@@ -161,17 +169,3 @@ class RPCServer:
             if data.get('params') else
             NotificationObject
         )(**data)
-
-    @staticmethod
-    def _err(
-            err: tuple[int, str],
-            rpc_id: Optional[Union[str, int]] = None,
-            data: Optional[Any] = None
-    ) -> ErrorResponseObject:
-        if data:
-            error = ErrorObjectData(code=err[0], message=err[1], data=data)
-            return ErrorResponseObject(id=rpc_id, error=error)
-        return ErrorResponseObject(
-            id=rpc_id,
-            error=ErrorObject(code=err[0], message=err[1])
-        )

@@ -12,7 +12,7 @@ from typing import (
 )
 
 from openrpc._rpc_server import RPCServer
-from openrpc.open_rpc_objects import (
+from openrpc.objects import (
     ContentDescriptorObject,
     SchemaObject,
     OpenRPCObject,

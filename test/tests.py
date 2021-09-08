@@ -2,16 +2,21 @@ import json
 import unittest
 import uuid
 from dataclasses import dataclass
+from json import JSONDecodeError
 from typing import Any, Union, Optional
 
-from openrpc import util
-from openrpc.open_rpc_objects import MethodObject
-from openrpc.rpc_client import RPCDirectClient
-from openrpc.rpc_objects import (
+from jsonrpcobjects.errors import JSONRPCError
+from jsonrpcobjects.objects import (
     RequestObjectParams,
     RequestObject,
+    ErrorObject,
+    ErrorObjectData,
     ErrorResponseObject,
+    ResultResponseObject,
+    ResponseType,
 )
+
+from openrpc.objects import MethodObject
 from openrpc.server import OpenRPCServer
 
 PARSE_ERROR = -32700
@@ -177,9 +182,9 @@ class RPCTest(unittest.TestCase):
         add_resp = [r for r in responses if r['id'] == add_id][0]
         subtract_resp = [r for r in responses if r['id'] == subtract_id][0]
         divide_resp = [r for r in responses if r['id'] == divide_id][0]
-        add_resp = util.parse_response(json.dumps(add_resp))
-        subtract_resp = util.parse_response(json.dumps(subtract_resp))
-        divide_resp = util.parse_response(json.dumps(divide_resp))
+        add_resp = parse_response(json.dumps(add_resp))
+        subtract_resp = parse_response(json.dumps(subtract_resp))
+        divide_resp = parse_response(json.dumps(divide_resp))
         self.assertEqual(add_id, add_resp.id)
         self.assertEqual(subtract_id, subtract_resp.id)
         self.assertEqual(divide_id, divide_resp.id)
@@ -307,38 +312,6 @@ def args_and_kwargs(*args, **kwargs) -> Any:
 
 
 ########################################################################
-# Client Tests
-test_rpc = OpenRPCServer('Test Client', '1.0.0', -32000)
-
-
-class TestRPCClient(RPCDirectClient):
-
-    def echo(self, x: float) -> Union[float, list, ErrorResponseObject]:
-        return self._call(
-            RequestObjectParams(
-                id=str(uuid.uuid4()),
-                method='echo',
-                params=[x]
-            )
-        )
-
-
-@test_rpc.method
-def echo(x: float) -> Union[float, tuple]:
-    return x
-
-
-class RPCClientTest(unittest.TestCase):
-
-    def __init__(self, *args) -> None:
-        self.client = TestRPCClient(test_rpc.server)
-        super(RPCClientTest, self).__init__(*args)
-
-    def test_client(self) -> None:
-        self.assertEqual(9, self.client.echo(9))
-
-
-########################################################################
 # OpenRPC Tests
 @dataclass
 class Vector3:
@@ -436,3 +409,30 @@ def get_distance(position: Vector3, target: Vector3) -> Vector3:
 
 def return_none() -> None:
     return None
+
+
+def parse_response(data: Union[bytes, str]) -> ResponseType:
+    try:
+        resp = json.loads(data)
+        if resp.get('error'):
+            error_resp = ErrorResponseObject(**resp)
+            if resp['error'].get('data'):
+                error_resp.error = ErrorObjectData(**resp['error'])
+            else:
+                error_resp.error = ErrorObject(**resp['error'])
+            return error_resp
+        if 'result' in resp.keys():
+            return ResultResponseObject(**resp)
+        raise JSONRPCError(
+            ErrorObject(
+                code=-32000,
+                message='Unable to parse response.'
+            )
+        )
+    except (JSONDecodeError, TypeError, AttributeError):
+        raise JSONRPCError(
+            ErrorObject(
+                code=-32000,
+                message='Unable to parse response.'
+            )
+        )
