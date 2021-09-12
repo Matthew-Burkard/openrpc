@@ -7,7 +7,6 @@ from typing import Callable, Optional, Union, Any, Type
 from jsonrpcobjects.errors import (
     PARSE_ERROR,
     INVALID_REQUEST,
-    METHOD_NOT_FOUND,
     INTERNAL_ERROR,
 )
 from jsonrpcobjects.objects import (
@@ -103,7 +102,11 @@ class RPCServer:
             if isinstance(request, (RequestObject, RequestObjectParams)):
                 return ErrorResponseObject(
                     id=request.id,
-                    error=METHOD_NOT_FOUND
+                    error=ErrorObjectData(
+                        code=-32601,
+                        message='Method not found',
+                        data=request.method
+                    )
                 )
 
         try:
