@@ -2,7 +2,7 @@ import json
 import logging
 from dataclasses import dataclass
 from json import JSONDecodeError
-from typing import Callable, Optional, Union, Any, Type
+from typing import Callable, Optional, Union, Any, Type, get_type_hints
 
 from jsonrpcobjects.errors import (
     PARSE_ERROR,
@@ -112,7 +112,7 @@ class RPCServer:
         try:
             method = registered_method.fun
             # noinspection PyUnresolvedReferences
-            annotations = method.__annotations__
+            annotations = get_type_hints(method)
 
             # Call method.
             if isinstance(request, (RequestObject, NotificationObject)):
@@ -168,7 +168,7 @@ class RPCServer:
         if not isinstance(param, dict):
             return param
         return p_type(
-            **{k: self._deserialize_param(v, type(p_type.__annotations__[k]))
+            **{k: self._deserialize_param(v, type(get_type_hints(p_type)[k]))
                for k, v in param.items()}
         )
 
