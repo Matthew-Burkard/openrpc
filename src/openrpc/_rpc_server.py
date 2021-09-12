@@ -55,30 +55,34 @@ class RPCServer:
             parsed_json = json.loads(data)
         except (TypeError, JSONDecodeError) as e:
             log.exception(f'{type(e).__name__}:')
-            return ErrorResponseObject(error=PARSE_ERROR).json(by_alias=True)
+            return ErrorResponseObject(error=PARSE_ERROR).json()
 
         # Process as single request or batch.
         try:
-            if isinstance(parsed_json, dict):
-                return self._process_request(parsed_json).json(by_alias=True)
+            if isinstance(parsed_json, dict) and parsed_json.get('id'):
+                return self._process_request(parsed_json).json()
+            elif isinstance(parsed_json, dict) and not parsed_json.get('id'):
+                self._process_request(parsed_json)
+                return None
             if isinstance(parsed_json, list):
                 return f'[{self._process_requests(parsed_json)}]' or None
         except Exception as e:
             log.error('Invalid request [%s]', parsed_json)
             log.exception(f'{type(e).__name__}:')
-            return ErrorResponseObject(
-                error=INVALID_REQUEST
-            ).json(by_alias=True)
+            return ErrorResponseObject(error=INVALID_REQUEST).json()
 
         # Request must be a JSON primitive.
         log.error('Invalid request [%s]', parsed_json)
-        return ErrorResponseObject(error=INVALID_REQUEST).json(by_alias=True)
+        return ErrorResponseObject(error=INVALID_REQUEST).json()
 
     def _process_requests(self, data: list) -> str:
         # TODO async batch handling for better performance?
+        # Process notifications.
+        [self._process_request(req) for req in data if not req.get('id')]
+        # Return request responses.
         return ','.join(
-            [self._process_request(req).json(by_alias=True)
-             for req in data]
+            [self._process_request(req).json()
+             for req in data if req.get('id')]
         )
 
     def _process_request(self, data: dict) -> Optional[ResponseType]:
@@ -89,11 +93,18 @@ class RPCServer:
             log.exception(f'{type(e).__name__}:')
             return ErrorResponseObject(error=INVALID_REQUEST)
 
-    def _process_method(self, request: RequestType) -> Any:
+    def _process_method(
+            self,
+            request: Union[RequestType, NotificationType]
+    ) -> Any:
         registered_method = self.methods.get(request.method)
         if not registered_method:
             log.error('Method not found [%s]', request)
-            return ErrorResponseObject(id=request.id, error=METHOD_NOT_FOUND)
+            if isinstance(request, (RequestObject, RequestObjectParams)):
+                return ErrorResponseObject(
+                    id=request.id,
+                    error=METHOD_NOT_FOUND
+                )
 
         try:
             method = registered_method.fun

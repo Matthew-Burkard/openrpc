@@ -14,6 +14,7 @@ from jsonrpcobjects.objects import (
     ErrorResponseObject,
     ResultResponseObject,
     ResponseType,
+    NotificationObjectParams,
 )
 
 from openrpc.objects import MethodObject
@@ -165,17 +166,18 @@ class RPCTest(unittest.TestCase):
                     id=add_id,
                     method='add',
                     params=[2, 2]
-                ).json(by_alias=True),
+                ).json(),
                 RequestObjectParams(
                     id=subtract_id,
                     method='subtract',
                     params=[2, 2]
-                ).json(by_alias=True),
+                ).json(),
                 RequestObjectParams(
                     id=divide_id,
                     method='divide',
                     params=[0, 0]
-                ).json(by_alias=True),
+                ).json(),
+                NotificationObjectParams(method='add', params=[1, 3]).json(),
             ]
         )
         responses = json.loads(self.server.process_request(f'[{requests}]'))
@@ -191,6 +193,7 @@ class RPCTest(unittest.TestCase):
         self.assertEqual(4, add_resp.result)
         self.assertEqual(0, subtract_resp.result)
         self.assertEqual(INTERNAL_ERROR, divide_resp.error.code)
+        self.assertEqual(len(responses), 3)
 
     def test_list_param(self) -> None:
         request = RequestObjectParams(
@@ -266,6 +269,11 @@ class RPCTest(unittest.TestCase):
             self.server.process_request(request.json(by_alias=True))
         )
         self.assertEqual(resp['jsonrpc'], '2.0')
+
+    def test_notifications(self) -> None:
+        request = NotificationObjectParams(method='add', params=[1, 2])
+        resp = self.server.process_request(request.json(by_alias=True))
+        self.assertEqual(None, resp)
 
 
 def increment_list(numbers: list[Union[int, float]]) -> list:
