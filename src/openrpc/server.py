@@ -88,11 +88,11 @@ class OpenRPCServer:
             required=self._is_required(get_type_hints(fun)['return'])
         )
 
-    # noinspection PyUnresolvedReferences
-    def _get_schema(self, annotation: Type) -> \
-            Union[SchemaObject, list[SchemaObject]]:
+    def _get_schema(self, annotation: Type) -> SchemaObject:
         if get_origin(annotation) == Union:
-            return [self._get_schema(arg) for arg in get_args(annotation)]
+            return SchemaObject(
+                anyOf=[self._get_schema(a) for a in get_args(annotation)]
+            )
 
         schema_type = self._py_to_schema_type(annotation)
 
@@ -102,6 +102,7 @@ class OpenRPCServer:
             except AttributeError:
                 name = None
             if 'schema' in dir(annotation):
+                # noinspection PyUnresolvedReferences
                 schema = SchemaObject(**annotation.schema())
                 schema.title = schema.title or name
                 for k, v in (schema.definitions or {}).items():

@@ -18,6 +18,10 @@ class SchemaObject(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     type: Optional[Union[str, list[str]]] = None
+    all_of: Optional[list[SchemaObject]] = Field(alias='allOf')
+    any_of: Optional[list[SchemaObject]] = Field(alias='anyOf')
+    one_of: Optional[list[SchemaObject]] = Field(alias='oneOf')
+    not_: Optional[SchemaObject] = Field(alias='not')
     properties: Optional[dict[str, SchemaObject]] = None
     additional_properties: Optional[Union[bool, dict[str, Any]]] = Field(
         alias='additionalProperties'

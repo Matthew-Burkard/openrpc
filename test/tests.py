@@ -347,47 +347,54 @@ class OpenRPCTest(unittest.TestCase):
             {
                 'openrpc': '1.2.6',
                 'info': {'title': 'Open RPC Test Server', 'version': '1.0.0'},
-                'methods': [{
-                    'name': 'increment', 'params': [{
-                        'name': 'numbers',
-                        'schema': {
-                            'type': 'array',
-                            'items': {'type': 'number'}
-                        },
-                        'required': False
-                    }],
-                    'result': {
-                        'name': 'result',
-                        'schema': {
-                            'type': 'array',
-                            'items': {'type': ['number', 'string']}
-                        },
-                        'required': False
-                    }
-                }, {
-                    'name': 'get_distance', 'params': [{
-                        'name': 'position',
-                        'schema': {'$ref': '#/components/schemas/Vector3'},
-                        'required': False
+                'methods': [
+                    {
+                        'name': 'increment',
+                        'params': [{
+                            'name': 'numbers',
+                            'schema': {
+                                'type': 'array', 'items': {'type': None}
+                            },
+                            'required': False
+                        }],
+                        'result': {
+                            'name': 'result',
+                            'schema': {
+                                'type': 'array', 'items': {'type': None}
+                            },
+                            'required': False
+                        }
                     }, {
-                        'name': 'target',
-                        'schema': {'$ref': '#/components/schemas/Vector3'},
-                        'required': False
-                    }],
-                    'result': {
-                        'name': 'result',
-                        'schema': {'$ref': '#/components/schemas/Vector3'},
-                        'required': False
+                        'name': 'get_distance',
+                        'params': [{
+                            'name': 'position',
+                            'schema': {'$ref': '#/components/schemas/Vector3'},
+                            'required': False
+                        }, {
+                            'name': 'target',
+                            'schema': {'$ref': '#/components/schemas/Vector3'},
+                            'required': False
+                        }],
+                        'result': {
+                            'name': 'result',
+                            'schema': {'$ref': '#/components/schemas/Vector3'},
+                            'required': False
+                        }
+                    }, {
+                        'name': 'return_none',
+                        'params': [{
+                            'name': 'optional_param',
+                            'schema': {
+                                'anyOf': [{'type': 'string'}, {'type': 'null'}]
+                            },
+                            'required': False
+                        }],
+                        'result': {
+                            'name': 'result', 'schema': {'type': 'null'},
+                            'required': False
+                        }
                     }
-                }, {
-                    'name': 'return_none',
-                    'params': [],
-                    'result': {
-                        'name': 'result',
-                        'schema': {'type': 'null'},
-                        'required': False
-                    }
-                }],
+                ],
                 'components': {
                     'schemas': {
                         'Vector3': {
@@ -415,7 +422,8 @@ def get_distance(position: Vector3, target: Vector3) -> Vector3:
     )
 
 
-def return_none() -> None:
+# noinspection PyUnusedLocal
+def return_none(optional_param: Optional[str]) -> None:
     return None
 
 
