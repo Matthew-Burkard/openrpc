@@ -355,30 +355,30 @@ class OpenRPCTest(unittest.TestCase):
                             'schema': {
                                 'type': 'array', 'items': {'type': None}
                             },
-                            'required': False
+                            'required': True
                         }],
                         'result': {
                             'name': 'result',
                             'schema': {
                                 'type': 'array', 'items': {'type': None}
                             },
-                            'required': False
+                            'required': True
                         }
                     }, {
                         'name': 'get_distance',
                         'params': [{
                             'name': 'position',
                             'schema': {'$ref': '#/components/schemas/Vector3'},
-                            'required': False
+                            'required': True
                         }, {
                             'name': 'target',
                             'schema': {'$ref': '#/components/schemas/Vector3'},
-                            'required': False
+                            'required': True
                         }],
                         'result': {
                             'name': 'result',
                             'schema': {'$ref': '#/components/schemas/Vector3'},
-                            'required': False
+                            'required': True
                         }
                     }, {
                         'name': 'return_none',
@@ -391,7 +391,7 @@ class OpenRPCTest(unittest.TestCase):
                         }],
                         'result': {
                             'name': 'result', 'schema': {'type': 'null'},
-                            'required': False
+                            'required': True
                         }
                     }
                 ],
