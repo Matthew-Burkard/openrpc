@@ -24,7 +24,7 @@ from openrpc.objects import (
 
 __all__ = ('OpenRPCServer',)
 T = Type[Callable]
-log = logging.getLogger(__name__)
+log = logging.getLogger('openrpc')
 
 
 class OpenRPCServer:
