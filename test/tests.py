@@ -252,6 +252,24 @@ class RPCTest(unittest.TestCase):
         resp = json.loads(self.server.process_request(req.json()))
         self.assertEqual(['three', 3], resp['result'])
 
+    def test_optional_object_param(self) -> None:
+        vector = Vector3(1, 3, 5)
+
+        def optional_param(v: Optional[Vector3] = None) -> Optional[Vector3]:
+            # This assertion won't fail test if it fails, that's why we
+            # assert the the response has a result.
+            self.assertEqual(v, vector)
+            return v
+
+        self.server.method(optional_param)
+        request = RequestObjectParams(
+            id=1,
+            method='optional_param',
+            params=[vector]
+        )
+        resp = json.loads(self.server.process_request(request.json()))
+        self.assertIsNotNone(resp.get('result'))
+
     def test_including_method_object(self) -> None:
         def multiply(a: int, b: int) -> int:
             return a * b

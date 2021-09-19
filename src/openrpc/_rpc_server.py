@@ -173,10 +173,14 @@ class RPCServer:
         except KeyError:
             return params
 
-    # FIXME Make p_type a list of types for union, try each.
     def _deserialize(self, param: Any, p_type: Type) -> Any:
         """Deserialize dict to python objects."""
-        # TODO If p_type is union.
+        if get_origin(p_type) == Union:
+            for arg in get_args(p_type):
+                try:
+                    return self._deserialize(param, arg)
+                except TypeError:
+                    continue
         if get_origin(p_type) == list:
             types = get_args(p_type)
             return [self._deserialize(it, types[0]) for it in param]
@@ -189,10 +193,10 @@ class RPCServer:
             )
         # In case p_type init does not take all properties.
         except KeyError:
-            param = p_type()
+            p = p_type()
             for k, v in param.items():
-                param.__dict__[k] = v
-            return param
+                p.__dict__[k] = v
+            return p
 
     @staticmethod
     def _get_request(data: dict) -> Union[RequestType, NotificationType]:
