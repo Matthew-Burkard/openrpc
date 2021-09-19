@@ -1,3 +1,4 @@
+import logging
 import re
 from functools import partial
 from typing import (
@@ -23,6 +24,7 @@ from openrpc.objects import (
 
 __all__ = ('OpenRPCServer',)
 T = Type[Callable]
+log = logging.getLogger(__name__)
 
 
 class OpenRPCServer:
@@ -53,7 +55,10 @@ class OpenRPCServer:
         return partial(self.server.method, method=method)
 
     def process_request(self, data: Union[bytes, str]) -> Optional[str]:
-        return self.server.process(data)
+        log.debug('Processing request: %s', data)
+        resp = self.server.process(data)
+        log.debug('Responding : %s', resp)
+        return resp
 
     def discover(self) -> dict[str, Any]:
         for name, rpc_method in self.server.methods.items():

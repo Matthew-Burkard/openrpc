@@ -2,7 +2,16 @@ import json
 import logging
 from dataclasses import dataclass
 from json import JSONDecodeError
-from typing import Callable, Optional, Union, Any, Type, get_type_hints
+from typing import (
+    Callable,
+    Optional,
+    Union,
+    Any,
+    Type,
+    get_type_hints,
+    get_origin,
+    get_args,
+)
 
 from jsonrpcobjects.errors import (
     PARSE_ERROR,
@@ -152,25 +161,38 @@ class RPCServer:
 
     def _get_list_params(self, params: list, annotations: dict) -> list:
         try:
-            return [self._deserialize_param(p, list(annotations.values())[i])
+            return [self._deserialize(p, list(annotations.values())[i])
                     for i, p in enumerate(params)]
         except IndexError:
             return params
 
     def _get_dict_params(self, params: dict, annotations: dict) -> dict:
         try:
-            return {k: self._deserialize_param(p, annotations[k])
+            return {k: self._deserialize(p, annotations[k])
                     for k, p in params.items()}
         except KeyError:
             return params
 
-    def _deserialize_param(self, param: Any, p_type: Type) -> Any:
+    # FIXME Make p_type a list of types for union, try each.
+    def _deserialize(self, param: Any, p_type: Type) -> Any:
+        """Deserialize dict to python objects."""
+        # TODO If p_type is union.
+        if get_origin(p_type) == list:
+            types = get_args(p_type)
+            return [self._deserialize(it, types[0]) for it in param]
         if not isinstance(param, dict):
             return param
-        return p_type(
-            **{k: self._deserialize_param(v, type(get_type_hints(p_type)[k]))
-               for k, v in param.items()}
-        )
+        try:
+            return p_type(
+                **{k: self._deserialize(v, type(get_type_hints(p_type)[k]))
+                   for k, v in param.items()}
+            )
+        # In case p_type init does not take all properties.
+        except KeyError:
+            param = p_type()
+            for k, v in param.items():
+                param.__dict__[k] = v
+            return param
 
     @staticmethod
     def _get_request(data: dict) -> Union[RequestType, NotificationType]:

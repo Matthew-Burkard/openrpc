@@ -28,20 +28,21 @@ INTERNAL_ERROR = -32603
 SERVER_ERROR = -32000
 
 
+@dataclass
+class Vector3:
+    x: float
+    y: float
+    z: float
+
+
 class RPCTest(unittest.TestCase):
 
     def __init__(self, *args) -> None:
         self.server = OpenRPCServer('Test JSON RPC', '1.0.0')
-        self.server.method(increment_list)
         self.server.method(add)
         self.server.method(subtract)
         self.server.method(divide)
-        self.server.method(summation)
-        self.server.method(pythagorean)
-        self.server.method(get_none)
-        self.server.method(optional_params)
         self.server.method(args_and_kwargs)
-        self.server.method(default_values)
         super(RPCTest, self).__init__(*args)
 
     def test_array_params(self) -> None:
@@ -50,6 +51,10 @@ class RPCTest(unittest.TestCase):
         self.assertEqual(4, json.loads(resp)['result'])
 
     def test_no_params(self) -> None:
+        def get_none() -> None:
+            return None
+
+        self.server.method(get_none)
         request = RequestObject(id=1, method='get_none')
         resp = self.server.process_request(request.json(by_alias=True))
         self.assertEqual(None, json.loads(resp)['result'])
@@ -64,6 +69,10 @@ class RPCTest(unittest.TestCase):
         self.assertEqual(0, json.loads(resp)['result'])
 
     def test_vararg_method(self) -> None:
+        def summation(*args) -> float:
+            return sum(args)
+
+        self.server.method(summation)
         request = RequestObjectParams(
             id=1,
             method='summation',
@@ -73,6 +82,10 @@ class RPCTest(unittest.TestCase):
         self.assertEqual(27, json.loads(resp)['result'])
 
     def test_kwarg_method(self) -> None:
+        def pythagorean(**kwargs) -> bool:
+            return (kwargs['a'] ** 2 + kwargs['b'] ** 2) == (kwargs['c'] ** 2)
+
+        self.server.method(pythagorean)
         request = RequestObjectParams(
             id=1,
             method='pythagorean',
@@ -105,43 +118,35 @@ class RPCTest(unittest.TestCase):
 
     def test_parse_error(self) -> None:
         resp = json.loads(self.server.process_request(b'}'))
-        self.assertEqual(resp['error']['code'], PARSE_ERROR)
+        self.assertEqual(PARSE_ERROR, resp['error']['code'])
 
     def test_invalid_request(self) -> None:
         resp = json.loads(self.server.process_request(b'{"id": 1}'))
-        self.assertEqual(resp['error']['code'], INVALID_REQUEST)
+        self.assertEqual(INVALID_REQUEST, resp['error']['code'])
 
     def test_method_not_found(self) -> None:
         request = RequestObject(id=1, method='does not exist')
-        resp = json.loads(
-            self.server.process_request(request.json(by_alias=True))
-        )
-        self.assertEqual(resp['error']['code'], METHOD_NOT_FOUND)
+        resp = json.loads(self.server.process_request(request.json()))
+        self.assertEqual(METHOD_NOT_FOUND, resp['error']['code'])
 
     def test_internal_error(self) -> None:
         request = RequestObjectParams(id=1, method='divide', params=[0, 0])
-        resp = json.loads(
-            self.server.process_request(request.json(by_alias=True))
-        )
-        self.assertEqual(resp['error']['code'], INTERNAL_ERROR)
+        resp = json.loads(self.server.process_request(request.json()))
+        self.assertEqual(INTERNAL_ERROR, resp['error']['code'])
 
     def test_server_error(self) -> None:
         uncaught_code = SERVER_ERROR
         request = RequestObjectParams(id=1, method='divide', params=[0, 0])
         server = OpenRPCServer('Test JSON RPC', '1.0.0', uncaught_code)
         server.method(divide)
-        resp = json.loads(
-            server.process_request(request.json(by_alias=True))
-        )
-        self.assertEqual(resp['error']['code'], uncaught_code)
+        resp = json.loads(server.process_request(request.json()))
+        self.assertEqual(uncaught_code, resp['error']['code'])
 
     def test_id_matching(self) -> None:
         # Result id.
         req_id = str(uuid.uuid4())
         request = RequestObjectParams(id=req_id, method='add', params=[2, 2])
-        resp = json.loads(
-            self.server.process_request(request.json(by_alias=True))
-        )
+        resp = json.loads(self.server.process_request(request.json()))
         self.assertEqual(4, resp['result'])
         self.assertEqual(req_id, resp['id'])
         # Error id.
@@ -151,9 +156,7 @@ class RPCTest(unittest.TestCase):
             method='add',
             params={'x': 1, 'z': 2}
         )
-        resp = json.loads(
-            self.server.process_request(request.json(by_alias=True))
-        )
+        resp = json.loads(self.server.process_request(request.json()))
         self.assertEqual(req_id, resp['id'])
 
     def test_batch(self) -> None:
@@ -196,34 +199,58 @@ class RPCTest(unittest.TestCase):
         self.assertEqual(len(responses), 3)
 
     def test_list_param(self) -> None:
+        def increment_list(numbers: list[Union[int, float]]) -> list:
+            return [it + 1 for it in numbers]
+
+        self.server.method(increment_list)
         request = RequestObjectParams(
             id=1,
             method='increment_list',
             params=[[1, 2, 3]]
         )
-        resp = json.loads(
-            self.server.process_request(request.json(by_alias=True))
+        resp = json.loads(self.server.process_request(request.json()))
+        self.assertEqual([2, 3, 4], resp['result'])
+
+    def test_list_object_list_param(self) -> None:
+        def get_vectors(vector3s: list[Vector3]) -> list[Vector3]:
+            # This assertion won't fail test if it fails, that's why we
+            # assert the the response has a result.
+            self.assertEqual(vectors, vector3s)
+            return vector3s
+
+        vectors = [Vector3(0, 0, 0), Vector3(1, 1, 1)]
+        self.server.method(get_vectors)
+        request = RequestObjectParams(
+            id=1,
+            method='get_vectors',
+            params=[vectors]
         )
-        self.assertEqual(resp['result'], [2, 3, 4])
+        resp = json.loads(self.server.process_request(request.json()))
+        self.assertIsNotNone(resp.get('result'))
 
     def test_optional_params(self) -> None:
+        def optional_params(
+                opt_str: Optional[str] = None,
+                opt_int: Optional[int] = None
+        ) -> list[Union[int, str]]:
+            return [opt_str, opt_int]
+
+        self.server.method(optional_params)
         req_id = str(uuid.uuid4())
         # No params.
         req = RequestObject(id=req_id, method='optional_params')
         resp = json.loads(
-            self.server.process_request(req.json(by_alias=True))
+            self.server.process_request(req.json())
         )
-        self.assertEqual(resp['result'], [None, None])
+        self.assertEqual([None, None], resp['result'])
         # With params.
         req = RequestObjectParams(
             id=req_id,
             method='optional_params',
             params=['three', 3]
         )
-        resp = json.loads(
-            self.server.process_request(req.json(by_alias=True))
-        )
-        self.assertEqual(resp['result'], ['three', 3])
+        resp = json.loads(self.server.process_request(req.json()))
+        self.assertEqual(['three', 3], resp['result'])
 
     def test_including_method_object(self) -> None:
         def multiply(a: int, b: int) -> int:
@@ -231,61 +258,43 @@ class RPCTest(unittest.TestCase):
 
         self.server.method(method=MethodObject())(multiply)
         req = RequestObjectParams(id=1, method='multiply', params=[2, 4])
-        resp = json.loads(
-            self.server.process_request(req.json(by_alias=True))
-        )
-        self.assertEqual(resp['result'], 8)
+        resp = json.loads(self.server.process_request(req.json()))
+        self.assertEqual(8, resp['result'])
 
     def test_default_values(self) -> None:
+        def default_values(a: int = 1, b: Optional[int] = None) -> int:
+            return a + (b or 1)
+
+        self.server.method(default_values)
         # No params.
         req = RequestObject(id=1, method='default_values')
-        resp = json.loads(
-            self.server.process_request(req.json(by_alias=True))
-        )
-        self.assertEqual(resp['result'], 2)
+        resp = json.loads(self.server.process_request(req.json()))
+        self.assertEqual(2, resp['result'])
         # First param.
         req = RequestObjectParams(id=1, method='default_values', params=[2])
-        resp = json.loads(
-            self.server.process_request(req.json(by_alias=True))
-        )
+        resp = json.loads(self.server.process_request(req.json()))
         # Both params.
-        self.assertEqual(resp['result'], 3)
+        self.assertEqual(3, resp['result'])
         req = RequestObjectParams(id=1, method='default_values', params=[2, 2])
-        resp = json.loads(
-            self.server.process_request(req.json(by_alias=True))
-        )
-        self.assertEqual(resp['result'], 4)
+        resp = json.loads(self.server.process_request(req.json()))
+        self.assertEqual(4, resp['result'])
 
     def test_json_rpc(self) -> None:
         # Result object.
         request = RequestObjectParams(id=1, method='add', params=[1, 2])
-        resp = json.loads(
-            self.server.process_request(request.json(by_alias=True))
-        )
-        self.assertEqual(resp['jsonrpc'], '2.0')
+        resp = json.loads(self.server.process_request(request.json()))
+        self.assertEqual('2.0', resp['jsonrpc'])
         # Error object.
         request = RequestObjectParams(id=1, method='divide', params=[0, 0])
         resp = json.loads(
-            self.server.process_request(request.json(by_alias=True))
+            self.server.process_request(request.json())
         )
-        self.assertEqual(resp['jsonrpc'], '2.0')
+        self.assertEqual('2.0', resp['jsonrpc'])
 
     def test_notifications(self) -> None:
         request = NotificationObjectParams(method='add', params=[1, 2])
-        resp = self.server.process_request(request.json(by_alias=True))
+        resp = self.server.process_request(request.json())
         self.assertEqual(None, resp)
-
-
-def increment_list(numbers: list[Union[int, float]]) -> list:
-    return [it + 1 for it in numbers]
-
-
-def pythagorean(**kwargs) -> bool:
-    return (kwargs['a'] ** 2 + kwargs['b'] ** 2) == (kwargs['c'] ** 2)
-
-
-def summation(*args) -> float:
-    return sum(args)
 
 
 def add(x: float, y: float) -> float:
@@ -300,32 +309,12 @@ def divide(x: float, y: float) -> float:
     return x / y
 
 
-def get_none() -> None:
-    return None
-
-
-def default_values(a: int = 1, b: Optional[int] = None) -> int:
-    return a + (b or 1)
-
-
-def optional_params(
-        opt_str: Optional[str] = None,
-        opt_int: Optional[int] = None
-) -> list:
-    return [opt_str, opt_int]
-
-
 def args_and_kwargs(*args, **kwargs) -> Any:
     return *args, {**kwargs}
 
 
 ########################################################################
 # OpenRPC Tests
-@dataclass
-class Vector3:
-    x: float
-    y: float
-    z: float
 
 
 class OpenRPCTest(unittest.TestCase):
