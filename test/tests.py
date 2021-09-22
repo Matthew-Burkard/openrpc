@@ -1,7 +1,6 @@
 import json
 import unittest
 import uuid
-from dataclasses import dataclass
 from json import JSONDecodeError
 from typing import Any, Union, Optional
 
@@ -16,6 +15,7 @@ from jsonrpcobjects.objects import (
     ResponseType,
     NotificationObjectParams,
 )
+from pydantic import BaseModel
 
 from openrpc.objects import MethodObject
 from openrpc.server import OpenRPCServer
@@ -28,8 +28,7 @@ INTERNAL_ERROR = -32603
 SERVER_ERROR = -32000
 
 
-@dataclass
-class Vector3:
+class Vector3(BaseModel):
     x: float
     y: float
     z: float
@@ -218,7 +217,7 @@ class RPCTest(unittest.TestCase):
             self.assertEqual(vectors, vector3s)
             return vector3s
 
-        vectors = [Vector3(0, 0, 0), Vector3(1, 1, 1)]
+        vectors = [Vector3(x=0, y=0, z=0), Vector3(x=1, y=1, z=1)]
         self.server.method(get_vectors)
         request = RequestObjectParams(
             id=1,
@@ -253,7 +252,7 @@ class RPCTest(unittest.TestCase):
         self.assertEqual(['three', 3], resp['result'])
 
     def test_optional_object_param(self) -> None:
-        vector = Vector3(1, 3, 5)
+        vector = Vector3(x=1, y=3, z=5)
 
         def optional_param(v: Optional[Vector3] = None) -> Optional[Vector3]:
             # This assertion won't fail test if it fails, that's why we
@@ -313,6 +312,36 @@ class RPCTest(unittest.TestCase):
         request = NotificationObjectParams(method='add', params=[1, 2])
         resp = self.server.process_request(request.json())
         self.assertEqual(None, resp)
+
+    def test_deserialize_nested_objects(self) -> None:
+        class Thing(BaseModel):
+            name: str
+            position: Vector3
+            another_thing: Optional['Thing'] = None
+
+        Thing.update_forward_refs()
+
+        def take_thing(thing: Thing) -> bool:
+            self.assertTrue(isinstance(thing, Thing))
+            self.assertTrue(isinstance(thing.another_thing, Thing))
+            self.assertTrue(isinstance(thing.another_thing.position, Vector3))
+            return True
+
+        self.server.method(take_thing)
+        req = RequestObjectParams(
+            id=1,
+            method='take_thing',
+            params=[Thing(
+                name='ping',
+                position=Vector3(x=1, y=3, z=5),
+                another_thing=Thing(
+                    name='pong',
+                    position=Vector3(x=7, y=11, z=13)
+                )
+            )]
+        )
+        resp = json.loads(self.server.process_request(req.json()))
+        self.assertTrue(resp['result'])
 
 
 def add(x: float, y: float) -> float:
@@ -405,11 +434,14 @@ class OpenRPCTest(unittest.TestCase):
                 'components': {
                     'schemas': {
                         'Vector3': {
-                            'type': 'object', 'properties': {
-                                'x': {'type': 'number'},
-                                'y': {'type': 'number'},
-                                'z': {'type': 'number'}
-                            }
+                            'type': 'object',
+                            'properties': {
+                                'x': {'title': 'X', 'type': 'number'},
+                                'y': {'title': 'Y', 'type': 'number'},
+                                'z': {'title': 'Z', 'type': 'number'},
+                            },
+                            'required': ['x', 'y', 'z'],
+                            'title': 'Vector3'
                         }
                     }
                 }
@@ -423,9 +455,9 @@ def increment(numbers: list[Union[int, float]]) -> list[Union[int, str]]:
 
 def get_distance(position: Vector3, target: Vector3) -> Vector3:
     return Vector3(
-        position.x - target.x,
-        position.y - target.y,
-        position.z - target.z,
+        x=position.x - target.x,
+        y=position.y - target.y,
+        z=position.z - target.z,
     )
 
 

@@ -187,16 +187,9 @@ class RPCServer:
         if not isinstance(param, dict):
             return param
         try:
-            return p_type(
-                **{k: self._deserialize(v, type(get_type_hints(p_type)[k]))
-                   for k, v in param.items()}
-            )
-        # In case p_type init does not take all properties.
-        except KeyError:
-            p = p_type()
-            for k, v in param.items():
-                p.__dict__[k] = v
-            return p
+            return p_type(**param)
+        except (TypeError, AttributeError, KeyError):
+            return param
 
     @staticmethod
     def _get_request(data: dict) -> Union[RequestType, NotificationType]:
