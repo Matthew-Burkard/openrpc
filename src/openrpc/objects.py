@@ -1,35 +1,35 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Union, Optional, Any
+from typing import Any, Optional, Union
 
 from pydantic import BaseModel, Field
 
 
 class ParamStructure(Enum):
-    BY_NAME = 'by-name'
-    BY_POSITION = 'by-position'
-    EITHER = 'either'
+    BY_NAME = "by-name"
+    BY_POSITION = "by-position"
+    EITHER = "either"
 
 
 class SchemaObject(BaseModel):
-    id: Optional[str] = Field(alias='$id')
-    json_schema: Optional[str] = Field(alias='$schema')
+    id: Optional[str] = Field(alias="$id", default=None)
+    json_schema: Optional[str] = Field(alias="$schema", default=None)
     title: Optional[str] = None
     description: Optional[str] = None
     type: Optional[Union[str, list[str]]] = None
-    all_of: Optional[list[SchemaObject]] = Field(alias='allOf')
-    any_of: Optional[list[SchemaObject]] = Field(alias='anyOf')
-    one_of: Optional[list[SchemaObject]] = Field(alias='oneOf')
-    not_: Optional[SchemaObject] = Field(alias='not')
+    all_of: Optional[list[SchemaObject]] = Field(alias="allOf", default=None)
+    any_of: Optional[list[SchemaObject]] = Field(alias="anyOf", default=None)
+    one_of: Optional[list[SchemaObject]] = Field(alias="oneOf", default=None)
+    not_: Optional[SchemaObject] = Field(alias="not", default=None)
     properties: Optional[dict[str, SchemaObject]] = None
     additional_properties: Optional[Union[bool, dict[str, Any]]] = Field(
-        alias='additionalProperties'
+        alias="additionalProperties", default=None
     )
     required: Optional[list[str]] = None
     definitions: Optional[dict[str, SchemaObject]]
     items: Optional[SchemaObject]
-    ref: Optional[str] = Field(alias='$ref')
+    ref: Optional[str] = Field(alias="$ref", default=None)
 
 
 class ServerVariableObject(BaseModel):
@@ -40,7 +40,7 @@ class ServerVariableObject(BaseModel):
 
 class ServerObject(BaseModel):
     name: str
-    url: str = 'localhost'
+    url: str = "localhost"
     summary: Optional[str] = None
     description: Optional[str] = None
     variables: Optional[dict[str, ServerVariableObject]] = None
@@ -68,7 +68,7 @@ class InfoObject(BaseModel):
 
 class ContentDescriptorObject(BaseModel):
     name: str
-    json_schema: SchemaObject = Field(alias='schema')
+    json_schema: SchemaObject = Field(alias="schema")
     summary: Optional[str] = None
     description: Optional[str] = None
     required: Optional[bool] = None
