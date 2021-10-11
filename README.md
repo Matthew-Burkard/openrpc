@@ -1,9 +1,19 @@
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-
-# OpenRPC
-
-OpenRPC provides classes to rapidly develop an
-[open-rpc](https://open-rpc.org/) server.
+<div align=center>
+  <h1>OpenRPC</h1>
+  <img src="https://img.shields.io/badge/License-AGPL%20v3-blue.svg"
+   height="20"
+   alt="License: AGPL v3">
+  <img src="https://img.shields.io/badge/code%20style-black-000000.svg"
+   height="20"
+   alt="Code style: black">
+  <a href="https://gitlab.com/mburkard/openrpc/-/blob/main/CONTRIBUTING.md">
+    <img src="https://img.shields.io/static/v1.svg?label=Contributions&message=Welcome&color=2267a0"
+     height="20"
+     alt="Contributions Welcome">
+  </a>
+  <h3>OpenRPC provides classes to rapidly develop an
+  <a href="https://gitlab.com/mburkard/openrpc/-/blob/main/CONTRIBUTING.md">OpenRPC</a> server.</h3>
+</div>
 
 ## Example Flask Server
 
