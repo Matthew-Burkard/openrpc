@@ -15,7 +15,15 @@
   <a href="https://gitlab.com/mburkard/openrpc/-/blob/main/CONTRIBUTING.md">OpenRPC</a> server.</h3>
 </div>
 
-## Example Flask Server
+## Installation
+
+OpenRPC is on PyPI and can be installed with:
+
+```shell
+pip install openrpc
+```
+
+## Example Usage
 
 ```python
 from flask import Flask, Response, jsonify, request
