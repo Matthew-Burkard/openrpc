@@ -4,12 +4,12 @@ from functools import partial
 from typing import (
     Any,
     Callable,
-    get_args,
-    get_origin,
-    get_type_hints,
     Optional,
     Type,
     Union,
+    get_args,
+    get_origin,
+    get_type_hints,
 )
 
 from openrpc._rpc_server import RPCServer
@@ -29,11 +29,10 @@ log = logging.getLogger("openrpc")
 
 class OpenRPCServer:
     def __init__(
-        self, title: str, version: str, uncaught_error_code: Optional[int] = None
+        self, info: InfoObject, uncaught_error_code: Optional[int] = None
     ) -> None:
         self.server = RPCServer(uncaught_error_code)
-        self.title: str = title
-        self.version: str = version
+        self.info: InfoObject = info
         self.components: ComponentsObject = ComponentsObject(schemas={})
         self.server.method(self.discover, method=MethodObject(name="rpc.discover"))
 
@@ -61,7 +60,7 @@ class OpenRPCServer:
             method.result = method.result or self._get_result(rpc_method.fun)
         return OpenRPCObject(
             openrpc="1.2.6",
-            info=InfoObject(title=self.title, version=self.version),
+            info=self.info,
             methods=[
                 it.method
                 for it in self.server.methods.values()

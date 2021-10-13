@@ -17,7 +17,7 @@ from jsonrpcobjects.objects import (
 )
 from pydantic import BaseModel
 
-from openrpc.objects import MethodObject
+from openrpc.objects import InfoObject, MethodObject
 from openrpc.server import OpenRPCServer
 
 INTERNAL_ERROR = -32603
@@ -36,7 +36,8 @@ class Vector3(BaseModel):
 
 class RPCTest(unittest.TestCase):
     def __init__(self, *args) -> None:
-        self.server = OpenRPCServer("Test JSON RPC", "1.0.0")
+        self.info = InfoObject(title="Test JSON RPC", version="1.0.0")
+        self.server = OpenRPCServer(self.info)
         self.server.method(add)
         self.server.method(subtract)
         self.server.method(divide)
@@ -125,7 +126,7 @@ class RPCTest(unittest.TestCase):
     def test_server_error(self) -> None:
         uncaught_code = SERVER_ERROR
         request = RequestObjectParams(id=1, method="divide", params=[0, 0])
-        server = OpenRPCServer("Test JSON RPC", "1.0.0", uncaught_code)
+        server = OpenRPCServer(self.info, uncaught_code)
         server.method(divide)
         resp = json.loads(server.process_request(request.json()))
         self.assertEqual(uncaught_code, resp["error"]["code"])
@@ -323,7 +324,8 @@ def args_and_kwargs(*args, **kwargs) -> Any:
 
 class OpenRPCTest(unittest.TestCase):
     def __init__(self, *args) -> None:
-        self.server = OpenRPCServer("Open RPC Test Server", "1.0.0")
+        self.info = InfoObject(title="Test OpenRPC", version="1.0.0")
+        self.server = OpenRPCServer(self.info)
         self.server.method(increment)
         self.server.method(get_distance)
         self.server.method(return_none)
@@ -336,7 +338,7 @@ class OpenRPCTest(unittest.TestCase):
             resp["result"],
             {
                 "openrpc": "1.2.6",
-                "info": {"title": "Open RPC Test Server", "version": "1.0.0"},
+                "info": {"title": "Test OpenRPC", "version": "1.0.0"},
                 "methods": [
                     {
                         "name": "increment",
