@@ -41,9 +41,9 @@ class RegisteredMethod:
 
 
 class RPCServer:
-    def __init__(self, uncaught_error_code: Optional[int] = None) -> None:
+    def __init__(self, server_error_code: int) -> None:
         self.methods: dict[str, RegisteredMethod] = {}
-        self.uncaught_error_code: Optional[int] = uncaught_error_code
+        self.uncaught_error_code: Optional[int] = server_error_code
 
     def method(self, func: T, method: MethodObject) -> T:
         log.debug("Registering method [%s]", func.__name__)

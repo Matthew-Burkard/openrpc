@@ -28,10 +28,8 @@ log = logging.getLogger("openrpc")
 
 
 class OpenRPCServer:
-    def __init__(
-        self, info: InfoObject, uncaught_error_code: Optional[int] = None
-    ) -> None:
-        self.server = RPCServer(uncaught_error_code)
+    def __init__(self, info: InfoObject, server_error_code: int = -32000) -> None:
+        self.server = RPCServer(server_error_code)
         self.info: InfoObject = info
         self.components: ComponentsObject = ComponentsObject(schemas={})
         self.server.method(self.discover, method=MethodObject(name="rpc.discover"))

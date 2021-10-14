@@ -118,11 +118,6 @@ class RPCTest(unittest.TestCase):
         resp = json.loads(self.server.process_request(request.json()))
         self.assertEqual(METHOD_NOT_FOUND, resp["error"]["code"])
 
-    def test_internal_error(self) -> None:
-        request = RequestObjectParams(id=1, method="divide", params=[0, 0])
-        resp = json.loads(self.server.process_request(request.json()))
-        self.assertEqual(INTERNAL_ERROR, resp["error"]["code"])
-
     def test_server_error(self) -> None:
         uncaught_code = SERVER_ERROR
         request = RequestObjectParams(id=1, method="divide", params=[0, 0])
@@ -172,7 +167,7 @@ class RPCTest(unittest.TestCase):
         self.assertEqual(divide_id, divide_resp.id)
         self.assertEqual(4, add_resp.result)
         self.assertEqual(0, subtract_resp.result)
-        self.assertEqual(INTERNAL_ERROR, divide_resp.error.code)
+        self.assertEqual(SERVER_ERROR, divide_resp.error.code)
         self.assertEqual(len(responses), 3)
 
     def test_list_param(self) -> None:
