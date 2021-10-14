@@ -26,71 +26,124 @@ OpenRPC is on PyPI and can be installed with:
 pip install openrpc
 ```
 
-## Example Usage
+## Usage
+
+This library provides an `OpenRPCServer` class that can be used to
+quickly create an OpenRPCServer; it takes as an argument an `InfoObject`
+which needs at minimum a title and version.
+
+```python
+from openrpc.objects import InfoObject
+from openrpc.server import OpenRPCServer
+
+rpc = OpenRPCServer(InfoObject(title="Demo Server", version="1.0.0"))
+```
+
+### Register a function as an RPC Method
+
+To register a method with the OpenRPCServer add the `@rpc.method`
+decorator to a method.
+
+```python
+@rpc.method
+def add(a: int, b: int) -> int:
+    return a + b
+```
+
+#### RPC Discover
+
+The `rpc.discover` method is automatically generated. It relies heavily
+on type hints.
+
+### Process JSON RPC Request
+
+OpenRPC is transport agnostic. To use it, pass JSON RPC requests to the
+`process_request` method.
+
+```python
+req = """
+{
+  "id": 1,
+  "method": "add",
+  "params": {"a": 2, "b": 2},
+  "jsonrpc": "2.0"
+}
+"""
+rpc.process_request(req)
+```
+
+## Example
 
 ```python
 from flask import Flask, Response, jsonify, request
+from openrpc.objects import InfoObject
 from openrpc.server import OpenRPCServer
 
 app = Flask(__name__)
-rpc = OpenRPCServer(title='Demo Server', version='1.0.0')
+rpc = OpenRPCServer(InfoObject(title="Demo Server", version="1.0.0"))
 
 
 @rpc.method
-def add(x: float, y: float) -> float:
-    return x + y
+def add(a: int, b: int) -> int:
+    return a + b
 
 
-@app.route('/api/v1/', methods=['POST'])
+@app.route("/api/v1/", methods=["POST"])
 def process_rpc() -> Response:
     return jsonify(rpc.process_request(request.json))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run()
 ```
 
 Example In
 
 ```json
-{
-  "method": "add",
-  "params": [
-    1,
-    2
-  ],
-  "id": 1,
-  "jsonrpc": "2.0"
-}
+[
+  {
+    "id": 1,
+    "method": "add",
+    "params": {"a": 1, "b": 3},
+    "jsonrpc": "2.0"
+  }, {
+    "id": 2,
+    "method": "add",
+    "params": [5, 7],
+    "jsonrpc": "2.0"
+  }, {
+    "id": 3,
+    "method": "add",
+    "params": [11, "thirteen"],
+    "jsonrpc": "2.0"
+  }
+]
 ```
 
 Example Result Out
 
 ```json
-{
-  "id": 1,
-  "result": 3,
-  "jsonrpc": "2.0"
-}
+[
+  {
+    "id": 1,
+    "result": 4,
+    "jsonrpc": "2.0"
+  }, {
+    "id": 2,
+    "result": 12,
+    "jsonrpc": "2.0"
+  }, {
+    "id": 3,
+    "error": {
+      "code": -32000,
+      "message": "TypeError: unsupported operand type(s) for +: 'int' and 'str'"
+    },
+    "jsonrpc": "2.0"
+  }
+]
 ```
 
-Example Error Out
-
-```json
-{
-  "id": 1,
-  "error": {
-    "code": -32000,
-    "message": "TypeError: unsupported operand type(s) for +: 'int' and 'str'"
-  },
-  "jsonrpc": "2.0"
-}
-```
-
-## RPC Discover
-
-The `rpc.discover` method for the server is automatically generated using
-Python type hints. Output for the example server above would be:
+Example RPC Discover
 
 ```json
 {
@@ -104,14 +157,14 @@ Python type hints. Output for the example server above would be:
       "name": "add",
       "params": [
         {
-          "name": "x",
+          "name": "a",
           "schema": {
             "type": "number"
           },
           "required": true
         },
         {
-          "name": "y",
+          "name": "b",
           "schema": {
             "type": "number"
           },
