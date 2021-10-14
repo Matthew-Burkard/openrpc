@@ -12,7 +12,7 @@
      alt="Contributions Welcome">
   </a>
   <h3>OpenRPC provides classes to rapidly develop an
-  <a href="https://gitlab.com/mburkard/openrpc/-/blob/main/CONTRIBUTING.md">OpenRPC</a> server.</h3>
+  <a href="https://open-rpc.org">OpenRPC</a> server.</h3>
 </div>
 
 ## Installation
