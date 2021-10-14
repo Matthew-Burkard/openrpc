@@ -6,6 +6,9 @@
   <img src="https://img.shields.io/badge/code%20style-black-000000.svg"
    height="20"
    alt="Code style: black">
+  <img src="https://img.shields.io/pypi/v/openrpc.svg"
+   height="20"
+   alt="PyPI version">
   <a href="https://gitlab.com/mburkard/openrpc/-/blob/main/CONTRIBUTING.md">
     <img src="https://img.shields.io/static/v1.svg?label=Contributions&message=Welcome&color=2267a0"
      height="20"
