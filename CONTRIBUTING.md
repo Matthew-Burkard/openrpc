@@ -3,6 +3,9 @@
 OpenRPC is open source and open to feedback and contributions from the
 community!
 
+This is on GitHub as a read-only mirror, the main repository is hosted
+[here](https://gitlab.com/mburkard/openrpc).
+
 ## Pull Requests
 
 - An [issue](https://gitlab.com/mburkard/openrpc/-/issues) should be
