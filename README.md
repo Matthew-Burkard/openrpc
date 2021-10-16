@@ -69,7 +69,7 @@ req = """
   "jsonrpc": "2.0"
 }
 """
-rpc.process_request(req)
+rpc.process_request(req)  # '{"id": 1, "result": 4, "jsonrpc": "2.0}'
 ```
 
 ## Example
