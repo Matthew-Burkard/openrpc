@@ -17,6 +17,7 @@ class SchemaObject(BaseModel):
     json_schema: Optional[str] = Field(alias="$schema", default=None)
     title: Optional[str] = None
     description: Optional[str] = None
+    format: Optional[str] = None
     type: Optional[Union[str, list[str]]] = None
     all_of: Optional[list[SchemaObject]] = Field(alias="allOf", default=None)
     any_of: Optional[list[SchemaObject]] = Field(alias="anyOf", default=None)
