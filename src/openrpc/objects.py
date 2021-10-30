@@ -14,23 +14,60 @@ class ParamStructure(Enum):
 
 class SchemaObject(BaseModel):
     id: Optional[str] = Field(alias="$id", default=None)
-    json_schema: Optional[str] = Field(alias="$schema", default=None)
     title: Optional[str] = None
-    description: Optional[str] = None
     format: Optional[str] = None
     type: Optional[Union[str, list[str]]] = None
     all_of: Optional[list[SchemaObject]] = Field(alias="allOf", default=None)
     any_of: Optional[list[SchemaObject]] = Field(alias="anyOf", default=None)
     one_of: Optional[list[SchemaObject]] = Field(alias="oneOf", default=None)
     not_: Optional[SchemaObject] = Field(alias="not", default=None)
-    properties: Optional[dict[str, SchemaObject]] = None
+    pattern: Optional[str] = None
+    minimum: Optional[float] = None
+    maximum: Optional[float] = None
+    exclusive_minimum: Optional[float] = Field(alias="exclusiveMinimum", default=None)
+    exclusive_maximum: Optional[float] = Field(alias="exclusiveMaximum", default=None)
+    multiple_of: Optional[float] = Field(alias="multipleOf", default=None)
+    min_length: Optional[int] = Field(alias="minLength", default=None)
+    max_length: Optional[int] = Field(alias="maxLength", default=None)
+    pattern_properties: Optional[dict[str, SchemaObject]] = Field(
+        alias="patternProperties", default=None
+    )
     additional_properties: Optional[Union[bool, dict[str, Any]]] = Field(
         alias="additionalProperties", default=None
     )
+    property_names: Optional[SchemaObject] = Field(alias="propertyNames", default=None)
+    min_properties: Optional[int] = Field(alias="minProperties", default=None)
+    max_properties: Optional[int] = Field(alias="maxProperties", default=None)
     required: Optional[list[str]] = None
-    definitions: Optional[dict[str, SchemaObject]]
-    items: Optional[SchemaObject]
+    definitions: Optional[dict[str, SchemaObject]] = None
+    items: Optional[Union[SchemaObject, bool]] = None
+    prefix_items: Optional[list[SchemaObject]] = Field(
+        alias="prefixItems", default=None
+    )
+    contains: Optional[SchemaObject] = None
+    min_contains: Optional[int] = Field(alias="minContains", default=None)
+    max_contains: Optional[int] = Field(alias="maxContains", default=None)
+    min_items: Optional[int] = Field(alias="minItems", default=None)
+    max_items: Optional[int] = Field(alias="maxItems", default=None)
+    unique_items: Optional[bool] = Field(alias="uniqueItems", default=None)
     ref: Optional[str] = Field(alias="$ref", default=None)
+    description: Optional[str] = None
+    deprecated: Optional[bool] = None
+    default: Optional[Any] = None
+    examples: Optional[list[Any]] = None
+    read_only: Optional[bool] = Field(alias="readOnly", default=None)
+    write_only: Optional[bool] = Field(alias="writeOnly", default=None)
+    const: Optional[Any] = None
+    dependent_required: Optional[dict[str, list[str]]] = Field(
+        alias="dependentRequired", default=None
+    )
+    dependent_schemas: Optional[dict[str, SchemaObject]] = Field(
+        alias="dependentSchemas", default=None
+    )
+    if_: Optional[SchemaObject] = Field(alias="if", default=None)
+    then: Optional[SchemaObject] = None
+    else_: Optional[SchemaObject] = Field(alias="else", default=None)
+    schema_dialect: Optional[str] = Field(alias="$schema", default=None)
 
 
 class ServerVariableObject(BaseModel):
