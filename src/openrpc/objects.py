@@ -29,6 +29,7 @@ class SchemaObject(BaseModel):
     multiple_of: Optional[float] = Field(alias="multipleOf", default=None)
     min_length: Optional[int] = Field(alias="minLength", default=None)
     max_length: Optional[int] = Field(alias="maxLength", default=None)
+    properties: Optional[dict[str, SchemaObject]] = None
     pattern_properties: Optional[dict[str, SchemaObject]] = Field(
         alias="patternProperties", default=None
     )
