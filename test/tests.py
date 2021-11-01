@@ -330,8 +330,8 @@ class OpenRPCTest(unittest.TestCase):
     def test_open_rpc(self) -> None:
         request = RequestObject(id=1, method="rpc.discover")
         resp = json.loads(self.server.process_request(request.json(by_alias=True)))
+        # FIXME Too much packed into one test.
         self.assertEqual(
-            resp["result"],
             {
                 "openrpc": "1.2.6",
                 "info": {"title": "Test OpenRPC", "version": "1.0.0"},
@@ -388,6 +388,31 @@ class OpenRPCTest(unittest.TestCase):
                             "required": True,
                         },
                     },
+                    {
+                        "name": "default_value",
+                        "params": [
+                            {
+                                "name": "a",
+                                "schema": {"type": "number"},
+                                "required": False,
+                            },
+                            {
+                                "name": "b",
+                                "schema": {"type": "number"},
+                                "required": False,
+                            },
+                            {
+                                "name": "c",
+                                "schema": {"type": "string"},
+                                "required": False,
+                            },
+                        ],
+                        "result": {
+                            "name": "result",
+                            "schema": {"type": "string"},
+                            "required": True,
+                        },
+                    },
                 ],
                 "components": {
                     "schemas": {
@@ -404,6 +429,7 @@ class OpenRPCTest(unittest.TestCase):
                     }
                 },
             },
+            resp["result"]
         )
 
 
