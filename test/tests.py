@@ -325,111 +325,139 @@ class OpenRPCTest(unittest.TestCase):
         self.server.method(get_distance)
         self.server.method(return_none)
         self.server.method(default_value)
+        request = RequestObject(id=1, method="rpc.discover")
+        resp = json.loads(self.server.process_request(request.json(by_alias=True)))
+        self.discover_result = resp["result"]
         super(OpenRPCTest, self).__init__(*args)
 
     def test_open_rpc(self) -> None:
-        request = RequestObject(id=1, method="rpc.discover")
-        resp = json.loads(self.server.process_request(request.json(by_alias=True)))
-        # FIXME Too much packed into one test.
+        self.assertEqual("1.2.6", self.discover_result["openrpc"])
+        self.assertEqual(
+            {"title": "Test OpenRPC", "version": "1.0.0"}, self.discover_result["info"]
+        )
+
+    def test_lists(self) -> None:
+        method = [
+            m for m in self.discover_result["methods"] if m["name"] == "increment"
+        ][0]
         self.assertEqual(
             {
-                "openrpc": "1.2.6",
-                "info": {"title": "Test OpenRPC", "version": "1.0.0"},
-                "methods": [
+                "name": "increment",
+                "params": [
                     {
-                        "name": "increment",
-                        "params": [
-                            {
-                                "name": "numbers",
-                                "schema": {"type": "array", "items": {"type": None}},
-                                "required": True,
-                            }
-                        ],
-                        "result": {
-                            "name": "result",
-                            "schema": {"type": "array", "items": {"type": None}},
-                            "required": True,
-                        },
-                    },
-                    {
-                        "name": "get_distance",
-                        "params": [
-                            {
-                                "name": "position",
-                                "schema": {"$ref": "#/components/schemas/Vector3"},
-                                "required": True,
-                            },
-                            {
-                                "name": "target",
-                                "schema": {"$ref": "#/components/schemas/Vector3"},
-                                "required": True,
-                            },
-                        ],
-                        "result": {
-                            "name": "result",
-                            "schema": {"$ref": "#/components/schemas/Vector3"},
-                            "required": True,
-                        },
-                    },
-                    {
-                        "name": "return_none",
-                        "params": [
-                            {
-                                "name": "optional_param",
-                                "schema": {
-                                    "anyOf": [{"type": "string"}, {"type": "null"}]
-                                },
-                                "required": False,
-                            }
-                        ],
-                        "result": {
-                            "name": "result",
-                            "schema": {"type": "null"},
-                            "required": True,
-                        },
-                    },
-                    {
-                        "name": "default_value",
-                        "params": [
-                            {
-                                "name": "a",
-                                "schema": {"type": "number"},
-                                "required": False,
-                            },
-                            {
-                                "name": "b",
-                                "schema": {"type": "number"},
-                                "required": False,
-                            },
-                            {
-                                "name": "c",
-                                "schema": {"type": "string"},
-                                "required": False,
-                            },
-                        ],
-                        "result": {
-                            "name": "result",
-                            "schema": {"type": "string"},
-                            "required": True,
-                        },
-                    },
-                ],
-                "components": {
-                    "schemas": {
-                        "Vector3": {
-                            "type": "object",
-                            "properties": {
-                                "x": {"title": "X", "type": "number"},
-                                "y": {"title": "Y", "type": "number"},
-                                "z": {"title": "Z", "type": "number"},
-                            },
-                            "required": ["x", "y", "z"],
-                            "title": "Vector3",
-                        }
+                        "name": "numbers",
+                        "schema": {"type": "array", "items": {"type": None}},
+                        "required": True,
                     }
+                ],
+                "result": {
+                    "name": "result",
+                    "schema": {"type": "array", "items": {"type": None}},
+                    "required": True,
                 },
             },
-            resp["result"]
+            method,
+        )
+
+    def test_schema_params(self) -> None:
+        method = [
+            m for m in self.discover_result["methods"] if m["name"] == "get_distance"
+        ][0]
+        self.assertEqual(
+            {
+                "name": "get_distance",
+                "params": [
+                    {
+                        "name": "position",
+                        "schema": {"$ref": "#/components/schemas/Vector3"},
+                        "required": True,
+                    },
+                    {
+                        "name": "target",
+                        "schema": {"$ref": "#/components/schemas/Vector3"},
+                        "required": True,
+                    },
+                ],
+                "result": {
+                    "name": "result",
+                    "schema": {"$ref": "#/components/schemas/Vector3"},
+                    "required": True,
+                },
+            },
+            method,
+        )
+
+    def test_defaults(self) -> None:
+        method = [
+            m for m in self.discover_result["methods"] if m["name"] == "default_value"
+        ][0]
+        self.assertEqual(
+            {
+                "name": "default_value",
+                "params": [
+                    {
+                        "name": "a",
+                        "schema": {"type": "number"},
+                        "required": False,
+                    },
+                    {
+                        "name": "b",
+                        "schema": {"type": "number"},
+                        "required": False,
+                    },
+                    {
+                        "name": "c",
+                        "schema": {"type": "string"},
+                        "required": False,
+                    },
+                ],
+                "result": {
+                    "name": "result",
+                    "schema": {"type": "string"},
+                    "required": True,
+                },
+            },
+            method,
+        )
+
+    def test_return_none(self) -> None:
+        method = [
+            m for m in self.discover_result["methods"] if m["name"] == "return_none"
+        ][0]
+        self.assertEqual(
+            {
+                "name": "return_none",
+                "params": [
+                    {
+                        "name": "optional_param",
+                        "schema": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+                        "required": False,
+                    }
+                ],
+                "result": {
+                    "name": "result",
+                    "schema": {"type": "null"},
+                    "required": True,
+                },
+            },
+            method,
+        )
+
+    def test_schemas(self) -> None:
+        self.assertEqual(
+            {
+                "Vector3": {
+                    "type": "object",
+                    "properties": {
+                        "x": {"title": "X", "type": "number"},
+                        "y": {"title": "Y", "type": "number"},
+                        "z": {"title": "Z", "type": "number"},
+                    },
+                    "required": ["x", "y", "z"],
+                    "title": "Vector3",
+                }
+            },
+            self.discover_result["components"]["schemas"],
         )
 
 
