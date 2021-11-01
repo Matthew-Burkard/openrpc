@@ -324,6 +324,7 @@ class OpenRPCTest(unittest.TestCase):
         self.server.method(increment)
         self.server.method(get_distance)
         self.server.method(return_none)
+        self.server.method(default_value)
         super(OpenRPCTest, self).__init__(*args)
 
     def test_open_rpc(self) -> None:
@@ -416,6 +417,10 @@ def get_distance(position: Vector3, target: Vector3) -> Vector3:
         y=position.y - target.y,
         z=position.z - target.z,
     )
+
+
+def default_value(a: int = 2, b: float = 0.99792458, c: str = "c") -> str:
+    return f"{c}{a + b}^8"
 
 
 # noinspection PyUnusedLocal
