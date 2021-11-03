@@ -75,7 +75,7 @@ rpc.process_request(req)  # '{"id": 1, "result": 4, "jsonrpc": "2.0}'
 ## Example
 
 ```python
-from flask import Flask, Response, jsonify, request
+from flask import Flask, Response, request
 from openrpc.objects import InfoObject
 from openrpc.server import OpenRPCServer
 
@@ -90,7 +90,7 @@ def add(a: int, b: int) -> int:
 
 @app.route("/api/v1/", methods=["POST"])
 def process_rpc() -> Response:
-    return jsonify(rpc.process_request(request.json))
+    return rpc.process_request(request.json)
 
 
 if __name__ == "__main__":
