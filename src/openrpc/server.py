@@ -1,15 +1,16 @@
+import inspect
 import logging
 import re
 from functools import partial
 from typing import (
     Any,
     Callable,
-    Optional,
-    Type,
-    Union,
     get_args,
     get_origin,
     get_type_hints,
+    Optional,
+    Type,
+    Union,
 )
 
 from openrpc._rpc_server import RPCServer
@@ -68,11 +69,17 @@ class OpenRPCServer:
         ).dict(by_alias=True, exclude_unset=True)
 
     def _get_params(self, fun: Callable) -> list[ContentDescriptorObject]:
+        # noinspection PyUnresolvedReferences,PyProtectedMember
+        has_default = {
+            k
+            for k, v in inspect.signature(fun).parameters.items()
+            if v.default != inspect._empty
+        }
         return [
             ContentDescriptorObject(
                 name=name,
                 schema=self._get_schema(annotation),
-                required=self._is_required(annotation),
+                required=name not in has_default and self._is_required(annotation),
             )
             for name, annotation in get_type_hints(fun).items()
             if name != "return"
