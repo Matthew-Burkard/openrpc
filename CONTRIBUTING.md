@@ -8,6 +8,8 @@ This is on GitHub as a read-only mirror, the main repository is hosted
 
 ## Pull Requests
 
+- OpenRPC uses [poetry](https://python-poetry.org/docs/) for dependency
+  management and packaging.
 - An [issue](https://gitlab.com/mburkard/openrpc/-/issues) should be
   made for any substantial changes.
 - Commit messages should follow the
