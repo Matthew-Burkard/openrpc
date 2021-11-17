@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openrpc"
-version = "1.1.11"
+version = "1.1.12"
 description = "OpenRPC provides classes to rapidly develop an OpenRPC server."
 readme = "README.md"
 repository = "https://gitlab.com/mburkard/openrpc"
