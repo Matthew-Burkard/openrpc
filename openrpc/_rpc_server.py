@@ -16,6 +16,7 @@ from jsonrpcobjects.objects import (
     RequestObjectParams,
     RequestType,
 )
+from pydantic import ValidationError
 
 from openrpc._request_processor import RequestProcessor
 from openrpc.objects import MethodObject
@@ -24,6 +25,8 @@ __all__ = ("RPCServer",)
 
 T = Type[Callable]
 log = logging.getLogger("openrpc")
+NotificationTypes = (NotificationObject, NotificationObjectParams)
+RequestTypes = (RequestObject, RequestObjectParams)
 
 
 @dataclass
@@ -56,7 +59,7 @@ class RPCServer:
                 if it.method not in self.methods.keys():
                     results.append(
                         ErrorResponseObject(
-                            id=None if isinstance(it, NotificationType) else it.id,
+                            id=None if isinstance(it, NotificationTypes) else it.id,
                             error=ErrorObjectData(
                                 **{**METHOD_NOT_FOUND.dict(), **{"data": it.method}}
                             ),
@@ -66,10 +69,12 @@ class RPCServer:
                 fun = self.methods[it.method].fun
                 if isinstance(it, ErrorResponseObject):
                     results.append(it.json())
-                elif isinstance(it, RequestType):
-                    results.append(RequestProcessor(fun, it).execute())
+                elif isinstance(it, RequestTypes):
+                    results.append(
+                        RequestProcessor(fun, self.uncaught_error_code, it).execute()
+                    )
                 else:
-                    RequestProcessor(fun, it).execute()
+                    RequestProcessor(fun, self.uncaught_error_code, it).execute()
             return f"[{','.join(results)}]"
 
         # Single Request
@@ -79,13 +84,15 @@ class RPCServer:
             return req.json()
         if req.method not in self.methods.keys():
             return ErrorResponseObject(
-                id=None if isinstance(req, NotificationType) else req.id,
+                id=None if isinstance(req, NotificationTypes) else req.id,
                 error=ErrorObjectData(
                     **{**METHOD_NOT_FOUND.dict(), **{"data": req.method}}
                 ),
             ).json()
-        result = RequestProcessor(self.methods[req.method].fun, req).execute()
-        return None if isinstance(req, NotificationType) else result
+        result = RequestProcessor(
+            self.methods[req.method].fun, self.uncaught_error_code, req
+        ).execute()
+        return None if isinstance(req, NotificationTypes) else result
 
     async def process_async(self, data: Union[bytes, str]) -> Optional[str]:
         parsed_json = get_parsed_json(data)
@@ -98,7 +105,7 @@ class RPCServer:
             async def one_iter(it) -> Any:
                 if it.method not in self.methods.keys():
                     return ErrorResponseObject(
-                        id=None if isinstance(it, NotificationType) else it.id,
+                        id=None if isinstance(it, NotificationTypes) else it.id,
                         error=ErrorObjectData(
                             **{**METHOD_NOT_FOUND.dict(), **{"data": it.method}}
                         ),
@@ -107,9 +114,13 @@ class RPCServer:
                 fun = self.methods[it.method].fun
                 if isinstance(it, ErrorResponseObject):
                     return it.json()
-                elif isinstance(it, RequestType):
-                    return await RequestProcessor(fun, it).execute_async()
-                await RequestProcessor(fun, it).execute_async()
+                elif isinstance(it, RequestTypes):
+                    return await RequestProcessor(
+                        fun, self.uncaught_error_code, it
+                    ).execute_async()
+                await RequestProcessor(
+                    fun, self.uncaught_error_code, it
+                ).execute_async()
 
             results = await asyncio.gather(
                 one_iter(get_request_object(it)) for it in parsed_json
@@ -123,15 +134,15 @@ class RPCServer:
             return req.json()
         if req.method not in self.methods.keys():
             return ErrorResponseObject(
-                id=None if isinstance(req, NotificationType) else req.id,
+                id=None if isinstance(req, NotificationTypes) else req.id,
                 error=ErrorObjectData(
                     **{**METHOD_NOT_FOUND.dict(), **{"data": req.method}}
                 ),
             ).json()
         result = await RequestProcessor(
-            self.methods[req.method].fun, req
+            self.methods[req.method].fun, self.uncaught_error_code, req
         ).execute_async()
-        return None if isinstance(req, NotificationType) else result
+        return None if isinstance(req, NotificationTypes) else result
 
 
 def get_parsed_json(data: Union[bytes, str]) -> Union[ErrorResponseObject, dict, list]:
@@ -151,7 +162,7 @@ def get_parsed_json(data: Union[bytes, str]) -> Union[ErrorResponseObject, dict,
 
 def get_request_object(
     data: dict[str, Any]
-) -> Union[RequestType, NotificationType, ErrorResponseObject]:
+) -> Union[ErrorResponseObject, NotificationType, RequestType]:
     is_request = data.get("id") is not None
     has_params = data.get("params") is not None
 
@@ -159,7 +170,7 @@ def get_request_object(
         if is_request:
             return (RequestObjectParams if has_params else RequestObject)(**data)
         return (NotificationObjectParams if has_params else NotificationObject)(**data)
-    except TypeError as e:
+    except (TypeError, ValidationError) as e:
         log.exception(f"{type(e).__name__}:")
         return ErrorResponseObject(
             id=data.get("id"),
