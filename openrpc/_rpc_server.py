@@ -60,7 +60,7 @@ class RPCServer:
                         ErrorResponseObject(
                             id=None if isinstance(it, NotificationType) else it.id,
                             error=ErrorObjectData(
-                                **{**METHOD_NOT_FOUND.dict(), **{"data": parsed_json}}
+                                **{**METHOD_NOT_FOUND.dict(), **{"data": it.method}}
                             ),
                         ).json()
                     )
@@ -79,7 +79,7 @@ class RPCServer:
             return ErrorResponseObject(
                 id=None if isinstance(req, NotificationType) else req.id,
                 error=ErrorObjectData(
-                    **{**METHOD_NOT_FOUND.dict(), **{"data": parsed_json}}
+                    **{**METHOD_NOT_FOUND.dict(), **{"data": req.method}}
                 ),
             ).json()
         result = RequestProcessor(req).execute()
@@ -100,7 +100,7 @@ class RPCServer:
                     return ErrorResponseObject(
                         id=None if isinstance(it, NotificationType) else it.id,
                         error=ErrorObjectData(
-                            **{**METHOD_NOT_FOUND.dict(), **{"data": parsed_json}}
+                            **{**METHOD_NOT_FOUND.dict(), **{"data": it.method}}
                         ),
                     ).json()
                 elif isinstance(it, RequestType):
@@ -121,7 +121,7 @@ class RPCServer:
             return ErrorResponseObject(
                 id=None if isinstance(req, NotificationType) else req.id,
                 error=ErrorObjectData(
-                    **{**METHOD_NOT_FOUND.dict(), **{"data": parsed_json}}
+                    **{**METHOD_NOT_FOUND.dict(), **{"data": req.method}}
                 ),
             ).json()
         result = await RequestProcessor(req).execute_async()
