@@ -1,24 +1,18 @@
 import json
 import unittest
 import uuid
-from json import JSONDecodeError
 from typing import Any, Optional, Union
 
-from jsonrpcobjects.errors import JSONRPCError
 from jsonrpcobjects.objects import (
-    ErrorObject,
-    ErrorObjectData,
-    ErrorResponseObject,
     NotificationObjectParams,
     RequestObject,
     RequestObjectParams,
-    ResponseType,
-    ResultResponseObject,
 )
 from pydantic import BaseModel
 
 from openrpc.objects import InfoObject, MethodObject
 from openrpc.server import OpenRPCServer
+from tests.util import parse_response
 
 INTERNAL_ERROR = -32603
 INVALID_PARAMS = -32602
@@ -46,7 +40,7 @@ class RPCTest(unittest.TestCase):
 
     def test_array_params(self) -> None:
         request = RequestObjectParams(id=1, method="add", params=[2, 2])
-        resp = self.server.process_request(request.json(by_alias=True))
+        resp = self.server.process_request(request.json())
         self.assertEqual(4, json.loads(resp)["result"])
 
     def test_no_params(self) -> None:
@@ -55,12 +49,12 @@ class RPCTest(unittest.TestCase):
 
         self.server.method(get_none)
         request = RequestObject(id=1, method="get_none")
-        resp = self.server.process_request(request.json(by_alias=True))
+        resp = self.server.process_request(request.json())
         self.assertEqual(None, json.loads(resp)["result"])
 
     def test_object_params(self) -> None:
         request = RequestObjectParams(id=1, method="subtract", params={"x": 2, "y": 2})
-        resp = self.server.process_request(request.json(by_alias=True))
+        resp = self.server.process_request(request.json())
         self.assertEqual(0, json.loads(resp)["result"])
 
     def test_vararg_method(self) -> None:
@@ -69,7 +63,7 @@ class RPCTest(unittest.TestCase):
 
         self.server.method(summation)
         request = RequestObjectParams(id=1, method="summation", params=[1, 3, 5, 7, 11])
-        resp = self.server.process_request(request.json(by_alias=True))
+        resp = self.server.process_request(request.json())
         self.assertEqual(27, json.loads(resp)["result"])
 
     def test_kwarg_method(self) -> None:
@@ -80,28 +74,28 @@ class RPCTest(unittest.TestCase):
         request = RequestObjectParams(
             id=1, method="pythagorean", params={"a": 3, "b": 4, "c": 5}
         )
-        resp = self.server.process_request(request.json(by_alias=True))
+        resp = self.server.process_request(request.json())
         self.assertEqual(True, json.loads(resp)["result"])
 
     def test_vararg_method_with_no_params(self) -> None:
         request = RequestObject(id=1, method="args_and_kwargs")
-        resp = self.server.process_request(request.json(by_alias=True))
+        resp = self.server.process_request(request.json())
         self.assertEqual([{}], json.loads(resp)["result"])
 
     def test_kwarg_method_with_no_params(self) -> None:
         request = RequestObject(id=1, method="args_and_kwargs")
-        resp = self.server.process_request(request.json(by_alias=True))
+        resp = self.server.process_request(request.json())
         self.assertEqual([{}], json.loads(resp)["result"])
 
     def test_no_result(self) -> None:
         request = RequestObjectParams(id=1, method="does not exist", params=[])
-        resp = self.server.process_request(request.json(by_alias=True))
+        resp = self.server.process_request(request.json())
         self.assertNotIn("result", json.loads(resp).keys())
         self.assertIn("error", json.loads(resp).keys())
 
     def test_no_error(self) -> None:
         request = RequestObjectParams(id=1, method="add", params=[1, 2])
-        resp = self.server.process_request(request.json(by_alias=True))
+        resp = self.server.process_request(request.json())
         self.assertNotIn("error", json.loads(resp).keys())
         self.assertIn("result", json.loads(resp).keys())
 
@@ -139,6 +133,7 @@ class RPCTest(unittest.TestCase):
         resp = json.loads(self.server.process_request(request.json()))
         self.assertEqual(req_id, resp["id"])
 
+    # noinspection DuplicatedCode
     def test_batch(self) -> None:
         add_id = str(uuid.uuid4())
         subtract_id = str(uuid.uuid4())
@@ -326,7 +321,7 @@ class OpenRPCTest(unittest.TestCase):
         self.server.method(return_none)
         self.server.method(default_value)
         request = RequestObject(id=1, method="rpc.discover")
-        resp = json.loads(self.server.process_request(request.json(by_alias=True)))
+        resp = json.loads(self.server.process_request(request.json()))
         self.discover_result = resp["result"]
         super(OpenRPCTest, self).__init__(*args)
 
@@ -480,24 +475,3 @@ def default_value(a: int = 2, b: float = 0.99792458, c: str = "c") -> str:
 # noinspection PyUnusedLocal
 def return_none(optional_param: Optional[str]) -> None:
     return None
-
-
-def parse_response(data: Union[bytes, str]) -> ResponseType:
-    try:
-        resp = json.loads(data)
-        if resp.get("error"):
-            error_resp = ErrorResponseObject(**resp)
-            if resp["error"].get("data"):
-                error_resp.error = ErrorObjectData(**resp["error"])
-            else:
-                error_resp.error = ErrorObject(**resp["error"])
-            return error_resp
-        if "result" in resp.keys():
-            return ResultResponseObject(**resp)
-        raise JSONRPCError(
-            ErrorObject(code=-32000, message="Unable to parse response.")
-        )
-    except (JSONDecodeError, TypeError, AttributeError):
-        raise JSONRPCError(
-            ErrorObject(code=-32000, message="Unable to parse response.")
-        )
