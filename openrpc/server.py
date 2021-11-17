@@ -50,6 +50,12 @@ class OpenRPCServer:
         log.debug("Responding : %s", resp)
         return resp
 
+    async def process_request_async(self, data: Union[bytes, str]) -> Optional[str]:
+        log.debug("Processing request: %s", data)
+        resp = await self.server.process_async(data)
+        log.debug("Responding : %s", resp)
+        return resp
+
     def discover(self) -> dict[str, Any]:
         for name, rpc_method in self.server.methods.items():
             if name == "rpc.discover":
