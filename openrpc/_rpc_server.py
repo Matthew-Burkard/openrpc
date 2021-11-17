@@ -105,9 +105,9 @@ class RPCServer:
                 ).execute_async()
 
             results = await asyncio.gather(
-                one_iter(get_request_object(it)) for it in parsed_json
+                *[one_iter(get_request_object(it)) for it in parsed_json]
             )
-            return f"[{','.join(results)}]"
+            return f"[{','.join(str(r) for r in results if r is not None)}]"
 
         # Single Request
         req = get_request_object(parsed_json)
