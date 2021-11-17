@@ -1,3 +1,4 @@
+import inspect
 import logging
 from typing import (
     Any,
@@ -24,7 +25,6 @@ from jsonrpcobjects.objects import (
 
 __all__ = ("RequestProcessor",)
 
-
 log = logging.getLogger("openrpc")
 
 
@@ -41,43 +41,58 @@ class RequestProcessor:
 
     def execute(self) -> Optional[str]:
         try:
-            annotations = get_type_hints(self.method)
-
-            # Call method.
-            if isinstance(self.request, (RequestObject, NotificationObject)):
-                result = self.method()
-            elif isinstance(self.request.params, list):
-                result = self.method(
-                    *self._get_list_params(self.request.params, annotations)
-                )
-            elif isinstance(self.request.params, dict):
-                result = self.method(
-                    **self._get_dict_params(self.request.params, annotations)
-                )
-            else:
-                result = self.method()
-
-            # Return proper response object.
+            result = self._execute()
             if isinstance(self.request, (NotificationObject, NotificationObjectParams)):
                 # If request was notification, return nothing.
                 return None
             return ResultResponseObject(id=self.request.id, result=result).json()
 
         except Exception as e:
-            log.exception(f"{type(e).__name__}:")
-            if self.uncaught_error_code:
-                return ErrorResponseObject(
-                    id=self.request.id,
-                    error=ErrorObjectData(
-                        code=self.uncaught_error_code,
-                        message="Server error",
-                        data=f"{type(e).__name__}: {e}",
-                    ),
-                ).json()
-            return ErrorResponseObject(id=self.request.id, error=INTERNAL_ERROR).json()
+            return self.get_error_response(e)
 
-    def execute_async(self) -> Any:
-        pass
+    async def execute_async(self) -> Any:
+        try:
+            result = self._execute()
+            if inspect.isawaitable(result):
+                result = await result
+            if isinstance(self.request, (NotificationObject, NotificationObjectParams)):
+                # If request was notification, return nothing.
+                return None
+            return ResultResponseObject(id=self.request.id, result=result).json()
+
+        except Exception as e:
+            return self.get_error_response(e)
+
+    def _execute(self) -> Any:
+        annotations = get_type_hints(self.method)
+
+        # Call method.
+        if isinstance(self.request, (RequestObject, NotificationObject)):
+            result = self.method()
+        elif isinstance(self.request.params, list):
+            result = self.method(
+                *self._get_list_params(self.request.params, annotations)
+            )
+        elif isinstance(self.request.params, dict):
+            result = self.method(
+                **self._get_dict_params(self.request.params, annotations)
+            )
+        else:
+            result = self.method()
+        return result
+
+    def get_error_response(self, e: Exception):
+        log.exception(f"{type(e).__name__}:")
+        if self.uncaught_error_code:
+            return ErrorResponseObject(
+                id=self.request.id,
+                error=ErrorObjectData(
+                    code=self.uncaught_error_code,
+                    message="Server error",
+                    data=f"{type(e).__name__}: {e}",
+                ),
+            ).json()
+        return ErrorResponseObject(id=self.request.id, error=INTERNAL_ERROR).json()
 
     def _get_list_params(self, params: list, annotations: dict) -> list:
         try:

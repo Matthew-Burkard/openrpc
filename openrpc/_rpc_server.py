@@ -57,14 +57,7 @@ class RPCServer:
             results = []
             for it in requests:
                 if it.method not in self.methods.keys():
-                    results.append(
-                        ErrorResponseObject(
-                            id=None if isinstance(it, NotificationTypes) else it.id,
-                            error=ErrorObjectData(
-                                **{**METHOD_NOT_FOUND.dict(), **{"data": it.method}}
-                            ),
-                        ).json()
-                    )
+                    results.append(get_method_not_found_error(it))
 
                 fun = self.methods[it.method].fun
                 if isinstance(it, ErrorResponseObject):
@@ -78,17 +71,11 @@ class RPCServer:
             return f"[{','.join(results)}]"
 
         # Single Request
-        # noinspection DuplicatedCode
         req = get_request_object(parsed_json)
         if isinstance(req, ErrorResponseObject):
             return req.json()
         if req.method not in self.methods.keys():
-            return ErrorResponseObject(
-                id=None if isinstance(req, NotificationTypes) else req.id,
-                error=ErrorObjectData(
-                    **{**METHOD_NOT_FOUND.dict(), **{"data": req.method}}
-                ),
-            ).json()
+            return get_method_not_found_error(req)
         result = RequestProcessor(
             self.methods[req.method].fun, self.uncaught_error_code, req
         ).execute()
@@ -104,12 +91,7 @@ class RPCServer:
 
             async def one_iter(it) -> Any:
                 if it.method not in self.methods.keys():
-                    return ErrorResponseObject(
-                        id=None if isinstance(it, NotificationTypes) else it.id,
-                        error=ErrorObjectData(
-                            **{**METHOD_NOT_FOUND.dict(), **{"data": it.method}}
-                        ),
-                    ).json()
+                    return get_method_not_found_error(it)
 
                 fun = self.methods[it.method].fun
                 if isinstance(it, ErrorResponseObject):
@@ -128,21 +110,24 @@ class RPCServer:
             return f"[{','.join(results)}]"
 
         # Single Request
-        # noinspection DuplicatedCode
         req = get_request_object(parsed_json)
         if isinstance(req, ErrorResponseObject):
             return req.json()
         if req.method not in self.methods.keys():
-            return ErrorResponseObject(
-                id=None if isinstance(req, NotificationTypes) else req.id,
-                error=ErrorObjectData(
-                    **{**METHOD_NOT_FOUND.dict(), **{"data": req.method}}
-                ),
-            ).json()
+            return get_method_not_found_error(req)
         result = await RequestProcessor(
             self.methods[req.method].fun, self.uncaught_error_code, req
         ).execute_async()
         return None if isinstance(req, NotificationTypes) else result
+
+
+def get_method_not_found_error(req: Union[NotificationType, RequestType]) -> str:
+    return ErrorResponseObject(
+        id=None if isinstance(req, NotificationTypes) else req.id,
+        error=ErrorObjectData(
+            **{**METHOD_NOT_FOUND.dict(), **{"data": req.method}}
+        ),
+    ).json()
 
 
 def get_parsed_json(data: Union[bytes, str]) -> Union[ErrorResponseObject, dict, list]:
