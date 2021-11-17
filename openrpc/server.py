@@ -35,7 +35,9 @@ class OpenRPCServer:
         self.components: ComponentsObject = ComponentsObject(schemas={})
         self.server.method(self.discover, method=MethodObject(name="rpc.discover"))
 
-    def method(self, *args: tuple[T], method: Optional[MethodObject] = None) -> T:
+    def method(
+        self, *args: Union[T, tuple[T]], method: Optional[MethodObject] = None
+    ) -> T:
         if args:
             func = args[0]
             method = MethodObject()
@@ -48,7 +50,7 @@ class OpenRPCServer:
         log.debug("Responding : %s", resp)
         return resp
 
-    def process_request_async(self, data: Union[bytes, str]) -> Optional[str]:
+    async def process_request_async(self, data: Union[bytes, str]) -> Optional[str]:
         log.debug("Processing request: %s", data)
         resp = await self.server.process_async(data)
         log.debug("Responding : %s", resp)
