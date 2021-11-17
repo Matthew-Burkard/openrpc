@@ -3,14 +3,7 @@ import logging
 from dataclasses import dataclass
 from json import JSONDecodeError
 from typing import (
-    Any,
-    Callable,
-    Optional,
-    Type,
-    Union,
-    get_args,
-    get_origin,
-    get_type_hints,
+    Any, Callable, get_args, get_origin, get_type_hints, Optional, Type, Union,
 )
 
 from jsonrpcobjects.errors import INTERNAL_ERROR, INVALID_REQUEST, PARSE_ERROR
@@ -59,6 +52,10 @@ class RPCServer:
             log.exception(f"{type(e).__name__}:")
             return ErrorResponseObject(error=PARSE_ERROR).json()
 
+        if not isinstance(parsed_json, (list, dict)):
+            log.error("Invalid request [%s]", parsed_json)
+            return ErrorResponseObject(error=INVALID_REQUEST).json()
+
         # Process as single request or batch.
         try:
             if isinstance(parsed_json, dict) and parsed_json.get("id"):
@@ -66,16 +63,13 @@ class RPCServer:
             elif isinstance(parsed_json, dict) and not parsed_json.get("id"):
                 self._process_request(parsed_json)
                 return None
+
             if isinstance(parsed_json, list):
                 return f"[{self._process_requests(parsed_json)}]" or None
         except Exception as e:
             log.error("Invalid request [%s]", parsed_json)
             log.exception(f"{type(e).__name__}:")
             return ErrorResponseObject(error=INVALID_REQUEST).json()
-
-        # Request must be a JSON primitive.
-        log.error("Invalid request [%s]", parsed_json)
-        return ErrorResponseObject(error=INVALID_REQUEST).json()
 
     def _process_requests(self, data: list) -> str:
         # TODO async batch handling for better performance?
