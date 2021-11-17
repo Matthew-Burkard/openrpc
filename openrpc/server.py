@@ -5,12 +5,12 @@ from functools import partial
 from typing import (
     Any,
     Callable,
-    get_args,
-    get_origin,
-    get_type_hints,
     Optional,
     Type,
     Union,
+    get_args,
+    get_origin,
+    get_type_hints,
 )
 
 from openrpc._rpc_server import RPCServer
