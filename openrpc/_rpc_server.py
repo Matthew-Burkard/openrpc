@@ -1,12 +1,11 @@
+import asyncio
 import json
 import logging
 from dataclasses import dataclass
 from json import JSONDecodeError
-from typing import (
-    Any, Callable, get_args, get_origin, get_type_hints, Optional, Type, Union,
-)
+from typing import Any, Callable, Optional, Type, Union
 
-from jsonrpcobjects.errors import INTERNAL_ERROR, INVALID_REQUEST, PARSE_ERROR
+from jsonrpcobjects.errors import INVALID_REQUEST, METHOD_NOT_FOUND, PARSE_ERROR
 from jsonrpcobjects.objects import (
     ErrorObjectData,
     ErrorResponseObject,
@@ -16,13 +15,13 @@ from jsonrpcobjects.objects import (
     RequestObject,
     RequestObjectParams,
     RequestType,
-    ResponseType,
-    ResultResponseObject,
 )
 
+from openrpc._request_processor import RequestProcessor
 from openrpc.objects import MethodObject
 
 __all__ = ("RPCServer",)
+
 T = Type[Callable]
 log = logging.getLogger("openrpc")
 
@@ -45,134 +44,118 @@ class RPCServer:
         return func
 
     def process(self, data: Union[bytes, str]) -> Optional[str]:
-        # Parse JSON
-        try:
-            parsed_json = json.loads(data)
-        except (TypeError, JSONDecodeError) as e:
-            log.exception(f"{type(e).__name__}:")
-            return ErrorResponseObject(error=PARSE_ERROR).json()
+        parsed_json = get_parsed_json(data)
+        if isinstance(parsed_json, ErrorResponseObject):
+            return parsed_json.json()
 
-        if not isinstance(parsed_json, (list, dict)):
-            log.error("Invalid request [%s]", parsed_json)
-            return ErrorResponseObject(error=INVALID_REQUEST).json()
+        # Batch
+        if isinstance(parsed_json, list):
+            requests = [get_request_object(it) for it in parsed_json]
+            results = []
+            for it in requests:
+                if isinstance(it, ErrorResponseObject):
+                    results.append(it.json())
+                elif it.method not in self.methods.keys():
+                    results.append(
+                        ErrorResponseObject(
+                            id=None if isinstance(it, NotificationType) else it.id,
+                            error=ErrorObjectData(
+                                **{**METHOD_NOT_FOUND.dict(), **{"data": parsed_json}}
+                            ),
+                        ).json()
+                    )
+                elif isinstance(it, RequestType):
+                    results.append(RequestProcessor(it).execute())
+                else:
+                    RequestProcessor(it).execute()
+            return f"[{','.join(results)}]"
 
-        # Process as single request or batch.
-        try:
-            if isinstance(parsed_json, dict) and parsed_json.get("id"):
-                return self._process_request(parsed_json).json()
-            elif isinstance(parsed_json, dict) and not parsed_json.get("id"):
-                self._process_request(parsed_json)
-                return None
+        # Single Request
+        # noinspection DuplicatedCode
+        req = get_request_object(parsed_json)
+        if isinstance(req, ErrorResponseObject):
+            return req.json()
+        if req.method not in self.methods.keys():
+            return ErrorResponseObject(
+                id=None if isinstance(req, NotificationType) else req.id,
+                error=ErrorObjectData(
+                    **{**METHOD_NOT_FOUND.dict(), **{"data": parsed_json}}
+                ),
+            ).json()
+        result = RequestProcessor(req).execute()
+        return None if isinstance(req, NotificationType) else result
 
-            if isinstance(parsed_json, list):
-                return f"[{self._process_requests(parsed_json)}]" or None
-        except Exception as e:
-            log.error("Invalid request [%s]", parsed_json)
-            log.exception(f"{type(e).__name__}:")
-            return ErrorResponseObject(error=INVALID_REQUEST).json()
+    async def process_async(self, data: Union[bytes, str]) -> Optional[str]:
+        parsed_json = get_parsed_json(data)
+        if isinstance(parsed_json, ErrorResponseObject):
+            return parsed_json.json()
 
-    def _process_requests(self, data: list) -> str:
-        # TODO async batch handling for better performance?
-        # Process notifications.
-        [self._process_request(req) for req in data if not req.get("id")]
-        # Return request responses.
-        return ",".join(
-            [self._process_request(req).json() for req in data if req.get("id")]
-        )
+        # Batch
+        if isinstance(parsed_json, list):
 
-    def _process_request(self, data: dict) -> Optional[ResponseType]:
-        request = self._get_request(data)
-        try:
-            return self._process_method(request)
-        except Exception as e:
-            log.exception(f"{type(e).__name__}:")
-            return ErrorResponseObject(error=INVALID_REQUEST)
+            async def one_iter(it) -> Any:
+                if isinstance(it, ErrorResponseObject):
+                    return it.json()
+                elif it.method not in self.methods.keys():
+                    return ErrorResponseObject(
+                        id=None if isinstance(it, NotificationType) else it.id,
+                        error=ErrorObjectData(
+                            **{**METHOD_NOT_FOUND.dict(), **{"data": parsed_json}}
+                        ),
+                    ).json()
+                elif isinstance(it, RequestType):
+                    return await RequestProcessor(it).execute_async()
+                await RequestProcessor(it).execute_async()
 
-    def _process_method(self, request: Union[RequestType, NotificationType]) -> Any:
-        registered_method = self.methods.get(request.method)
-        if not registered_method:
-            log.error("Method not found [%s]", request)
-            if isinstance(request, (RequestObject, RequestObjectParams)):
-                return ErrorResponseObject(
-                    id=request.id,
-                    error=ErrorObjectData(
-                        code=-32601, message="Method not found", data=request.method
-                    ),
-                )
-
-        try:
-            method = registered_method.fun
-            # noinspection PyUnresolvedReferences
-            annotations = get_type_hints(method)
-
-            # Call method.
-            if isinstance(request, (RequestObject, NotificationObject)):
-                result = method()
-            elif isinstance(request.params, list):
-                result = method(*self._get_list_params(request.params, annotations))
-            elif isinstance(request.params, dict):
-                result = method(**self._get_dict_params(request.params, annotations))
-            else:
-                result = method()
-
-            # Return proper response object.
-            if isinstance(request, (NotificationObject, NotificationObjectParams)):
-                # If request was notification, return nothing.
-                return None
-            return ResultResponseObject(id=request.id, result=result)
-
-        except Exception as e:
-            log.exception(f"{type(e).__name__}:")
-            if self.uncaught_error_code:
-                return ErrorResponseObject(
-                    id=request.id,
-                    error=ErrorObjectData(
-                        code=self.uncaught_error_code,
-                        message="Server error",
-                        data=f"{type(e).__name__}: {e}",
-                    ),
-                )
-            return ErrorResponseObject(id=request.id, error=INTERNAL_ERROR)
-
-    def _get_list_params(self, params: list, annotations: dict) -> list:
-        try:
-            return [
-                self._deserialize(p, list(annotations.values())[i])
-                for i, p in enumerate(params)
-            ]
-        except IndexError:
-            return params
-
-    def _get_dict_params(self, params: dict, annotations: dict) -> dict:
-        try:
-            return {k: self._deserialize(p, annotations[k]) for k, p in params.items()}
-        except KeyError:
-            return params
-
-    def _deserialize(self, param: Any, p_type: Type) -> Any:
-        """Deserialize dict to python objects."""
-        if get_origin(p_type) == Union:
-            for arg in get_args(p_type):
-                try:
-                    return self._deserialize(param, arg)
-                except TypeError:
-                    continue
-        if get_origin(p_type) == list:
-            types = get_args(p_type)
-            return [self._deserialize(it, types[0]) for it in param]
-        if not isinstance(param, dict):
-            return param
-        try:
-            return p_type(**param)
-        except (TypeError, AttributeError, KeyError):
-            return param
-
-    @staticmethod
-    def _get_request(data: dict) -> Union[RequestType, NotificationType]:
-        if data.get("id"):
-            return (RequestObjectParams if data.get("params") else RequestObject)(
-                **data
+            results = await asyncio.gather(
+                one_iter(get_request_object(it)) for it in parsed_json
             )
-        return (NotificationObjectParams if data.get("params") else NotificationObject)(
-            **data
+            return f"[{','.join(results)}]"
+
+        # Single Request
+        # noinspection DuplicatedCode
+        req = get_request_object(parsed_json)
+        if isinstance(req, ErrorResponseObject):
+            return req.json()
+        if req.method not in self.methods.keys():
+            return ErrorResponseObject(
+                id=None if isinstance(req, NotificationType) else req.id,
+                error=ErrorObjectData(
+                    **{**METHOD_NOT_FOUND.dict(), **{"data": parsed_json}}
+                ),
+            ).json()
+        result = await RequestProcessor(req).execute_async()
+        return None if isinstance(req, NotificationType) else result
+
+
+def get_parsed_json(data: Union[bytes, str]) -> Union[ErrorResponseObject, dict, list]:
+    try:
+        parsed_json = json.loads(data)
+    except (TypeError, JSONDecodeError) as e:
+        log.exception(f"{type(e).__name__}:")
+        return ErrorResponseObject(error=PARSE_ERROR)
+
+    if not isinstance(parsed_json, (list, dict)):
+        log.error("Invalid request [%s]", parsed_json)
+        return ErrorResponseObject(
+            error=ErrorObjectData(**{**INVALID_REQUEST.dict(), **{"data": parsed_json}})
+        )
+    return parsed_json
+
+
+def get_request_object(
+    data: dict[str, Any]
+) -> Union[RequestType, NotificationType, ErrorResponseObject]:
+    is_request = data.get("id") is not None
+    has_params = data.get("params") is not None
+
+    try:
+        if is_request:
+            return (RequestObjectParams if has_params else RequestObject)(**data)
+        return (NotificationObjectParams if has_params else NotificationObject)(**data)
+    except TypeError as e:
+        log.exception(f"{type(e).__name__}:")
+        return ErrorResponseObject(
+            id=data.get("id"),
+            error=ErrorObjectData(**{**INVALID_REQUEST.dict(), **{"data": data}}),
         )

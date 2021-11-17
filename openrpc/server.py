@@ -35,9 +35,7 @@ class OpenRPCServer:
         self.components: ComponentsObject = ComponentsObject(schemas={})
         self.server.method(self.discover, method=MethodObject(name="rpc.discover"))
 
-    def method(
-        self, *args: Union[T, tuple[T]], method: Optional[MethodObject] = None
-    ) -> T:
+    def method(self, *args: tuple[T], method: Optional[MethodObject] = None) -> T:
         if args:
             func = args[0]
             method = MethodObject()
