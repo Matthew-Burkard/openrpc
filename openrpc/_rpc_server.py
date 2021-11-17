@@ -53,9 +53,7 @@ class RPCServer:
             requests = [get_request_object(it) for it in parsed_json]
             results = []
             for it in requests:
-                if isinstance(it, ErrorResponseObject):
-                    results.append(it.json())
-                elif it.method not in self.methods.keys():
+                if it.method not in self.methods.keys():
                     results.append(
                         ErrorResponseObject(
                             id=None if isinstance(it, NotificationType) else it.id,
@@ -64,10 +62,14 @@ class RPCServer:
                             ),
                         ).json()
                     )
+
+                fun = self.methods[it.method].fun
+                if isinstance(it, ErrorResponseObject):
+                    results.append(it.json())
                 elif isinstance(it, RequestType):
-                    results.append(RequestProcessor(it).execute())
+                    results.append(RequestProcessor(fun, it).execute())
                 else:
-                    RequestProcessor(it).execute()
+                    RequestProcessor(fun, it).execute()
             return f"[{','.join(results)}]"
 
         # Single Request
@@ -82,7 +84,7 @@ class RPCServer:
                     **{**METHOD_NOT_FOUND.dict(), **{"data": req.method}}
                 ),
             ).json()
-        result = RequestProcessor(req).execute()
+        result = RequestProcessor(self.methods[req.method].fun, req).execute()
         return None if isinstance(req, NotificationType) else result
 
     async def process_async(self, data: Union[bytes, str]) -> Optional[str]:
@@ -94,18 +96,20 @@ class RPCServer:
         if isinstance(parsed_json, list):
 
             async def one_iter(it) -> Any:
-                if isinstance(it, ErrorResponseObject):
-                    return it.json()
-                elif it.method not in self.methods.keys():
+                if it.method not in self.methods.keys():
                     return ErrorResponseObject(
                         id=None if isinstance(it, NotificationType) else it.id,
                         error=ErrorObjectData(
                             **{**METHOD_NOT_FOUND.dict(), **{"data": it.method}}
                         ),
                     ).json()
+
+                fun = self.methods[it.method].fun
+                if isinstance(it, ErrorResponseObject):
+                    return it.json()
                 elif isinstance(it, RequestType):
-                    return await RequestProcessor(it).execute_async()
-                await RequestProcessor(it).execute_async()
+                    return await RequestProcessor(fun, it).execute_async()
+                await RequestProcessor(fun, it).execute_async()
 
             results = await asyncio.gather(
                 one_iter(get_request_object(it)) for it in parsed_json
@@ -124,7 +128,9 @@ class RPCServer:
                     **{**METHOD_NOT_FOUND.dict(), **{"data": req.method}}
                 ),
             ).json()
-        result = await RequestProcessor(req).execute_async()
+        result = await RequestProcessor(
+            self.methods[req.method].fun, req
+        ).execute_async()
         return None if isinstance(req, NotificationType) else result
 
 
