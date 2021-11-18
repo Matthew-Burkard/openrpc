@@ -77,7 +77,7 @@ rpc.process_request(req)  # '{"id": 1, "result": 4, "jsonrpc": "2.0}'
 OpenRPC has async support:
 
 ```python
-rpc.process_request_async(req)
+await rpc.process_request_async(req)
 ```
 
 ## Example
