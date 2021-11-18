@@ -67,6 +67,7 @@ class RPCServer:
                         RequestProcessor(fun, self.uncaught_error_code, it).execute()
                     )
                 else:
+                    # To get here, it must be a notification.
                     RequestProcessor(fun, self.uncaught_error_code, it).execute()
             return f"[{','.join(results)}]"
 
@@ -100,6 +101,7 @@ class RPCServer:
                     return await RequestProcessor(
                         fun, self.uncaught_error_code, it
                     ).execute_async()
+                # To get here, it must be a notification.
                 await RequestProcessor(
                     fun, self.uncaught_error_code, it
                 ).execute_async()

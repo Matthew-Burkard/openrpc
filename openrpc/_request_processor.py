@@ -3,12 +3,12 @@ import logging
 from typing import (
     Any,
     Callable,
-    get_args,
-    get_origin,
-    get_type_hints,
     Optional,
     Type,
     Union,
+    get_args,
+    get_origin,
+    get_type_hints,
 )
 
 from jsonrpcobjects.errors import INTERNAL_ERROR
