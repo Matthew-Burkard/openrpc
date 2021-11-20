@@ -24,6 +24,7 @@ from openrpc.objects import (
 )
 
 __all__ = ("OpenRPCServer",)
+
 T = Type[Callable]
 log = logging.getLogger("openrpc")
 
@@ -99,6 +100,8 @@ class OpenRPCServer:
         )
 
     def _get_schema(self, annotation: Type) -> SchemaObject:
+        if annotation == Any:
+            return SchemaObject()
         if get_origin(annotation) == Union:
             return SchemaObject(
                 anyOf=[self._get_schema(a) for a in get_args(annotation)]

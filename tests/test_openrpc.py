@@ -320,6 +320,7 @@ class OpenRPCTest(unittest.TestCase):
         self.server.method(get_distance)
         self.server.method(return_none)
         self.server.method(default_value)
+        self.server.method(take_any_get_any)
         request = RequestObject(id=1, method="rpc.discover")
         resp = json.loads(self.server.process_request(request.json()))
         self.discover_result = resp["result"]
@@ -438,6 +439,21 @@ class OpenRPCTest(unittest.TestCase):
             method,
         )
 
+    def test_any(self) -> None:
+        method = [
+            m
+            for m in self.discover_result["methods"]
+            if m["name"] == "take_any_get_any"
+        ][0]
+        self.assertEqual(
+            {
+                "name": "take_any_get_any",
+                "params": [{"name": "any_param", "required": True, "schema": {}}],
+                "result": {"name": "result", "schema": {}, "required": True},
+            },
+            method,
+        )
+
     def test_schemas(self) -> None:
         self.assertEqual(
             {
@@ -474,4 +490,9 @@ def default_value(a: int = 2, b: float = 0.99792458, c: str = "c") -> str:
 
 # noinspection PyUnusedLocal
 def return_none(optional_param: Optional[str]) -> None:
+    return None
+
+
+# noinspection PyUnusedLocal
+def take_any_get_any(any_param: Any) -> Any:
     return None
