@@ -1,3 +1,4 @@
+"""Provide JSON-RPC2 server class."""
 import asyncio
 import json
 import logging
@@ -30,34 +31,42 @@ RequestTypes = (RequestObject, RequestObjectParams)
 
 
 @dataclass
-class RegisteredMethod:
+class _RegisteredMethod:
     fun: Callable
     method: MethodObject
 
 
 class RPCServer:
+    """Class to register and methods execute methods."""
+
     def __init__(self, server_error_code: int) -> None:
-        self.methods: dict[str, RegisteredMethod] = {}
+        self.methods: dict[str, _RegisteredMethod] = {}
         self.uncaught_error_code: Optional[int] = server_error_code
 
     def method(self, func: T, method: MethodObject) -> T:
+        """Register a method with this server for later calls."""
         log.debug("Registering method [%s]", func.__name__)
         method.name = method.name or func.__name__
-        self.methods[method.name] = RegisteredMethod(func, method)
+        self.methods[method.name] = _RegisteredMethod(func, method)
         return func
 
     def process(self, data: Union[bytes, str]) -> Optional[str]:
-        parsed_json = get_parsed_json(data)
+        """Process a JSON-RPC2 request and get the response.
+
+        :param data: A JSON-RPC2 request.
+        :return: A valid JSON-RPC2 response.
+        """
+        parsed_json = _get_parsed_json(data)
         if isinstance(parsed_json, ErrorResponseObject):
             return parsed_json.json()
 
         # Batch
         if isinstance(parsed_json, list):
-            requests = [get_request_object(it) for it in parsed_json]
+            requests = [_get_request_object(it) for it in parsed_json]
             results = []
             for it in requests:
                 if it.method not in self.methods.keys():
-                    results.append(get_method_not_found_error(it))
+                    results.append(_get_method_not_found_error(it))
 
                 fun = self.methods[it.method].fun
                 if isinstance(it, ErrorResponseObject):
@@ -72,27 +81,34 @@ class RPCServer:
             return f"[{','.join(results)}]"
 
         # Single Request
-        req = get_request_object(parsed_json)
+        req = _get_request_object(parsed_json)
         if isinstance(req, ErrorResponseObject):
             return req.json()
         if req.method not in self.methods.keys():
-            return get_method_not_found_error(req)
+            return _get_method_not_found_error(req)
         result = RequestProcessor(
             self.methods[req.method].fun, self.uncaught_error_code, req
         ).execute()
         return None if isinstance(req, NotificationTypes) else result
 
     async def process_async(self, data: Union[bytes, str]) -> Optional[str]:
-        parsed_json = get_parsed_json(data)
+        """Process a JSON-RPC2 request and get the response.
+
+        If the method called by the request is async it will be awaited.
+
+        :param data: A JSON-RPC2 request.
+        :return: A valid JSON-RPC2 response.
+        """
+        parsed_json = _get_parsed_json(data)
         if isinstance(parsed_json, ErrorResponseObject):
             return parsed_json.json()
 
         # Batch
         if isinstance(parsed_json, list):
 
-            async def one_iter(it) -> Any:
+            async def _one_iter(it) -> Any:
                 if it.method not in self.methods.keys():
-                    return get_method_not_found_error(it)
+                    return _get_method_not_found_error(it)
 
                 fun = self.methods[it.method].fun
                 if isinstance(it, ErrorResponseObject):
@@ -107,32 +123,30 @@ class RPCServer:
                 ).execute_async()
 
             results = await asyncio.gather(
-                *[one_iter(get_request_object(it)) for it in parsed_json]
+                *[_one_iter(_get_request_object(it)) for it in parsed_json]
             )
             return f"[{','.join(str(r) for r in results if r is not None)}]"
 
         # Single Request
-        req = get_request_object(parsed_json)
+        req = _get_request_object(parsed_json)
         if isinstance(req, ErrorResponseObject):
             return req.json()
         if req.method not in self.methods.keys():
-            return get_method_not_found_error(req)
+            return _get_method_not_found_error(req)
         result = await RequestProcessor(
             self.methods[req.method].fun, self.uncaught_error_code, req
         ).execute_async()
         return None if isinstance(req, NotificationTypes) else result
 
 
-def get_method_not_found_error(req: Union[NotificationType, RequestType]) -> str:
+def _get_method_not_found_error(req: Union[NotificationType, RequestType]) -> str:
     return ErrorResponseObject(
         id=None if isinstance(req, NotificationTypes) else req.id,
-        error=ErrorObjectData(
-            **{**METHOD_NOT_FOUND.dict(), **{"data": req.method}}
-        ),
+        error=ErrorObjectData(**{**METHOD_NOT_FOUND.dict(), **{"data": req.method}}),
     ).json()
 
 
-def get_parsed_json(data: Union[bytes, str]) -> Union[ErrorResponseObject, dict, list]:
+def _get_parsed_json(data: Union[bytes, str]) -> Union[ErrorResponseObject, dict, list]:
     try:
         parsed_json = json.loads(data)
     except (TypeError, JSONDecodeError) as e:
@@ -147,7 +161,7 @@ def get_parsed_json(data: Union[bytes, str]) -> Union[ErrorResponseObject, dict,
     return parsed_json
 
 
-def get_request_object(
+def _get_request_object(
     data: dict[str, Any]
 ) -> Union[ErrorResponseObject, NotificationType, RequestType]:
     is_request = data.get("id") is not None

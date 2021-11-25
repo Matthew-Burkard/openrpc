@@ -1,3 +1,4 @@
+"""Python class representations of OpenRPC and JSON Schema objects."""
 from __future__ import annotations
 
 from enum import Enum
@@ -7,12 +8,16 @@ from pydantic import BaseModel, Field
 
 
 class ParamStructure(Enum):
+    """OpenRPC ParamStructure options."""
+
     BY_NAME = "by-name"
     BY_POSITION = "by-position"
     EITHER = "either"
 
 
 class SchemaObject(BaseModel):
+    """JSON Schema object."""
+
     id: Optional[str] = Field(alias="$id", default=None)
     title: Optional[str] = None
     format: Optional[str] = None
@@ -71,12 +76,14 @@ class SchemaObject(BaseModel):
     schema_dialect: Optional[str] = Field(alias="$schema", default=None)
 
 
+# noinspection PyMissingOrEmptyDocstring
 class ServerVariableObject(BaseModel):
     default: str
     enum: Optional[list[str]] = None
     description: Optional[str] = None
 
 
+# noinspection PyMissingOrEmptyDocstring
 class ServerObject(BaseModel):
     name: str
     url: str = "localhost"
@@ -85,17 +92,20 @@ class ServerObject(BaseModel):
     variables: Optional[dict[str, ServerVariableObject]] = None
 
 
+# noinspection PyMissingOrEmptyDocstring
 class ContactObject(BaseModel):
     name: Optional[str] = None
     url: Optional[str] = None
     email: Optional[str] = None
 
 
+# noinspection PyMissingOrEmptyDocstring
 class LicenseObject(BaseModel):
     name: str
     url: Optional[str] = None
 
 
+# noinspection PyMissingOrEmptyDocstring
 class InfoObject(BaseModel):
     title: str
     version: str
@@ -105,6 +115,7 @@ class InfoObject(BaseModel):
     license: Optional[LicenseObject] = None
 
 
+# noinspection PyMissingOrEmptyDocstring
 class ContentDescriptorObject(BaseModel):
     name: str
     json_schema: SchemaObject = Field(alias="schema")
@@ -114,11 +125,13 @@ class ContentDescriptorObject(BaseModel):
     deprecated: bool = False
 
 
+# noinspection PyMissingOrEmptyDocstring
 class ExternalDocumentationObject(BaseModel):
     url: str
     description: Optional[str] = None
 
 
+# noinspection PyMissingOrEmptyDocstring
 class TagObject(BaseModel):
     name: str
     summary: Optional[str] = None
@@ -126,12 +139,14 @@ class TagObject(BaseModel):
     externalDocs: Optional[ExternalDocumentationObject] = None
 
 
+# noinspection PyMissingOrEmptyDocstring
 class ErrorObject(BaseModel):
     code: int
     message: str
     data: Any = None
 
 
+# noinspection PyMissingOrEmptyDocstring
 class LinkObject(BaseModel):
     name: str
     description: Optional[str] = None
@@ -141,6 +156,7 @@ class LinkObject(BaseModel):
     server: Optional[ServerObject] = None
 
 
+# noinspection PyMissingOrEmptyDocstring
 class ExampleObject(BaseModel):
     name: Optional[str] = None
     summary: Optional[str] = None
@@ -149,6 +165,7 @@ class ExampleObject(BaseModel):
     externalValue: Optional[str] = None
 
 
+# noinspection PyMissingOrEmptyDocstring
 class ExamplePairingObject(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
@@ -157,6 +174,7 @@ class ExamplePairingObject(BaseModel):
     result: Optional[ExampleObject] = None
 
 
+# noinspection PyMissingOrEmptyDocstring
 class MethodObject(BaseModel):
     name: Optional[str] = None
     params: Optional[list[ContentDescriptorObject]] = None
@@ -173,6 +191,7 @@ class MethodObject(BaseModel):
     examples: Optional[list[ExamplePairingObject]] = None
 
 
+# noinspection PyMissingOrEmptyDocstring
 class ComponentsObject(BaseModel):
     contentDescriptors: Optional[dict[str, ContentDescriptorObject]] = None
     schemas: Optional[dict[str, SchemaObject]] = None
@@ -183,6 +202,7 @@ class ComponentsObject(BaseModel):
     tags: Optional[dict[str, TagObject]] = None
 
 
+# noinspection PyMissingOrEmptyDocstring
 class OpenRPCObject(BaseModel):
     openrpc: str
     info: InfoObject

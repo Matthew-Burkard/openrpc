@@ -1,3 +1,4 @@
+"""Functions shared by tests."""
 import json
 from json import JSONDecodeError
 from typing import Union
@@ -13,6 +14,7 @@ from jsonrpcobjects.objects import (
 
 
 def parse_response(data: Union[bytes, str]) -> ResponseType:
+    """Map a JSON-RPC2 response to the appropriate object."""
     try:
         resp = json.loads(data)
         if resp.get("error"):

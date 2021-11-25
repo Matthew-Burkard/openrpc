@@ -1,3 +1,4 @@
+"""Provides OpenRPCServer class."""
 import inspect
 import logging
 import re
@@ -30,7 +31,10 @@ log = logging.getLogger("openrpc")
 
 
 class OpenRPCServer:
+    """OpenRPC server to register methods with."""
+
     def __init__(self, info: InfoObject, server_error_code: int = -32000) -> None:
+        # This class wraps RPCServer which registers and executes methods.
         self.server = RPCServer(server_error_code)
         self.info: InfoObject = info
         self.components: ComponentsObject = ComponentsObject(schemas={})
@@ -39,6 +43,26 @@ class OpenRPCServer:
     def method(
         self, *args: Union[T, tuple[T]], method: Optional[MethodObject] = None
     ) -> T:
+        """Register a method with this OpenRPC server.
+
+        Can be used as a plain decorator, eg:
+
+        .. code-block::
+
+            @method
+            def my_func()
+
+        Or additional method info can be provided with a MethodObject:
+
+        .. code-block::
+
+            @method(method=MethodObject(deprecated=True))
+            def my_func()
+
+        :param args: The method if this is used as a plain decorator.
+        :param method: MethodObject if addition information is required.
+        :return: None
+        """
         if args:
             func = args[0]
             method = MethodObject()
@@ -46,18 +70,31 @@ class OpenRPCServer:
         return partial(self.server.method, method=method)
 
     def process_request(self, data: Union[bytes, str]) -> Optional[str]:
+        """Process a JSON-RPC2 request and get the response.
+
+        :param data: A JSON-RPC2 request.
+        :return: A valid JSON-RPC2 response.
+        """
         log.debug("Processing request: %s", data)
         resp = self.server.process(data)
         log.debug("Responding : %s", resp)
         return resp
 
     async def process_request_async(self, data: Union[bytes, str]) -> Optional[str]:
+        """Process a JSON-RPC2 request and get the response.
+
+        If the method called by the request is async it will be awaited.
+
+        :param data: A JSON-RPC2 request.
+        :return: A valid JSON-RPC2 response.
+        """
         log.debug("Processing request: %s", data)
         resp = await self.server.process_async(data)
         log.debug("Responding : %s", resp)
         return resp
 
     def discover(self) -> dict[str, Any]:
+        """The OpenRPC discover method."""
         for name, rpc_method in self.server.methods.items():
             if name == "rpc.discover":
                 continue
@@ -202,10 +239,10 @@ class OpenRPCServer:
 
     @staticmethod
     def _is_required(annotation: Any) -> bool:
-        def get_name(arg: Any) -> str:
+        def _get_name(arg: Any) -> str:
             try:
                 return arg.__name__
             except AttributeError:
                 return ""
 
-        return "NoneType" not in [get_name(a) for a in get_args(annotation)]
+        return "NoneType" not in [_get_name(a) for a in get_args(annotation)]

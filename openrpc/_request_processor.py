@@ -1,3 +1,4 @@
+"""Provides RequestProcessor class for processing a single request."""
 import inspect
 import logging
 from typing import (
@@ -29,6 +30,8 @@ log = logging.getLogger("openrpc")
 
 
 class RequestProcessor:
+    """Execute a JSON-RPC2 request and get the response."""
+
     def __init__(
         self,
         method: Callable,
@@ -40,6 +43,7 @@ class RequestProcessor:
         self.uncaught_error_code = uncaught_error_code
 
     def execute(self) -> Optional[str]:
+        """Execute the method and get the JSON-RPC2 response."""
         try:
             result = self._execute()
             if isinstance(self.request, (NotificationObject, NotificationObjectParams)):
@@ -48,9 +52,13 @@ class RequestProcessor:
             return ResultResponseObject(id=self.request.id, result=result).json()
 
         except Exception as e:
-            return self.get_error_response(e)
+            return self._get_error_response(e)
 
     async def execute_async(self) -> Any:
+        """Execute the method and get the JSON-RPC2 response.
+
+        If the method is an async method it will be awaited.
+        """
         try:
             result = self._execute()
             if inspect.isawaitable(result):
@@ -61,7 +69,7 @@ class RequestProcessor:
             return ResultResponseObject(id=self.request.id, result=result).json()
 
         except Exception as e:
-            return self.get_error_response(e)
+            return self._get_error_response(e)
 
     def _execute(self) -> Any:
         annotations = get_type_hints(self.method)
@@ -81,7 +89,7 @@ class RequestProcessor:
             result = self.method()
         return result
 
-    def get_error_response(self, e: Exception):
+    def _get_error_response(self, e: Exception):
         log.exception(f"{type(e).__name__}:")
         if self.uncaught_error_code:
             return ErrorResponseObject(

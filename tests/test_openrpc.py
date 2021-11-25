@@ -1,3 +1,4 @@
+"""Synchronous OpenRPC tests."""
 import json
 import unittest
 import uuid
@@ -23,11 +24,14 @@ SERVER_ERROR = -32000
 
 
 class Vector3(BaseModel):
+    """x, y, and z values."""
+
     x: float
     y: float
     z: float
 
 
+# noinspection PyMissingOrEmptyDocstring
 class RPCTest(unittest.TestCase):
     def __init__(self, *args) -> None:
         self.info = InfoObject(title="Test JSON RPC", version="1.0.0")
@@ -263,6 +267,7 @@ class RPCTest(unittest.TestCase):
         self.assertEqual(None, resp)
 
     def test_deserialize_nested_objects(self) -> None:
+        # noinspection PyMissingOrEmptyDocstring
         class Thing(BaseModel):
             name: str
             position: Vector3
@@ -292,18 +297,22 @@ class RPCTest(unittest.TestCase):
         self.assertTrue(resp["result"])
 
 
+# noinspection PyMissingOrEmptyDocstring
 def add(x: float, y: float) -> float:
     return x + y
 
 
+# noinspection PyMissingOrEmptyDocstring
 def subtract(x: float, y: float) -> float:
     return x - y
 
 
+# noinspection PyMissingOrEmptyDocstring
 def divide(x: float, y: float) -> float:
     return x / y
 
 
+# noinspection PyMissingOrEmptyDocstring
 def args_and_kwargs(*args, **kwargs) -> Any:
     return *args, {**kwargs}
 
@@ -459,6 +468,7 @@ class OpenRPCTest(unittest.TestCase):
             {
                 "Vector3": {
                     "type": "object",
+                    'description': 'x, y, and z values.',
                     "properties": {
                         "x": {"title": "X", "type": "number"},
                         "y": {"title": "Y", "type": "number"},
@@ -472,10 +482,12 @@ class OpenRPCTest(unittest.TestCase):
         )
 
 
+# noinspection PyMissingOrEmptyDocstring
 def increment(numbers: list[Union[int, float]]) -> list[Union[int, str]]:
     return [it + 1 for it in numbers]
 
 
+# noinspection PyMissingOrEmptyDocstring
 def get_distance(position: Vector3, target: Vector3) -> Vector3:
     return Vector3(
         x=position.x - target.x,
@@ -484,15 +496,18 @@ def get_distance(position: Vector3, target: Vector3) -> Vector3:
     )
 
 
+# noinspection PyMissingOrEmptyDocstring
 def default_value(a: int = 2, b: float = 0.99792458, c: str = "c") -> str:
     return f"{c}{a + b}^8"
 
 
+# noinspection PyMissingOrEmptyDocstring
 # noinspection PyUnusedLocal
 def return_none(optional_param: Optional[str]) -> None:
     return None
 
 
+# noinspection PyMissingOrEmptyDocstring
 # noinspection PyUnusedLocal
 def take_any_get_any(any_param: Any) -> Any:
     return None

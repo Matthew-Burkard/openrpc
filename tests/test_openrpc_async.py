@@ -1,3 +1,4 @@
+"""Asynchronous OpenRPC tests."""
 import asyncio
 import json
 import unittest
@@ -26,11 +27,14 @@ SERVER_ERROR = -32000
 
 
 class Vector3(BaseModel):
+    """x, y, and z values."""
+
     x: float
     y: float
     z: float
 
 
+# noinspection PyMissingOrEmptyDocstring
 class RPCTest(unittest.TestCase):
     def __init__(self, *args) -> None:
         self.info = InfoObject(title="Test JSON RPC", version="1.0.0")
@@ -272,6 +276,7 @@ class RPCTest(unittest.TestCase):
         self.assertEqual(None, resp)
 
     def test_deserialize_nested_objects(self) -> None:
+        # noinspection PyMissingOrEmptyDocstring
         class Thing(BaseModel):
             name: str
             position: Vector3
@@ -301,22 +306,27 @@ class RPCTest(unittest.TestCase):
         self.assertTrue(resp["result"])
 
 
+# noinspection PyMissingOrEmptyDocstring
 async def add(x: float, y: float) -> float:
     return x + y
 
 
+# noinspection PyMissingOrEmptyDocstring
 async def subtract(x: float, y: float) -> float:
     return x - y
 
 
+# noinspection PyMissingOrEmptyDocstring
 async def divide(x: float, y: float) -> float:
     return x / y
 
 
+# noinspection PyMissingOrEmptyDocstring
 async def args_and_kwargs(*args, **kwargs) -> Any:
     return *args, {**kwargs}
 
 
+# noinspection PyMissingOrEmptyDocstring
 def get_result_async(
     server: OpenRPCServer, request: Union[NotificationType, RequestType]
 ) -> Optional[str]:
