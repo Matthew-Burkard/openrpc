@@ -468,7 +468,7 @@ class OpenRPCTest(unittest.TestCase):
             {
                 "Vector3": {
                     "type": "object",
-                    'description': 'x, y, and z values.',
+                    "description": "x, y, and z values.",
                     "properties": {
                         "x": {"title": "X", "type": "number"},
                         "y": {"title": "Y", "type": "number"},
