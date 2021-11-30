@@ -72,7 +72,7 @@ req = """
 rpc.process_request(req)  # '{"id": 1, "result": 4, "jsonrpc": "2.0}'
 ```
 
-## Async Support (v1.2+)
+### Async Support (v1.2+)
 
 OpenRPC has async support:
 
@@ -80,15 +80,37 @@ OpenRPC has async support:
 await rpc.process_request_async(req)
 ```
 
+### Pydantic Support
+
+For data classes, it is strongly recommended you use Pydantic.
+OpenRPCServer will use Pydantic for JSON serialization/deserialization
+as well as generating schemas.
+
 ## Example
 
 ```python
 from flask import Flask, Response, request
 from openrpc.objects import InfoObject
 from openrpc.server import OpenRPCServer
+from pydantic import BaseModel
 
 app = Flask(__name__)
 rpc = OpenRPCServer(InfoObject(title="Demo Server", version="1.0.0"))
+
+
+class Vector3(BaseModel):
+    x: float
+    y: float
+    z: float
+
+
+@rpc.method
+def get_distance(a: Vector3, b: Vector3) -> Vector3:
+    return Vector3(
+        x=a.x - b.x,
+        y=a.y - b.y,
+        z=a.z - b.z,
+    )
 
 
 @rpc.method
@@ -97,8 +119,8 @@ def add(a: int, b: int) -> int:
 
 
 @app.route("/api/v1/", methods=["POST"])
-def process_rpc() -> Response:
-    return rpc.process_request(request.json)
+def process_rpc() -> str:
+    return rpc.process_request(request.data)
 
 
 if __name__ == "__main__":
@@ -155,41 +177,45 @@ Example RPC Discover
 
 ```json
 {
-  "openrpc": "1.2.6",
-  "info": {
-    "title": "Demo Server",
-    "version": "1.0.0"
-  },
-  "methods": [
-    {
-      "name": "add",
-      "params": [
-        {
-          "name": "a",
-          "schema": {
-            "type": "number"
+  "id": 1,
+  "result": {
+    "openrpc": "1.2.6",
+    "info": {
+      "title": "Demo Server",
+      "version": "1.0.0"
+    },
+    "methods": [
+      {
+        "name": "add",
+        "params": [
+          {
+            "name": "a",
+            "schema": {
+              "type": "number"
+            },
+            "required": true
           },
-          "required": true
-        },
-        {
-          "name": "b",
+          {
+            "name": "b",
+            "schema": {
+              "type": "number"
+            },
+            "required": true
+          }
+        ],
+        "result": {
+          "name": "result",
           "schema": {
             "type": "number"
           },
           "required": true
         }
-      ],
-      "result": {
-        "name": "result",
-        "schema": {
-          "type": "number"
-        },
-        "required": true
       }
+    ],
+    "components": {
+      "schemas": {}
     }
-  ],
-  "components": {
-    "schemas": {}
-  }
+  },
+  "jsonrpc": "2.0"
 }
 ```
