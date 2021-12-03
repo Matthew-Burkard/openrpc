@@ -181,7 +181,7 @@ class RPCTest(unittest.TestCase):
     def test_list_object_list_param(self) -> None:
         def get_vectors(vector3s: list[Vector3]) -> list[Vector3]:
             # This assertion won't fail test if it fails, that's why we
-            # assert the the response has a result.
+            # assert the response has a result.
             self.assertEqual(vectors, vector3s)
             return vector3s
 
@@ -215,7 +215,7 @@ class RPCTest(unittest.TestCase):
 
         def optional_param(v: Optional[Vector3] = None) -> Optional[Vector3]:
             # This assertion won't fail test if it fails, that's why we
-            # assert the the response has a result.
+            # assert the response has a result.
             self.assertEqual(v, vector)
             return v
 
