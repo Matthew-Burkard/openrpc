@@ -110,7 +110,7 @@ class InfoObject(BaseModel):
     title: str
     version: str
     description: Optional[str] = None
-    termsOfService: Optional[str] = None
+    terms_of_service: Optional[str] = Field(None, alias="termsOfService")
     contact: Optional[ContactObject] = None
     license: Optional[LicenseObject] = None
 
@@ -136,7 +136,9 @@ class TagObject(BaseModel):
     name: str
     summary: Optional[str] = None
     description: Optional[str] = None
-    externalDocs: Optional[ExternalDocumentationObject] = None
+    external_docs: Optional[ExternalDocumentationObject] = Field(
+        None, alias="externalDocs"
+    )
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -162,7 +164,7 @@ class ExampleObject(BaseModel):
     summary: Optional[str] = None
     description: Optional[str] = None
     value: Any = None
-    externalValue: Optional[str] = None
+    external_value: Optional[str] = Field(None, alias="externalValue")
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -182,23 +184,29 @@ class MethodObject(BaseModel):
     tags: Optional[list[TagObject]] = None
     summary: Optional[str] = None
     description: Optional[str] = None
-    externalDocs: Optional[ExternalDocumentationObject] = None
+    external_docs: Optional[ExternalDocumentationObject] = Field(
+        None, alias="externalDocs"
+    )
     deprecated: Optional[bool] = None
     servers: Optional[list[ServerObject]] = None
     errors: Optional[list[ErrorObject]] = None
     links: Optional[list[LinkObject]] = None
-    paramStructure: Optional[ParamStructure] = None
+    param_structure: Optional[ParamStructure] = Field(None, alias="paramStructure")
     examples: Optional[list[ExamplePairingObject]] = None
 
 
 # noinspection PyMissingOrEmptyDocstring
 class ComponentsObject(BaseModel):
-    contentDescriptors: Optional[dict[str, ContentDescriptorObject]] = None
+    content_descriptors: Optional[dict[str, ContentDescriptorObject]] = Field(
+        None, alias="contentDescriptors"
+    )
     schemas: Optional[dict[str, SchemaObject]] = None
     examples: Optional[dict[str, ExampleObject]] = None
     links: Optional[dict[str, LinkObject]] = None
     errors: Optional[dict[str, ErrorObject]] = None
-    examplePairingObjects: Optional[dict[str, ExamplePairingObject]] = None
+    example_pairing_objects: Optional[dict[str, ExamplePairingObject]] = Field(
+        None, alias="examplePairingObjects"
+    )
     tags: Optional[dict[str, TagObject]] = None
 
 
@@ -209,7 +217,9 @@ class OpenRPCObject(BaseModel):
     methods: list[MethodObject]
     servers: Optional[Union[ServerObject, list[ServerObject]]] = None
     components: Optional[ComponentsObject] = None
-    externalDocs: Optional[ExternalDocumentationObject] = None
+    external_docs: Optional[ExternalDocumentationObject] = Field(
+        None, alias="externalDocs"
+    )
 
 
 SchemaObject.update_forward_refs()
