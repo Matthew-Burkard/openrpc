@@ -89,7 +89,7 @@ as well as generating schemas.
 ## Example
 
 ```python
-from flask import Flask, Response, request
+from flask import Flask, request
 from openrpc.objects import InfoObject
 from openrpc.server import OpenRPCServer
 from pydantic import BaseModel
