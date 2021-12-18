@@ -86,7 +86,7 @@ class ServerVariableObject(BaseModel):
 # noinspection PyMissingOrEmptyDocstring
 class ServerObject(BaseModel):
     name: str
-    url: str = "localhost"
+    url: str
     summary: Optional[str] = None
     description: Optional[str] = None
     variables: Optional[dict[str, ServerVariableObject]] = None
@@ -215,7 +215,9 @@ class OpenRPCObject(BaseModel):
     openrpc: str
     info: InfoObject
     methods: list[MethodObject]
-    servers: Optional[Union[ServerObject, list[ServerObject]]] = None
+    servers: Union[list[ServerObject], ServerObject] = ServerObject(
+        name="default", url="localhost"
+    )
     components: Optional[ComponentsObject] = None
     external_docs: Optional[ExternalDocumentationObject] = Field(
         None, alias="externalDocs"
