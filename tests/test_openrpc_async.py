@@ -268,7 +268,7 @@ class RPCTest(unittest.TestCase):
         async def multiply(a: int, b: int) -> int:
             return a * b
 
-        self.server.method(name="math.multiply")(multiply)
+        self.server.method(multiply, name="math.multiply")
         req = RequestObjectParams(id=1, method="math.multiply", params=[2, 4])
         resp = json.loads(self.get_result_async(req.json()))
         self.assertEqual(8, resp["result"])
