@@ -273,6 +273,7 @@ class RPCTest(unittest.TestCase):
             self.assertTrue(isinstance(thing.another_thing.position, Vector3))
             return True
 
+        # noinspection DuplicatedCode
         self.server.method(take_thing)
         req = RequestObjectParams(
             id=1,

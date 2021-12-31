@@ -55,20 +55,21 @@ class RPCServer:
     ) -> None:
         # This class wraps RPCServer which registers and executes methods.
         self._mp = MethodProcessor(_DEFAULT_ERROR_CODE)
-        self._info = InfoObject(
-            title=title,
-            version=version,
-            description=description,
-            termsOfService=terms_of_service,
-            contact=contact,
-            license=license,
-        )
+        kwargs = {
+            "title": title,
+            "version": version,
+            "description": description,
+            "termsOfService": terms_of_service,
+            "contact": contact,
+            "license": license,
+        }
+        self._info = InfoObject(**{k: v for k, v in kwargs.items() if v is not None})
         self._components: ComponentsObject = ComponentsObject(schemas={})
         self._mp.method(self.discover, method=MethodObject(name="rpc.discover"))
 
     def method(
         self,
-        *args: Union[T, tuple[T]],
+        *args: T,
         name: Optional[str] = None,
         params: Optional[list[ContentDescriptorObject]] = None,
         result: Optional[ContentDescriptorObject] = None,
