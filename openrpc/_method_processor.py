@@ -46,7 +46,6 @@ class MethodProcessor:
     def method(self, func: T, method: MethodObject) -> T:
         """Register a method with this server for later calls."""
         log.debug("Registering method [%s]", func.__name__)
-        method.name = method.name or func.__name__
         self.methods[method.name] = _RegisteredMethod(func, method)
         return func
 

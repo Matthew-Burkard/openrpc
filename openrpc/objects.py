@@ -63,8 +63,8 @@ class MethodObject(BaseModel):
     """Describes the interface for the given method name."""
 
     name: str
-    params: Optional[list[ContentDescriptorObject]] = None
-    result: Optional[ContentDescriptorObject] = None
+    params: list[ContentDescriptorObject]
+    result: ContentDescriptorObject
     tags: Optional[list[TagObject]] = None
     summary: Optional[str] = None
     description: Optional[str] = None

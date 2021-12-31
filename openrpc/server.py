@@ -38,6 +38,7 @@ __all__ = ("RPCServer",)
 T = Type[Callable]
 log = logging.getLogger("openrpc")
 _DEFAULT_ERROR_CODE = -32000
+_META_REF = "https://raw.githubusercontent.com/open-rpc/meta-schema/master/schema.json"
 
 
 class RPCServer:
@@ -65,7 +66,14 @@ class RPCServer:
         }
         self._info = InfoObject(**{k: v for k, v in kwargs.items() if v is not None})
         self._components: ComponentsObject = ComponentsObject(schemas={})
-        self._mp.method(self.discover, method=MethodObject(name="rpc.discover"))
+        rpc_discover = MethodObject(
+            name="rpc.discover",
+            params=[],
+            result=ContentDescriptorObject(
+                name="OpenRPC Schema", schema=SchemaObject(**{"$ref": _META_REF})
+            ),
+        )
+        self._mp.method(self.discover, method=rpc_discover)
 
     def method(
         self,
@@ -132,12 +140,15 @@ class RPCServer:
             "examples": examples,
         }
         kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        kwargs["name"] = kwargs.get("name") or ""
-        method = MethodObject(**kwargs)
         if args:
             func = args[0]
-            return self._mp.method(func, method)
-        return partial(self._mp.method, method=method)
+        else:
+            return partial(self.method, **kwargs)
+        kwargs["name"] = kwargs.get("name") or func.__name__
+        kwargs["params"] = kwargs.get("params") or self._get_params(func)
+        kwargs["result"] = kwargs.get("result") or self._get_result(func)
+        method = MethodObject(**kwargs)
+        return self._mp.method(func, method)
 
     @property
     def title(self) -> str:
@@ -229,12 +240,6 @@ class RPCServer:
 
     def discover(self) -> dict[str, Any]:
         """The OpenRPC discover method."""
-        for name, rpc_method in self._mp.methods.items():
-            if name == "rpc.discover":
-                continue
-            method = rpc_method.method
-            method.params = method.params or self._get_params(rpc_method.fun)
-            method.result = method.result or self._get_result(rpc_method.fun)
         return OpenRPCObject(
             openrpc="1.2.6",
             info=self._info,
