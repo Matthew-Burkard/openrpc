@@ -109,19 +109,25 @@ class RPCServer:
             def my_func()
 
         :param args: The method if this is used as a plain decorator.
-        :param name: TODO
-        :param params: TODO
-        :param result: TODO
-        :param tags: TODO
-        :param summary: TODO
-        :param description: TODO
-        :param external_docs: TODO
-        :param deprecated: TODO
-        :param servers: TODO
-        :param errors: TODO
-        :param links: TODO
-        :param param_structure: TODO
-        :param examples: TODO
+        :param name: The canonical name for the method.
+        :param params: A list of parameters that are applicable for this
+            method.
+        :param result: The description of the result returned by the
+            method.
+        :param tags: A list of tags for API documentation control.
+        :param summary: A short summary of what the method does.
+        :param description: A verbose explanation of the method
+            behavior.
+        :param external_docs: Additional external documentation for this
+            method.
+        :param deprecated: Declares this method to be deprecated.
+        :param servers: An alternative servers array to service this
+            method.
+        :param errors: A list of custom application defined errors that
+            MAY be returned.
+        :param links: A list of possible links from this method call.
+        :param param_structure: The expected format of the parameters
+        :param examples: Array of Example Pairing Objects.
         :return: The decorated method.
         """
         kwargs = {
