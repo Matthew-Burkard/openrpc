@@ -2,6 +2,7 @@
 import inspect
 import logging
 import re
+from functools import partial
 from typing import (
     Any,
     Callable,
@@ -67,7 +68,7 @@ class RPCServer:
 
     def method(
         self,
-        func: T,
+        *args: Union[T, tuple[T]],
         name: Optional[str] = None,
         params: Optional[list[ContentDescriptorObject]] = None,
         result: Optional[ContentDescriptorObject] = None,
@@ -98,7 +99,7 @@ class RPCServer:
             @method(method=MethodObject(deprecated=True))
             def my_func()
 
-        :param func: The method if this is used as a plain decorator.
+        :param args: The method if this is used as a plain decorator.
         :param name: TODO
         :param params: TODO
         :param result: TODO
@@ -114,22 +115,28 @@ class RPCServer:
         :param examples: TODO
         :return: The decorated method.
         """
-        method = MethodObject(
-            name=name,
-            params=params,
-            result=result,
-            tags=tags,
-            summary=summary,
-            description=description,
-            externalDocs=external_docs,
-            deprecated=deprecated,
-            servers=servers,
-            errors=errors,
-            links=links,
-            paramStructure=param_structure,
-            examples=examples,
-        )
-        return self._mp.method(func, method)
+        kwargs = {
+            "name": name,
+            "params": params,
+            "result": result,
+            "tags": tags,
+            "summary": summary,
+            "description": description,
+            "externalDocs": external_docs,
+            "deprecated": deprecated,
+            "servers": servers,
+            "errors": errors,
+            "links": links,
+            "paramStructure": param_structure,
+            "examples": examples,
+        }
+        kwargs = {k: v for k, v in kwargs.items() if v is not None}
+        kwargs["name"] = kwargs.get("name") or ""
+        method = MethodObject(**kwargs)
+        if args:
+            func = args[0]
+            return self._mp.method(func, method)
+        return partial(self._mp.method, method=method)
 
     @property
     def title(self) -> str:

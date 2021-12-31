@@ -62,7 +62,7 @@ class ServerVariableObject(BaseModel):
 class MethodObject(BaseModel):
     """Describes the interface for the given method name."""
 
-    name: Optional[str] = None
+    name: str
     params: Optional[list[ContentDescriptorObject]] = None
     result: Optional[ContentDescriptorObject] = None
     tags: Optional[list[TagObject]] = None
