@@ -158,7 +158,7 @@ class RPCServer:
 
     @property
     def title(self) -> str:
-        """TODO title doc."""
+        """The title of the application."""
         return self._info.title
 
     @title.setter
@@ -167,7 +167,7 @@ class RPCServer:
 
     @property
     def version(self) -> str:
-        """TODO version doc."""
+        """The version of the OpenRPC document."""
         return self._info.version
 
     @version.setter
@@ -176,7 +176,7 @@ class RPCServer:
 
     @property
     def description(self) -> str:
-        """TODO description doc."""
+        """A verbose description of the application."""
         return self._info.description
 
     @description.setter
@@ -185,7 +185,7 @@ class RPCServer:
 
     @property
     def terms_of_service(self) -> str:
-        """TODO terms_of_service doc."""
+        """A URL to the Terms of Service for the API."""
         return self._info.terms_of_service
 
     @terms_of_service.setter
@@ -194,7 +194,7 @@ class RPCServer:
 
     @property
     def contact(self) -> ContactObject:
-        """TODO contact doc."""
+        """The contact information for the exposed API."""
         return self._info.contact
 
     @contact.setter
@@ -203,7 +203,7 @@ class RPCServer:
 
     @property
     def license(self) -> LicenseObject:
-        """TODO license doc."""
+        """The license information for the exposed API."""
         return self._info.license
 
     # noinspection PyShadowingBuiltins
