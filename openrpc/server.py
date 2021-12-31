@@ -61,7 +61,7 @@ class OpenRPCServer:
 
         :param args: The method if this is used as a plain decorator.
         :param method: MethodObject if addition information is required.
-        :return: None
+        :return: The decorated method.
         """
         if args:
             func = args[0]

@@ -8,11 +8,86 @@ from pydantic import BaseModel, Field
 
 
 class ParamStructure(Enum):
-    """OpenRPC ParamStructure options."""
+    """OpenRPC method param structure options."""
 
     BY_NAME = "by-name"
     BY_POSITION = "by-position"
     EITHER = "either"
+
+
+class InfoObject(BaseModel):
+    """The object provides metadata about the API."""
+
+    title: str
+    version: str
+    description: Optional[str] = None
+    terms_of_service: Optional[str] = Field(None, alias="termsOfService")
+    contact: Optional[ContactObject] = None
+    license: Optional[LicenseObject] = None
+
+
+class ContactObject(BaseModel):
+    """Contact information for the exposed API."""
+
+    name: Optional[str] = None
+    url: Optional[str] = None
+    email: Optional[str] = None
+
+
+class LicenseObject(BaseModel):
+    """License information for the exposed API."""
+
+    name: str
+    url: Optional[str] = None
+
+
+class ServerObject(BaseModel):
+    """An object representing a Server."""
+
+    name: str
+    url: str
+    summary: Optional[str] = None
+    description: Optional[str] = None
+    variables: Optional[dict[str, ServerVariableObject]] = None
+
+
+class ServerVariableObject(BaseModel):
+    """Represents a Server Variable for server URL template substitution."""
+
+    default: str
+    enum: Optional[list[str]] = None
+    description: Optional[str] = None
+
+
+class MethodObject(BaseModel):
+    """Describes the interface for the given method name."""
+
+    name: Optional[str] = None
+    params: Optional[list[ContentDescriptorObject]] = None
+    result: Optional[ContentDescriptorObject] = None
+    tags: Optional[list[TagObject]] = None
+    summary: Optional[str] = None
+    description: Optional[str] = None
+    external_docs: Optional[ExternalDocumentationObject] = Field(
+        None, alias="externalDocs"
+    )
+    deprecated: Optional[bool] = None
+    servers: Optional[list[ServerObject]] = None
+    errors: Optional[list[ErrorObject]] = None
+    links: Optional[list[LinkObject]] = None
+    param_structure: Optional[ParamStructure] = Field(None, alias="paramStructure")
+    examples: Optional[list[ExamplePairingObject]] = None
+
+
+class ContentDescriptorObject(BaseModel):
+    """Describes either parameters or result."""
+
+    name: str
+    json_schema: SchemaObject = Field(alias="schema")
+    summary: Optional[str] = None
+    description: Optional[str] = None
+    required: Optional[bool] = None
+    deprecated: bool = False
 
 
 class SchemaObject(BaseModel):
@@ -76,99 +151,9 @@ class SchemaObject(BaseModel):
     schema_dialect: Optional[str] = Field(alias="$schema", default=None)
 
 
-# noinspection PyMissingOrEmptyDocstring
-class ServerVariableObject(BaseModel):
-    default: str
-    enum: Optional[list[str]] = None
-    description: Optional[str] = None
-
-
-# noinspection PyMissingOrEmptyDocstring
-class ServerObject(BaseModel):
-    name: str
-    url: str
-    summary: Optional[str] = None
-    description: Optional[str] = None
-    variables: Optional[dict[str, ServerVariableObject]] = None
-
-
-# noinspection PyMissingOrEmptyDocstring
-class ContactObject(BaseModel):
-    name: Optional[str] = None
-    url: Optional[str] = None
-    email: Optional[str] = None
-
-
-# noinspection PyMissingOrEmptyDocstring
-class LicenseObject(BaseModel):
-    name: str
-    url: Optional[str] = None
-
-
-# noinspection PyMissingOrEmptyDocstring
-class InfoObject(BaseModel):
-    title: str
-    version: str
-    description: Optional[str] = None
-    terms_of_service: Optional[str] = Field(None, alias="termsOfService")
-    contact: Optional[ContactObject] = None
-    license: Optional[LicenseObject] = None
-
-
-# noinspection PyMissingOrEmptyDocstring
-class ContentDescriptorObject(BaseModel):
-    name: str
-    json_schema: SchemaObject = Field(alias="schema")
-    summary: Optional[str] = None
-    description: Optional[str] = None
-    required: Optional[bool] = None
-    deprecated: bool = False
-
-
-# noinspection PyMissingOrEmptyDocstring
-class ExternalDocumentationObject(BaseModel):
-    url: str
-    description: Optional[str] = None
-
-
-# noinspection PyMissingOrEmptyDocstring
-class TagObject(BaseModel):
-    name: str
-    summary: Optional[str] = None
-    description: Optional[str] = None
-    external_docs: Optional[ExternalDocumentationObject] = Field(
-        None, alias="externalDocs"
-    )
-
-
-# noinspection PyMissingOrEmptyDocstring
-class ErrorObject(BaseModel):
-    code: int
-    message: str
-    data: Any = None
-
-
-# noinspection PyMissingOrEmptyDocstring
-class LinkObject(BaseModel):
-    name: str
-    description: Optional[str] = None
-    summary: Optional[str] = None
-    method: Optional[str] = None
-    params: Optional[dict[str, Any]] = None
-    server: Optional[ServerObject] = None
-
-
-# noinspection PyMissingOrEmptyDocstring
-class ExampleObject(BaseModel):
-    name: Optional[str] = None
-    summary: Optional[str] = None
-    description: Optional[str] = None
-    value: Any = None
-    external_value: Optional[str] = Field(None, alias="externalValue")
-
-
-# noinspection PyMissingOrEmptyDocstring
 class ExamplePairingObject(BaseModel):
+    """Consists of a set of example params and result."""
+
     name: Optional[str] = None
     description: Optional[str] = None
     summary: Optional[str] = None
@@ -176,27 +161,38 @@ class ExamplePairingObject(BaseModel):
     result: Optional[ExampleObject] = None
 
 
-# noinspection PyMissingOrEmptyDocstring
-class MethodObject(BaseModel):
+class ExampleObject(BaseModel):
+    """Example that is intended to match a given Content Descriptor Schema."""
+
     name: Optional[str] = None
-    params: Optional[list[ContentDescriptorObject]] = None
-    result: Optional[ContentDescriptorObject] = None
-    tags: Optional[list[TagObject]] = None
     summary: Optional[str] = None
     description: Optional[str] = None
-    external_docs: Optional[ExternalDocumentationObject] = Field(
-        None, alias="externalDocs"
-    )
-    deprecated: Optional[bool] = None
-    servers: Optional[list[ServerObject]] = None
-    errors: Optional[list[ErrorObject]] = None
-    links: Optional[list[LinkObject]] = None
-    param_structure: Optional[ParamStructure] = Field(None, alias="paramStructure")
-    examples: Optional[list[ExamplePairingObject]] = None
+    value: Any = None
+    external_value: Optional[str] = Field(None, alias="externalValue")
 
 
-# noinspection PyMissingOrEmptyDocstring
+class LinkObject(BaseModel):
+    """The Link object represents a possible design-time link for a result."""
+
+    name: str
+    description: Optional[str] = None
+    summary: Optional[str] = None
+    method: Optional[str] = None
+    params: Optional[Any] = None
+    server: Optional[ServerObject] = None
+
+
+class ErrorObject(BaseModel):
+    """Defines an application level error."""
+
+    code: int
+    message: str
+    data: Any = None
+
+
 class ComponentsObject(BaseModel):
+    """Holds a set of reusable objects for different aspects of the OpenRPC."""
+
     content_descriptors: Optional[dict[str, ContentDescriptorObject]] = Field(
         None, alias="contentDescriptors"
     )
@@ -210,8 +206,33 @@ class ComponentsObject(BaseModel):
     tags: Optional[dict[str, TagObject]] = None
 
 
-# noinspection PyMissingOrEmptyDocstring
+class TagObject(BaseModel):
+    """Adds metadata to a single tag that is used by the Method Object."""
+
+    name: str
+    summary: Optional[str] = None
+    description: Optional[str] = None
+    external_docs: Optional[ExternalDocumentationObject] = Field(
+        None, alias="externalDocs"
+    )
+
+
+class ExternalDocumentationObject(BaseModel):
+    """Allows referencing an external resource for extended documentation."""
+
+    url: str
+    description: Optional[str] = None
+
+
+class ReferenceObject(BaseModel):
+    """A simple object to allow referencing other components in the specification."""
+
+    ref: str = Field(alias="$ref")
+
+
 class OpenRPCObject(BaseModel):
+    """This is the root object of the OpenRPC document."""
+
     openrpc: str
     info: InfoObject
     methods: list[MethodObject]
@@ -224,4 +245,20 @@ class OpenRPCObject(BaseModel):
     )
 
 
+InfoObject.update_forward_refs()
+ContactObject.update_forward_refs()
+LicenseObject.update_forward_refs()
+ServerObject.update_forward_refs()
+ServerVariableObject.update_forward_refs()
+MethodObject.update_forward_refs()
+ContentDescriptorObject.update_forward_refs()
 SchemaObject.update_forward_refs()
+ExamplePairingObject.update_forward_refs()
+ExampleObject.update_forward_refs()
+LinkObject.update_forward_refs()
+ErrorObject.update_forward_refs()
+ComponentsObject.update_forward_refs()
+TagObject.update_forward_refs()
+ExternalDocumentationObject.update_forward_refs()
+OpenRPCObject.update_forward_refs()
+ReferenceObject.update_forward_refs()
