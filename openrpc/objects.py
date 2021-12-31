@@ -71,7 +71,7 @@ class MethodObject(BaseModel):
     external_docs: Optional[ExternalDocumentationObject] = Field(
         None, alias="externalDocs"
     )
-    deprecated: Optional[bool] = None
+    deprecated: Optional[bool] = False
     servers: Optional[list[ServerObject]] = None
     errors: Optional[list[ErrorObject]] = None
     links: Optional[list[LinkObject]] = None

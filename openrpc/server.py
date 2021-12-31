@@ -298,7 +298,8 @@ class RPCServer:
                     if k not in self._components.schemas:
                         self._components.schemas[k] = v
                 # pydantic creates definitions, move them to components.
-                for prop in schema.properties.values():
+                components = schema.properties or schema.definitions or {}
+                for prop in components.values():
                     if prop.ref:
                         prop.ref = re.sub(
                             r"^#/definitions", "#/components/schemas", prop.ref
