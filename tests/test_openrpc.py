@@ -11,24 +11,16 @@ from jsonrpcobjects.objects import (
 )
 from pydantic import BaseModel
 
-from openrpc.objects import InfoObject, MethodObject
+from openrpc.objects import InfoObject
 from openrpc.server import RPCServer
-from tests.util import parse_response
-
-INTERNAL_ERROR = -32603
-INVALID_PARAMS = -32602
-INVALID_REQUEST = -32600
-METHOD_NOT_FOUND = -32601
-PARSE_ERROR = -32700
-SERVER_ERROR = -32000
-
-
-class Vector3(BaseModel):
-    """x, y, and z values."""
-
-    x: float
-    y: float
-    z: float
+from tests.util import (
+    INVALID_REQUEST,
+    METHOD_NOT_FOUND,
+    PARSE_ERROR,
+    parse_response,
+    SERVER_ERROR,
+    Vector3,
+)
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -117,13 +109,12 @@ class RPCTest(unittest.TestCase):
         self.assertEqual(METHOD_NOT_FOUND, resp["error"]["code"])
 
     def test_server_error(self) -> None:
-        uncaught_code = SERVER_ERROR
         request = RequestObjectParams(id=1, method="divide", params=[0, 0])
         server = RPCServer(title="Test JSON RPC", version="1.0.0")
-        server.default_error_code = uncaught_code
+        server.default_error_code = SERVER_ERROR
         server.method(divide)
         resp = json.loads(server.process_request(request.json()))
-        self.assertEqual(uncaught_code, resp["error"]["code"])
+        self.assertEqual(SERVER_ERROR, resp["error"]["code"])
 
     def test_id_matching(self) -> None:
         # Result id.
@@ -229,7 +220,7 @@ class RPCTest(unittest.TestCase):
         def multiply(a: int, b: int) -> int:
             return a * b
 
-        self.server.method(func=multiply, name="math.multiply")
+        self.server.method(name="math.multiply")(multiply)
         req = RequestObjectParams(id=1, method="math.multiply", params=[2, 4])
         resp = json.loads(self.server.process_request(req.json()))
         self.assertEqual(8, resp["result"])
