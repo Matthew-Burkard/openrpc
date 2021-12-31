@@ -12,7 +12,7 @@ from jsonrpcobjects.objects import (
 from pydantic import BaseModel
 
 from openrpc.objects import InfoObject, MethodObject
-from openrpc.server import OpenRPCServer
+from openrpc.server import RPCServer
 from tests.util import parse_response
 
 INTERNAL_ERROR = -32603
@@ -35,7 +35,7 @@ class Vector3(BaseModel):
 class RPCTest(unittest.TestCase):
     def __init__(self, *args) -> None:
         self.info = InfoObject(title="Test JSON RPC", version="1.0.0")
-        self.server = OpenRPCServer(self.info)
+        self.server = RPCServer(**self.info.dict())
         self.server.method(add)
         self.server.method(subtract)
         self.server.method(divide)
@@ -119,7 +119,8 @@ class RPCTest(unittest.TestCase):
     def test_server_error(self) -> None:
         uncaught_code = SERVER_ERROR
         request = RequestObjectParams(id=1, method="divide", params=[0, 0])
-        server = OpenRPCServer(self.info, uncaught_code)
+        server = RPCServer(title="Test JSON RPC", version="1.0.0")
+        server.default_error_code = uncaught_code
         server.method(divide)
         resp = json.loads(server.process_request(request.json()))
         self.assertEqual(uncaught_code, resp["error"]["code"])
@@ -224,12 +225,12 @@ class RPCTest(unittest.TestCase):
         resp = json.loads(self.server.process_request(request.json()))
         self.assertIsNotNone(resp.get("result"))
 
-    def test_including_method_object(self) -> None:
+    def test_including_method_name(self) -> None:
         def multiply(a: int, b: int) -> int:
             return a * b
 
-        self.server.method(method=MethodObject())(multiply)
-        req = RequestObjectParams(id=1, method="multiply", params=[2, 4])
+        self.server.method(func=multiply, name="math.multiply")
+        req = RequestObjectParams(id=1, method="math.multiply", params=[2, 4])
         resp = json.loads(self.server.process_request(req.json()))
         self.assertEqual(8, resp["result"])
 
@@ -324,7 +325,7 @@ def args_and_kwargs(*args, **kwargs) -> Any:
 class OpenRPCTest(unittest.TestCase):
     def __init__(self, *args) -> None:
         self.info = InfoObject(title="Test OpenRPC", version="1.0.0")
-        self.server = OpenRPCServer(self.info)
+        self.server = RPCServer(**self.info.dict())
         self.server.method(increment)
         self.server.method(get_distance)
         self.server.method(return_none)

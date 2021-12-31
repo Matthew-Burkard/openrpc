@@ -15,7 +15,7 @@ from jsonrpcobjects.objects import (
 from pydantic import BaseModel
 
 from openrpc.objects import InfoObject, MethodObject
-from openrpc.server import OpenRPCServer
+from openrpc.server import RPCServer
 from tests.util import parse_response
 
 INTERNAL_ERROR = -32603
@@ -38,7 +38,7 @@ class Vector3(BaseModel):
 class RPCTest(unittest.TestCase):
     def __init__(self, *args) -> None:
         self.info = InfoObject(title="Test JSON RPC", version="1.0.0")
-        self.server = OpenRPCServer(self.info)
+        self.server = RPCServer(self.info)
         self.server.method(add)
         self.server.method(subtract)
         self.server.method(divide)
@@ -128,7 +128,7 @@ class RPCTest(unittest.TestCase):
     def test_server_error(self) -> None:
         uncaught_code = SERVER_ERROR
         request = RequestObjectParams(id=1, method="divide", params=[0, 0])
-        server = OpenRPCServer(self.info, uncaught_code)
+        server = RPCServer(self.info, uncaught_code)
         server.method(divide)
         resp = json.loads(get_result_async(server, request))
         self.assertEqual(uncaught_code, resp["error"]["code"])
@@ -328,7 +328,7 @@ async def args_and_kwargs(*args, **kwargs) -> Any:
 
 # noinspection PyMissingOrEmptyDocstring
 def get_result_async(
-    server: OpenRPCServer, request: Union[NotificationType, RequestType]
+    server: RPCServer, request: Union[NotificationType, RequestType]
 ) -> Optional[str]:
     loop = asyncio.new_event_loop()
     resp = loop.run_until_complete(server.process_request_async(request.json()))

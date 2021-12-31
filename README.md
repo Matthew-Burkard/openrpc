@@ -34,9 +34,9 @@ which needs at minimum a title and version.
 
 ```python
 from openrpc.objects import InfoObject
-from openrpc.server import OpenRPCServer
+from openrpc.server import RPCServer
 
-rpc = OpenRPCServer(InfoObject(title="Demo Server", version="1.0.0"))
+rpc = RPCServer(title="Demo Server", version="1.0.0")
 ```
 
 ### Register a function as an RPC Method
@@ -91,11 +91,11 @@ as well as generating schemas.
 ```python
 from flask import Flask, request
 from openrpc.objects import InfoObject
-from openrpc.server import OpenRPCServer
+from openrpc.server import RPCServer
 from pydantic import BaseModel
 
 app = Flask(__name__)
-rpc = OpenRPCServer(InfoObject(title="Demo Server", version="1.0.0"))
+rpc = RPCServer(title="Demo Server", version="1.0.0")
 
 
 class Vector3(BaseModel):

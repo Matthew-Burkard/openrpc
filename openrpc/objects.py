@@ -148,7 +148,7 @@ class SchemaObject(BaseModel):
     if_: Optional[SchemaObject] = Field(alias="if", default=None)
     then: Optional[SchemaObject] = None
     else_: Optional[SchemaObject] = Field(alias="else", default=None)
-    schema_dialect: Optional[str] = Field(alias="$schema", default=None)
+    schema_: Optional[str] = Field(alias="$schema", default=None)
 
 
 class ExamplePairingObject(BaseModel):

@@ -22,7 +22,7 @@ from pydantic import ValidationError
 from openrpc._request_processor import RequestProcessor
 from openrpc.objects import MethodObject
 
-__all__ = ("RPCServer",)
+__all__ = ("MethodProcessor",)
 
 T = Type[Callable]
 log = logging.getLogger("openrpc")
@@ -36,8 +36,8 @@ class _RegisteredMethod:
     method: MethodObject
 
 
-class RPCServer:
-    """Class to register and methods execute methods."""
+class MethodProcessor:
+    """Class to register and execute methods."""
 
     def __init__(self, server_error_code: int) -> None:
         self.methods: dict[str, _RegisteredMethod] = {}
