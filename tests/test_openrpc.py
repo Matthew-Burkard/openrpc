@@ -145,7 +145,7 @@ class RPCTest(unittest.TestCase):
                     id=divide_id, method="divide", params=[0, 0]
                 ).json(),
                 NotificationObjectParams(method="add", params=[1, 3]).json(),
-                '{"fail": "to parse", "as": "jsonrpc request"}',
+                'null',
                 NotificationObject(method="does_not_exist").json(),
                 RequestObject(id=1, method="does_not_exist").json(),
             ]

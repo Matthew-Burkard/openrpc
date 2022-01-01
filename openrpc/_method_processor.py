@@ -156,22 +156,15 @@ def _get_parsed_json(data: Union[bytes, str]) -> Union[ErrorResponseObject, dict
     except (TypeError, JSONDecodeError) as e:
         log.exception(f"{type(e).__name__}:")
         return ErrorResponseObject(error=PARSE_ERROR)
-
-    if not isinstance(parsed_json, (list, dict)):
-        log.error("Invalid request [%s]", parsed_json)
-        return ErrorResponseObject(
-            error=ErrorObjectData(**{**INVALID_REQUEST.dict(), **{"data": parsed_json}})
-        )
     return parsed_json
 
 
 def _get_request_object(
-    data: dict[str, Any]
+    data: Any,
 ) -> Union[ErrorResponseObject, NotificationType, RequestType]:
-    is_request = data.get("id") is not None
-    has_params = data.get("params") is not None
-
     try:
+        is_request = data.get("id") is not None
+        has_params = data.get("params") is not None
         if is_request:
             return (RequestObjectParams if has_params else RequestObject)(**data)
         return (NotificationObjectParams if has_params else NotificationObject)(**data)
@@ -180,4 +173,8 @@ def _get_request_object(
         return ErrorResponseObject(
             id=data.get("id"),
             error=ErrorObjectData(**{**INVALID_REQUEST.dict(), **{"data": data}}),
+        )
+    except AttributeError:
+        return ErrorResponseObject(
+            error=ErrorObjectData(**{**INVALID_REQUEST.dict(), **{"data": data}})
         )
