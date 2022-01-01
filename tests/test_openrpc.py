@@ -147,6 +147,7 @@ class RPCTest(unittest.TestCase):
                 NotificationObjectParams(method="add", params=[1, 3]).json(),
                 '{"fail": "to parse", "as": "jsonrpc request"}',
                 NotificationObject(method="does_not_exist").json(),
+                RequestObject(id=1, method="does_not_exist").json(),
             ]
         )
         responses = json.loads(self.server.process_request(f"[{requests}]"))
