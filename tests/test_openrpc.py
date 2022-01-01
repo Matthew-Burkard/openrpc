@@ -5,6 +5,7 @@ import uuid
 from typing import Any, Optional, Union
 
 from jsonrpcobjects.objects import (
+    NotificationObject,
     NotificationObjectParams,
     RequestObject,
     RequestObjectParams,
@@ -144,12 +145,14 @@ class RPCTest(unittest.TestCase):
                     id=divide_id, method="divide", params=[0, 0]
                 ).json(),
                 NotificationObjectParams(method="add", params=[1, 3]).json(),
+                '{"fail": "to parse", "as": "jsonrpc request"}',
+                NotificationObject(method="does_not_exist").json(),
             ]
         )
         responses = json.loads(self.server.process_request(f"[{requests}]"))
-        add_resp = [r for r in responses if r["id"] == add_id][0]
-        subtract_resp = [r for r in responses if r["id"] == subtract_id][0]
-        divide_resp = [r for r in responses if r["id"] == divide_id][0]
+        add_resp = [r for r in responses if r.get("id") == add_id][0]
+        subtract_resp = [r for r in responses if r.get("id") == subtract_id][0]
+        divide_resp = [r for r in responses if r.get("id") == divide_id][0]
         add_resp = parse_response(json.dumps(add_resp))
         subtract_resp = parse_response(json.dumps(subtract_resp))
         divide_resp = parse_response(json.dumps(divide_resp))
@@ -159,7 +162,7 @@ class RPCTest(unittest.TestCase):
         self.assertEqual(4, add_resp.result)
         self.assertEqual(0, subtract_resp.result)
         self.assertEqual(SERVER_ERROR, divide_resp.error.code)
-        self.assertEqual(len(responses), 3)
+        self.assertEqual(len(responses), 5)
 
     def test_list_param(self) -> None:
         def increment_list(numbers: list[Union[int, float]]) -> list:

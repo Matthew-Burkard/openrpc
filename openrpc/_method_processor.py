@@ -63,20 +63,22 @@ class MethodProcessor:
         if isinstance(parsed_json, list):
             requests = [_get_request_object(it) for it in parsed_json]
             results = []
-            for it in requests:
-                if it.method not in self.methods.keys():
-                    results.append(_get_method_not_found_error(it))
+            for r in requests:
+                if isinstance(r, ErrorResponseObject):
+                    results.append(r.json())
+                    continue
+                if r.method not in self.methods.keys():
+                    results.append(_get_method_not_found_error(r))
+                    continue
 
-                fun = self.methods[it.method].fun
-                if isinstance(it, ErrorResponseObject):
-                    results.append(it.json())
-                elif isinstance(it, RequestTypes):
+                fun = self.methods[r.method].fun
+                if isinstance(r, RequestTypes):
                     results.append(
-                        RequestProcessor(fun, self.uncaught_error_code, it).execute()
+                        RequestProcessor(fun, self.uncaught_error_code, r).execute()
                     )
                 else:
-                    # To get here, it must be a notification.
-                    RequestProcessor(fun, self.uncaught_error_code, it).execute()
+                    # To get here, r must be a notification.
+                    RequestProcessor(fun, self.uncaught_error_code, r).execute()
             return f"[{','.join(results)}]"
 
         # Single Request
@@ -106,13 +108,13 @@ class MethodProcessor:
         if isinstance(parsed_json, list):
 
             async def _one_iter(it) -> Any:
+                if isinstance(it, ErrorResponseObject):
+                    return it.json()
                 if it.method not in self.methods.keys():
                     return _get_method_not_found_error(it)
 
                 fun = self.methods[it.method].fun
-                if isinstance(it, ErrorResponseObject):
-                    return it.json()
-                elif isinstance(it, RequestTypes):
+                if isinstance(it, RequestTypes):
                     return await RequestProcessor(
                         fun, self.uncaught_error_code, it
                     ).execute_async()
