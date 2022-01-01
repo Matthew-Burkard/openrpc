@@ -12,7 +12,7 @@ from typing import (
     Union,
 )
 
-from jsonrpcobjects.errors import INTERNAL_ERROR
+from jsonrpcobjects.errors import INTERNAL_ERROR, JSONRPCError
 from jsonrpcobjects.objects import (
     ErrorObjectData,
     ErrorResponseObject,
@@ -100,6 +100,8 @@ class RequestProcessor:
 
     def _get_error_response(self, e: Exception):
         log.exception(f"{type(e).__name__}:")
+        if isinstance(e, JSONRPCError):
+            return ErrorResponseObject(id=self.request.id, error=e.rpc_error).json()
         if self.uncaught_error_code:
             return ErrorResponseObject(
                 id=self.request.id,
