@@ -81,11 +81,9 @@ class RequestProcessor:
         elif isinstance(self.request.params, list):
             params = self._get_list_params(self.request.params, annotations)
             result = self.method(*params)
-        elif isinstance(self.request.params, dict):
+        else:
             params = self._get_dict_params(self.request.params, annotations)
             result = self.method(**params)
-        else:
-            result = self.method()
 
         # Logging
         id_msg = ""
