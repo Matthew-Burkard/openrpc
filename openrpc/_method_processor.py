@@ -68,7 +68,8 @@ class MethodProcessor:
                     results.append(r.json())
                     continue
                 if r.method not in self.methods.keys():
-                    results.append(_get_method_not_found_error(r))
+                    if isinstance(r, (RequestObject, RequestObjectParams)):
+                        results.append(_get_method_not_found_error(r))
                     continue
 
                 fun = self.methods[r.method].fun
@@ -111,7 +112,9 @@ class MethodProcessor:
                 if isinstance(it, ErrorResponseObject):
                     return it.json()
                 if it.method not in self.methods.keys():
-                    return _get_method_not_found_error(it)
+                    if isinstance(it, (RequestObject, RequestObjectParams)):
+                        return _get_method_not_found_error(it)
+                    return None
 
                 fun = self.methods[it.method].fun
                 if isinstance(it, RequestTypes):
