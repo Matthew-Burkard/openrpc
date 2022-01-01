@@ -4,12 +4,12 @@ import logging
 from typing import (
     Any,
     Callable,
-    Optional,
-    Type,
-    Union,
     get_args,
     get_origin,
     get_type_hints,
+    Optional,
+    Type,
+    Union,
 )
 
 from jsonrpcobjects.errors import INTERNAL_ERROR
@@ -20,6 +20,7 @@ from jsonrpcobjects.objects import (
     NotificationObjectParams,
     NotificationType,
     RequestObject,
+    RequestObjectParams,
     RequestType,
     ResultResponseObject,
 )
@@ -73,20 +74,30 @@ class RequestProcessor:
 
     def _execute(self) -> Any:
         annotations = get_type_hints(self.method)
-
+        params = None
         # Call method.
         if isinstance(self.request, (RequestObject, NotificationObject)):
             result = self.method()
         elif isinstance(self.request.params, list):
-            result = self.method(
-                *self._get_list_params(self.request.params, annotations)
-            )
+            params = self._get_list_params(self.request.params, annotations)
+            result = self.method(*params)
         elif isinstance(self.request.params, dict):
-            result = self.method(
-                **self._get_dict_params(self.request.params, annotations)
-            )
+            params = self._get_dict_params(self.request.params, annotations)
+            result = self.method(**params)
         else:
             result = self.method()
+
+        # Logging
+        id_msg = ""
+        res_msg = ""
+        if isinstance(self.request, (RequestObject, RequestObjectParams)):
+            res_msg = f" {result}"
+            if isinstance(self.request.id, str):
+                id_msg = f'"{self.request.id}" '
+            else:
+                id_msg = f"{self.request.id} "
+        params_msg = f" {params}" if params is not None else ""
+        log.info('%s--> "%s"%s -->%s', id_msg, self.request.method, params_msg, res_msg)
         return result
 
     def _get_error_response(self, e: Exception):

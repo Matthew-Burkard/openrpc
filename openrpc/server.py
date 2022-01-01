@@ -228,7 +228,8 @@ class RPCServer:
         """
         log.debug("Processing request: %s", data)
         resp = self._mp.process(data)
-        log.debug("Responding : %s", resp)
+        if resp:
+            log.debug("Responding: %s", resp)
         return resp
 
     async def process_request_async(self, data: Union[bytes, str]) -> Optional[str]:
@@ -241,7 +242,8 @@ class RPCServer:
         """
         log.debug("Processing request: %s", data)
         resp = await self._mp.process_async(data)
-        log.debug("Responding : %s", resp)
+        if resp:
+            log.debug("Responding: %s", resp)
         return resp
 
     def discover(self) -> dict[str, Any]:
