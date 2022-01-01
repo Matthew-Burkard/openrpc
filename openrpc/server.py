@@ -6,42 +6,91 @@ from functools import partial
 from typing import (
     Any,
     Callable,
-    Optional,
-    Type,
-    Union,
     get_args,
     get_origin,
     get_type_hints,
+    Optional,
+    Type,
+    Union,
 )
 
-from openrpc._rpc_server import RPCServer
+from openrpc._method_processor import MethodProcessor
 from openrpc.objects import (
     ComponentsObject,
+    ContactObject,
     ContentDescriptorObject,
+    ErrorObject,
+    ExamplePairingObject,
+    ExternalDocumentationObject,
     InfoObject,
+    LicenseObject,
+    LinkObject,
     MethodObject,
     OpenRPCObject,
+    ParamStructure,
     SchemaObject,
+    ServerObject,
+    TagObject,
 )
 
-__all__ = ("OpenRPCServer",)
+__all__ = ("RPCServer",)
 
 T = Type[Callable]
 log = logging.getLogger("openrpc")
+_DEFAULT_ERROR_CODE = -32000
+_META_REF = "https://raw.githubusercontent.com/open-rpc/meta-schema/master/schema.json"
 
 
-class OpenRPCServer:
+class RPCServer:
     """OpenRPC server to register methods with."""
 
-    def __init__(self, info: InfoObject, server_error_code: int = -32000) -> None:
+    # noinspection PyShadowingBuiltins
+    def __init__(
+        self,
+        title: str,
+        version: str,
+        description: Optional[str] = None,
+        terms_of_service: Optional[str] = None,
+        contact: Optional[ContactObject] = None,
+        license: Optional[LicenseObject] = None,
+    ) -> None:
         # This class wraps RPCServer which registers and executes methods.
-        self.server = RPCServer(server_error_code)
-        self.info: InfoObject = info
-        self.components: ComponentsObject = ComponentsObject(schemas={})
-        self.server.method(self.discover, method=MethodObject(name="rpc.discover"))
+        self._mp = MethodProcessor(_DEFAULT_ERROR_CODE)
+        kwargs = {
+            "title": title,
+            "version": version,
+            "description": description,
+            "termsOfService": terms_of_service,
+            "contact": contact,
+            "license": license,
+        }
+        self._info = InfoObject(**{k: v for k, v in kwargs.items() if v is not None})
+        self._components: ComponentsObject = ComponentsObject(schemas={})
+        rpc_discover = MethodObject(
+            name="rpc.discover",
+            params=[],
+            result=ContentDescriptorObject(
+                name="OpenRPC Schema", schema=SchemaObject(**{"$ref": _META_REF})
+            ),
+        )
+        self._mp.method(self.discover, method=rpc_discover)
 
     def method(
-        self, *args: Union[T, tuple[T]], method: Optional[MethodObject] = None
+        self,
+        *args: T,
+        name: Optional[str] = None,
+        params: Optional[list[ContentDescriptorObject]] = None,
+        result: Optional[ContentDescriptorObject] = None,
+        tags: Optional[list[TagObject]] = None,
+        summary: Optional[str] = None,
+        description: Optional[str] = None,
+        external_docs: Optional[ExternalDocumentationObject] = None,
+        deprecated: Optional[bool] = None,
+        servers: Optional[list[ServerObject]] = None,
+        errors: Optional[list[ErrorObject]] = None,
+        links: Optional[list[LinkObject]] = None,
+        param_structure: Optional[ParamStructure] = None,
+        examples: Optional[list[ExamplePairingObject]] = None,
     ) -> T:
         """Register a method with this OpenRPC server.
 
@@ -60,14 +109,116 @@ class OpenRPCServer:
             def my_func()
 
         :param args: The method if this is used as a plain decorator.
-        :param method: MethodObject if addition information is required.
+        :param name: The canonical name for the method.
+        :param params: A list of parameters that are applicable for this
+            method.
+        :param result: The description of the result returned by the
+            method.
+        :param tags: A list of tags for API documentation control.
+        :param summary: A short summary of what the method does.
+        :param description: A verbose explanation of the method
+            behavior.
+        :param external_docs: Additional external documentation for this
+            method.
+        :param deprecated: Declares this method to be deprecated.
+        :param servers: An alternative servers array to service this
+            method.
+        :param errors: A list of custom application defined errors that
+            MAY be returned.
+        :param links: A list of possible links from this method call.
+        :param param_structure: The expected format of the parameters
+        :param examples: Array of Example Pairing Objects.
         :return: The decorated method.
         """
+        kwargs = {
+            "name": name,
+            "params": params,
+            "result": result,
+            "tags": tags,
+            "summary": summary,
+            "description": description,
+            "externalDocs": external_docs,
+            "deprecated": deprecated,
+            "servers": servers,
+            "errors": errors,
+            "links": links,
+            "paramStructure": param_structure,
+            "examples": examples,
+        }
+        kwargs = {k: v for k, v in kwargs.items() if v is not None}
         if args:
             func = args[0]
-            method = MethodObject()
-            return self.server.method(func, method)
-        return partial(self.server.method, method=method)
+        else:
+            return partial(self.method, **kwargs)
+        kwargs["name"] = kwargs.get("name") or func.__name__
+        kwargs["params"] = kwargs.get("params") or self._get_params(func)
+        kwargs["result"] = kwargs.get("result") or self._get_result(func)
+        method = MethodObject(**kwargs)
+        return self._mp.method(func, method)
+
+    @property
+    def title(self) -> str:
+        """The title of the application."""
+        return self._info.title
+
+    @title.setter
+    def title(self, title: str) -> None:
+        self._info.title = title
+
+    @property
+    def version(self) -> str:
+        """The version of the OpenRPC document."""
+        return self._info.version
+
+    @version.setter
+    def version(self, version: str) -> None:
+        self._info.version = version
+
+    @property
+    def description(self) -> str:
+        """A verbose description of the application."""
+        return self._info.description
+
+    @description.setter
+    def description(self, description: str) -> None:
+        self._info.description = description
+
+    @property
+    def terms_of_service(self) -> str:
+        """A URL to the Terms of Service for the API."""
+        return self._info.terms_of_service
+
+    @terms_of_service.setter
+    def terms_of_service(self, terms_of_service: str) -> None:
+        self._info.terms_of_service = terms_of_service
+
+    @property
+    def contact(self) -> ContactObject:
+        """The contact information for the exposed API."""
+        return self._info.contact
+
+    @contact.setter
+    def contact(self, contact: ContactObject) -> None:
+        self._info.contact = contact
+
+    @property
+    def license(self) -> LicenseObject:
+        """The license information for the exposed API."""
+        return self._info.license
+
+    # noinspection PyShadowingBuiltins
+    @license.setter
+    def license(self, license: LicenseObject) -> None:
+        self._info.license = license
+
+    @property
+    def default_error_code(self) -> int:
+        """JSON-RPC error code used when a method raises an error."""
+        return self._mp.uncaught_error_code
+
+    @default_error_code.setter
+    def default_error_code(self, default_error_code: int) -> None:
+        self._mp.uncaught_error_code = default_error_code
 
     def process_request(self, data: Union[bytes, str]) -> Optional[str]:
         """Process a JSON-RPC2 request and get the response.
@@ -76,7 +227,7 @@ class OpenRPCServer:
         :return: A valid JSON-RPC2 response.
         """
         log.debug("Processing request: %s", data)
-        resp = self.server.process(data)
+        resp = self._mp.process(data)
         log.debug("Responding : %s", resp)
         return resp
 
@@ -89,27 +240,21 @@ class OpenRPCServer:
         :return: A valid JSON-RPC2 response.
         """
         log.debug("Processing request: %s", data)
-        resp = await self.server.process_async(data)
+        resp = await self._mp.process_async(data)
         log.debug("Responding : %s", resp)
         return resp
 
     def discover(self) -> dict[str, Any]:
         """The OpenRPC discover method."""
-        for name, rpc_method in self.server.methods.items():
-            if name == "rpc.discover":
-                continue
-            method = rpc_method.method
-            method.params = method.params or self._get_params(rpc_method.fun)
-            method.result = method.result or self._get_result(rpc_method.fun)
         return OpenRPCObject(
             openrpc="1.2.6",
-            info=self.info,
+            info=self._info,
             methods=[
                 it.method
-                for it in self.server.methods.values()
+                for it in self._mp.methods.values()
                 if it.method.name != "rpc.discover"
             ],
-            components=self.components,
+            components=self._components,
         ).dict(by_alias=True, exclude_unset=True)
 
     def _get_params(self, fun: Callable) -> list[ContentDescriptorObject]:
@@ -156,10 +301,11 @@ class OpenRPCServer:
                 schema = SchemaObject(**annotation.schema())
                 schema.title = schema.title or name
                 for k, v in (schema.definitions or {}).items():
-                    if k not in self.components.schemas:
-                        self.components.schemas[k] = v
+                    if k not in self._components.schemas:
+                        self._components.schemas[k] = v
                 # pydantic creates definitions, move them to components.
-                for prop in schema.properties.values():
+                components = schema.properties or schema.definitions or {}
+                for prop in components.values():
                     if prop.ref:
                         prop.ref = re.sub(
                             r"^#/definitions", "#/components/schemas", prop.ref
@@ -178,8 +324,8 @@ class OpenRPCServer:
                     for k, v in get_type_hints(annotation).items()
                     if k != "return"
                 }
-            if schema not in self.components.schemas.values():
-                self.components.schemas[name] = schema
+            if schema not in self._components.schemas.values():
+                self._components.schemas[name] = schema
             return SchemaObject(**{"$ref": f"#/components/schemas/{name}"})
 
         if schema_type == "array":

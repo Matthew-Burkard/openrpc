@@ -62,16 +62,16 @@ class ServerVariableObject(BaseModel):
 class MethodObject(BaseModel):
     """Describes the interface for the given method name."""
 
-    name: Optional[str] = None
-    params: Optional[list[ContentDescriptorObject]] = None
-    result: Optional[ContentDescriptorObject] = None
+    name: str
+    params: list[ContentDescriptorObject]
+    result: ContentDescriptorObject
     tags: Optional[list[TagObject]] = None
     summary: Optional[str] = None
     description: Optional[str] = None
     external_docs: Optional[ExternalDocumentationObject] = Field(
         None, alias="externalDocs"
     )
-    deprecated: Optional[bool] = None
+    deprecated: Optional[bool] = False
     servers: Optional[list[ServerObject]] = None
     errors: Optional[list[ErrorObject]] = None
     links: Optional[list[LinkObject]] = None
@@ -148,7 +148,7 @@ class SchemaObject(BaseModel):
     if_: Optional[SchemaObject] = Field(alias="if", default=None)
     then: Optional[SchemaObject] = None
     else_: Optional[SchemaObject] = Field(alias="else", default=None)
-    schema_dialect: Optional[str] = Field(alias="$schema", default=None)
+    schema_: Optional[str] = Field(alias="$schema", default=None)
 
 
 class ExamplePairingObject(BaseModel):

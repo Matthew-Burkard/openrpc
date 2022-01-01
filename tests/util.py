@@ -11,6 +11,22 @@ from jsonrpcobjects.objects import (
     ResponseType,
     ResultResponseObject,
 )
+from pydantic import BaseModel
+
+INTERNAL_ERROR = -32603
+INVALID_PARAMS = -32602
+INVALID_REQUEST = -32600
+METHOD_NOT_FOUND = -32601
+PARSE_ERROR = -32700
+SERVER_ERROR = -32000
+
+
+class Vector3(BaseModel):
+    """x, y, and z values."""
+
+    x: float
+    y: float
+    z: float
 
 
 def parse_response(data: Union[bytes, str]) -> ResponseType:

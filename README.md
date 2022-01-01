@@ -33,10 +33,9 @@ quickly create an OpenRPCServer; it takes as an argument an `InfoObject`
 which needs at minimum a title and version.
 
 ```python
-from openrpc.objects import InfoObject
-from openrpc.server import OpenRPCServer
+from openrpc.server import RPCServer
 
-rpc = OpenRPCServer(InfoObject(title="Demo Server", version="1.0.0"))
+rpc = RPCServer(title="Demo Server", version="1.0.0")
 ```
 
 ### Register a function as an RPC Method
@@ -49,11 +48,6 @@ decorator to a method.
 def add(a: int, b: int) -> int:
     return a + b
 ```
-
-#### RPC Discover
-
-The `rpc.discover` method is automatically generated. It relies heavily
-on type hints.
 
 ### Process JSON RPC Request
 
@@ -72,45 +66,34 @@ req = """
 rpc.process_request(req)  # '{"id": 1, "result": 4, "jsonrpc": "2.0}'
 ```
 
+### RPC Discover
+
+The `rpc.discover` method is automatically generated. It relies heavily
+on type hints.
+
+### Pydantic Support
+
+For data classes to work properly use Pydantic.
+RPCServer will use Pydantic for JSON serialization/deserialization as
+well as generating schemas when calling `rpc.discover`.
+
 ### Async Support (v1.2+)
 
-OpenRPC has async support:
+RPCServer has async support:
 
 ```python
 await rpc.process_request_async(req)
 ```
 
-### Pydantic Support
-
-For data classes, it is strongly recommended you use Pydantic.
-OpenRPCServer will use Pydantic for JSON serialization/deserialization
-as well as generating schemas.
-
 ## Example
 
 ```python
 from flask import Flask, request
-from openrpc.objects import InfoObject
-from openrpc.server import OpenRPCServer
-from pydantic import BaseModel
+
+from openrpc.server import RPCServer
 
 app = Flask(__name__)
-rpc = OpenRPCServer(InfoObject(title="Demo Server", version="1.0.0"))
-
-
-class Vector3(BaseModel):
-    x: float
-    y: float
-    z: float
-
-
-@rpc.method
-def get_distance(a: Vector3, b: Vector3) -> Vector3:
-    return Vector3(
-        x=a.x - b.x,
-        y=a.y - b.y,
-        z=a.z - b.z,
-    )
+rpc = RPCServer(title="Demo Server", version="1.0.0")
 
 
 @rpc.method
@@ -139,11 +122,6 @@ Example In
   }, {
     "id": 2,
     "method": "add",
-    "params": [5, 7],
-    "jsonrpc": "2.0"
-  }, {
-    "id": 3,
-    "method": "add",
     "params": [11, "thirteen"],
     "jsonrpc": "2.0"
   }
@@ -160,10 +138,6 @@ Example Result Out
     "jsonrpc": "2.0"
   }, {
     "id": 2,
-    "result": 12,
-    "jsonrpc": "2.0"
-  }, {
-    "id": 3,
     "error": {
       "code": -32000,
       "message": "TypeError: unsupported operand type(s) for +: 'int' and 'str'"
@@ -171,51 +145,4 @@ Example Result Out
     "jsonrpc": "2.0"
   }
 ]
-```
-
-Example RPC Discover
-
-```json
-{
-  "id": 1,
-  "result": {
-    "openrpc": "1.2.6",
-    "info": {
-      "title": "Demo Server",
-      "version": "1.0.0"
-    },
-    "methods": [
-      {
-        "name": "add",
-        "params": [
-          {
-            "name": "a",
-            "schema": {
-              "type": "number"
-            },
-            "required": true
-          },
-          {
-            "name": "b",
-            "schema": {
-              "type": "number"
-            },
-            "required": true
-          }
-        ],
-        "result": {
-          "name": "result",
-          "schema": {
-            "type": "number"
-          },
-          "required": true
-        }
-      }
-    ],
-    "components": {
-      "schemas": {}
-    }
-  },
-  "jsonrpc": "2.0"
-}
 ```

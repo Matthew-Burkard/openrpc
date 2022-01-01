@@ -14,31 +14,23 @@ from jsonrpcobjects.objects import (
 )
 from pydantic import BaseModel
 
-from openrpc.objects import InfoObject, MethodObject
-from openrpc.server import OpenRPCServer
-from tests.util import parse_response
-
-INTERNAL_ERROR = -32603
-INVALID_PARAMS = -32602
-INVALID_REQUEST = -32600
-METHOD_NOT_FOUND = -32601
-PARSE_ERROR = -32700
-SERVER_ERROR = -32000
-
-
-class Vector3(BaseModel):
-    """x, y, and z values."""
-
-    x: float
-    y: float
-    z: float
+from openrpc.objects import InfoObject
+from openrpc.server import RPCServer
+from tests.util import (
+    INVALID_REQUEST,
+    METHOD_NOT_FOUND,
+    PARSE_ERROR,
+    parse_response,
+    SERVER_ERROR,
+    Vector3,
+)
 
 
 # noinspection PyMissingOrEmptyDocstring
 class RPCTest(unittest.TestCase):
     def __init__(self, *args) -> None:
         self.info = InfoObject(title="Test JSON RPC", version="1.0.0")
-        self.server = OpenRPCServer(self.info)
+        self.server = RPCServer(**self.info.dict())
         self.server.method(add)
         self.server.method(subtract)
         self.server.method(divide)
@@ -50,6 +42,45 @@ class RPCTest(unittest.TestCase):
         resp = loop.run_until_complete(self.server.process_request_async(request))
         loop.close()
         return resp
+
+    def test_that_async_is_async(self) -> None:
+        wait_short_started_second = False
+        wait_long_finished_second = False
+
+        async def wait_long() -> None:
+            nonlocal wait_long_finished_second, wait_short_started_second
+            wait_short_started_second = False
+            await asyncio.sleep(0.2)
+            wait_long_finished_second = True
+
+        async def wait_short() -> None:
+            nonlocal wait_long_finished_second, wait_short_started_second
+            wait_short_started_second = True
+            wait_long_finished_second = False
+
+        self.server.method(wait_long)
+        self.server.method(wait_short)
+        requests = ",".join(
+            [
+                RequestObject(id=1, method="wait_long").json(),
+                RequestObject(id=2, method="wait_short").json(),
+            ]
+        )
+        json.loads(self.get_result_async(f"[{requests}]"))
+        self.assertTrue(wait_short_started_second)
+        self.assertTrue(wait_long_finished_second)
+        # Again in reverse order.
+        wait_short_started_second = False
+        wait_long_finished_second = False
+        requests = ",".join(
+            [
+                RequestObject(id=2, method="wait_short").json(),
+                RequestObject(id=1, method="wait_long").json(),
+            ]
+        )
+        json.loads(self.get_result_async(f"[{requests}]"))
+        self.assertFalse(wait_short_started_second)
+        self.assertTrue(wait_long_finished_second)
 
     def test_array_params(self) -> None:
         request = RequestObjectParams(id=1, method="add", params=[2, 2])
@@ -126,12 +157,12 @@ class RPCTest(unittest.TestCase):
         self.assertEqual(METHOD_NOT_FOUND, resp["error"]["code"])
 
     def test_server_error(self) -> None:
-        uncaught_code = SERVER_ERROR
         request = RequestObjectParams(id=1, method="divide", params=[0, 0])
-        server = OpenRPCServer(self.info, uncaught_code)
+        server = RPCServer(**self.info.dict())
+        server.default_error_code = SERVER_ERROR
         server.method(divide)
         resp = json.loads(get_result_async(server, request))
-        self.assertEqual(uncaught_code, resp["error"]["code"])
+        self.assertEqual(SERVER_ERROR, resp["error"]["code"])
 
     def test_id_matching(self) -> None:
         # Result id.
@@ -233,12 +264,12 @@ class RPCTest(unittest.TestCase):
         resp = json.loads(self.get_result_async(request.json()))
         self.assertIsNotNone(resp.get("result"))
 
-    def test_including_method_object(self) -> None:
+    def test_including_method_name(self) -> None:
         async def multiply(a: int, b: int) -> int:
             return a * b
 
-        self.server.method(method=MethodObject())(multiply)
-        req = RequestObjectParams(id=1, method="multiply", params=[2, 4])
+        self.server.method(multiply, name="math.multiply")
+        req = RequestObjectParams(id=1, method="math.multiply", params=[2, 4])
         resp = json.loads(self.get_result_async(req.json()))
         self.assertEqual(8, resp["result"])
 
@@ -290,6 +321,7 @@ class RPCTest(unittest.TestCase):
             self.assertTrue(isinstance(thing.another_thing.position, Vector3))
             return True
 
+        # noinspection DuplicatedCode
         self.server.method(take_thing)
         req = RequestObjectParams(
             id=1,
@@ -328,7 +360,7 @@ async def args_and_kwargs(*args, **kwargs) -> Any:
 
 # noinspection PyMissingOrEmptyDocstring
 def get_result_async(
-    server: OpenRPCServer, request: Union[NotificationType, RequestType]
+    server: RPCServer, request: Union[NotificationType, RequestType]
 ) -> Optional[str]:
     loop = asyncio.new_event_loop()
     resp = loop.run_until_complete(server.process_request_async(request.json()))
