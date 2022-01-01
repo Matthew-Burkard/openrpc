@@ -395,7 +395,7 @@ class OpenRPCTest(unittest.TestCase):
                 "params": [
                     {
                         "name": "a",
-                        "schema": {"type": "number"},
+                        "schema": {"type": "integer"},
                         "required": False,
                     },
                     {

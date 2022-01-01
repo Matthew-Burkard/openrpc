@@ -343,7 +343,7 @@ class RPCServer:
         py_to_schema = {
             None: "null",
             str: "string",
-            int: "number",
+            int: "integer",
             float: "number",
             bool: "boolean",
         }
