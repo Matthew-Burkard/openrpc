@@ -1,0 +1,2 @@
+include:
+  template: Jobs/SAST.gitlab-ci.yml
