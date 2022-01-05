@@ -6,13 +6,16 @@ from functools import partial
 from typing import (
     Any,
     Callable,
-    get_args,
-    get_origin,
-    get_type_hints,
     Optional,
     Type,
     Union,
+    get_args,
+    get_origin,
+    get_type_hints,
 )
+
+from jsonrpcobjects.errors import INTERNAL_ERROR
+from jsonrpcobjects.objects import ErrorObjectData
 
 from openrpc._method_processor import MethodProcessor
 from openrpc.objects import (
@@ -226,11 +229,16 @@ class RPCServer:
         :param data: A JSON-RPC2 request.
         :return: A valid JSON-RPC2 response.
         """
-        log.debug("Processing request: %s", data)
-        resp = self._mp.process(data)
-        if resp:
-            log.debug("Responding: %s", resp)
-        return resp
+        try:
+            log.debug("Processing request: %s", data)
+            resp = self._mp.process(data)
+            if resp:
+                log.debug("Responding: %s", resp)
+            return resp
+        except Exception as e:
+            error = ErrorObjectData(**INTERNAL_ERROR.dict())
+            error.data = f"{type(e).__name__}: {', '.join(e.args)}"
+            return error.json()
 
     async def process_request_async(self, data: Union[bytes, str]) -> Optional[str]:
         """Process a JSON-RPC2 request and get the response.
@@ -240,11 +248,16 @@ class RPCServer:
         :param data: A JSON-RPC2 request.
         :return: A valid JSON-RPC2 response.
         """
-        log.debug("Processing request: %s", data)
-        resp = await self._mp.process_async(data)
-        if resp:
-            log.debug("Responding: %s", resp)
-        return resp
+        try:
+            log.debug("Processing request: %s", data)
+            resp = await self._mp.process_async(data)
+            if resp:
+                log.debug("Responding: %s", resp)
+            return resp
+        except Exception as e:
+            error = ErrorObjectData(**INTERNAL_ERROR.dict())
+            error.data = f"{type(e).__name__}: {', '.join(e.args)}"
+            return error.json()
 
     def discover(self) -> dict[str, Any]:
         """The OpenRPC discover method."""
