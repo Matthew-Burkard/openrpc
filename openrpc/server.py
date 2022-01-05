@@ -1,4 +1,4 @@
-"""Provides OpenRPCServer class."""
+"""Provides RPCServer class."""
 import inspect
 import logging
 import re
