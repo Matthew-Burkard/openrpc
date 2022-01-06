@@ -1,7 +1,6 @@
 """Test Python enums to JSON Schema enums."""
 import unittest
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -9,34 +8,33 @@ from pydantic import BaseModel
 class Model(BaseModel):
     """Example type for the enum."""
 
-    INT_FIELD: int
+    int_field: int
 
 
 class EnumExample(Enum):
     """Each type for options should get a JSON Schema type."""
 
-    INT_OPTION: int = 3
-    STR_OPTION: str = 'A string with a "'
+    INT_OPTION = 3
+    STR_OPTION = 'A string with a "'
 
 
 # TODO Determine if JSON Schema spec supports non-primitive enum values.
 class EnumClassFieldExample(Enum):
     """Enum with a field of a custom class type."""
 
-    CLASS_OPTION: Model
+    CLASS_OPTION = Model(int_field=1)
 
 
-class EnumUnsetExample(Enum):
-    """Enum with a field of a custom class type."""
+class EnumExampleWithNull(Enum):
+    """If any field is null "null" should be a valid type."""
 
-    NO_VALUE: float
+    STR_OPTION = r'\"\\"'
+    OPT_INT_OPTION = None
 
 
-class EnumExampleWithNullable(Enum):
-    """If any field is nullable "null" should be a valid type."""
-
-    STR_OPTION: str = r'\"\\"'
-    OPT_INT_OPTION: Optional[int] = None
+# noinspection PyMissingOrEmptyDocstring
+def coffee(ee: EnumExample, ecf: EnumClassFieldExample) -> EnumExampleWithNull:
+    return EnumExampleWithNull.STR_OPTION
 
 
 class EnumTest(unittest.TestCase):
