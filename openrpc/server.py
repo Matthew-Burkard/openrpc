@@ -41,7 +41,6 @@ __all__ = ("RPCServer",)
 
 T = Type[Callable]
 log = logging.getLogger("openrpc")
-_DEFAULT_ERROR_CODE = -32000
 _META_REF = "https://raw.githubusercontent.com/open-rpc/meta-schema/master/schema.json"
 
 
@@ -58,8 +57,7 @@ class RPCServer:
         contact: Optional[ContactObject] = None,
         license: Optional[LicenseObject] = None,
     ) -> None:
-        # This class wraps RPCServer which registers and executes methods.
-        self._mp = MethodProcessor(_DEFAULT_ERROR_CODE)
+        self._mp = MethodProcessor()
         kwargs = {
             "title": title,
             "version": version,

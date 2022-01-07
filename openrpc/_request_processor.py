@@ -58,7 +58,7 @@ class RequestProcessor:
     def __init__(
         self,
         method: Callable,
-        uncaught_error_code: Optional[int],
+        uncaught_error_code: int,
         request: Union[RequestType, NotificationType],
     ) -> None:
         self.method = method
@@ -124,16 +124,14 @@ class RequestProcessor:
         log.exception(f"{type(e).__name__}:")
         if isinstance(e, JSONRPCError):
             return ErrorResponseObject(id=self.request.id, error=e.rpc_error).json()
-        if self.uncaught_error_code:
-            return ErrorResponseObject(
-                id=self.request.id,
-                error=ErrorObjectData(
-                    code=self.uncaught_error_code,
-                    message="Server error",
-                    data=f"{type(e).__name__}: {e}",
-                ),
-            ).json()
-        return ErrorResponseObject(id=self.request.id, error=INTERNAL_ERROR).json()
+        return ErrorResponseObject(
+            id=self.request.id,
+            error=ErrorObjectData(
+                code=self.uncaught_error_code,
+                message="Server error",
+                data=f"{type(e).__name__}: {e}",
+            ),
+        ).json()
 
     def _get_list_params(self, params: list, annotations: dict) -> list:
         try:
