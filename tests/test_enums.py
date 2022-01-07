@@ -43,7 +43,7 @@ def enum_test_func(ee: EnumExample, ecf: EnumClassFieldExample) -> EnumExampleWi
 
 class EnumTest(unittest.TestCase):
     def __init__(self, *args) -> None:
-        self.rpc = RPCServer(title="Test JSON RPC", version="1.0.0")
+        self.rpc = RPCServer(title="Test Enums", version="1.0.0")
         super(EnumTest, self).__init__(*args)
 
     def test_register_enum_using_method(self) -> None:
@@ -86,5 +86,6 @@ class EnumTest(unittest.TestCase):
         }
         res = json.loads(self.rpc.process_request(json.dumps(req)))
         self.assertEqual(
-            "ValueError: 5 is not a valid EnumExample", res["error"]["data"]
+            "Failed to deserialize request param [5] to type [<enum 'EnumExample'>]",
+            res["error"]["data"],
         )
