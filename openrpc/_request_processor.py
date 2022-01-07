@@ -173,5 +173,5 @@ class RequestProcessor:
                 return p_type(**param)
             except (TypeError, AttributeError, KeyError):
                 return p_type(param)
-        except (TypeError, AttributeError, KeyError, ValueError) as e:
+        except (TypeError, AttributeError, KeyError, ValueError):
             return NotDeserialized
