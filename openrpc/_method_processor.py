@@ -42,6 +42,7 @@ class MethodProcessor:
 
     def __init__(self) -> None:
         self.methods: dict[str, _RegisteredMethod] = {}
+        self.uncaught_error_code = _DEFAULT_ERROR_CODE
 
     def method(self, func: T, method: MethodObject) -> T:
         """Register a method with this server for later calls."""
@@ -75,11 +76,11 @@ class MethodProcessor:
                 fun = self.methods[r.method].fun
                 if isinstance(r, RequestTypes):
                     results.append(
-                        RequestProcessor(fun, _DEFAULT_ERROR_CODE, r).execute()
+                        RequestProcessor(fun, self.uncaught_error_code, r).execute()
                     )
                 else:
                     # To get here, r must be a notification.
-                    RequestProcessor(fun, _DEFAULT_ERROR_CODE, r).execute()
+                    RequestProcessor(fun, self.uncaught_error_code, r).execute()
             return f"[{','.join(results)}]"
 
         # Single Request
@@ -89,7 +90,7 @@ class MethodProcessor:
         if req.method not in self.methods.keys():
             return _get_method_not_found_error(req)
         result = RequestProcessor(
-            self.methods[req.method].fun, _DEFAULT_ERROR_CODE, req
+            self.methods[req.method].fun, self.uncaught_error_code, req
         ).execute()
         return None if isinstance(req, NotificationTypes) else result
 
@@ -119,10 +120,12 @@ class MethodProcessor:
                 fun = self.methods[it.method].fun
                 if isinstance(it, RequestTypes):
                     return await RequestProcessor(
-                        fun, _DEFAULT_ERROR_CODE, it
+                        fun, self.uncaught_error_code, it
                     ).execute_async()
                 # To get here, it must be a notification.
-                await RequestProcessor(fun, _DEFAULT_ERROR_CODE, it).execute_async()
+                await RequestProcessor(
+                    fun, self.uncaught_error_code, it
+                ).execute_async()
 
             results = await asyncio.gather(
                 *[_one_iter(_get_request_object(it)) for it in parsed_json]
@@ -136,7 +139,7 @@ class MethodProcessor:
         if req.method not in self.methods.keys():
             return _get_method_not_found_error(req)
         result = await RequestProcessor(
-            self.methods[req.method].fun, _DEFAULT_ERROR_CODE, req
+            self.methods[req.method].fun, self.uncaught_error_code, req
         ).execute_async()
         return None if isinstance(req, NotificationTypes) else result
 
