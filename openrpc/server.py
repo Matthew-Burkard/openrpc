@@ -1,18 +1,22 @@
-"""Provides OpenRPCServer class."""
+"""Provides RPCServer class."""
 import inspect
 import logging
 import re
+from enum import Enum
 from functools import partial
 from typing import (
     Any,
     Callable,
-    get_args,
-    get_origin,
-    get_type_hints,
     Optional,
     Type,
     Union,
+    get_args,
+    get_origin,
+    get_type_hints,
 )
+
+from jsonrpcobjects.errors import INTERNAL_ERROR
+from jsonrpcobjects.objects import ErrorObjectData
 
 from openrpc._method_processor import MethodProcessor
 from openrpc.objects import (
@@ -37,7 +41,6 @@ __all__ = ("RPCServer",)
 
 T = Type[Callable]
 log = logging.getLogger("openrpc")
-_DEFAULT_ERROR_CODE = -32000
 _META_REF = "https://raw.githubusercontent.com/open-rpc/meta-schema/master/schema.json"
 
 
@@ -54,8 +57,7 @@ class RPCServer:
         contact: Optional[ContactObject] = None,
         license: Optional[LicenseObject] = None,
     ) -> None:
-        # This class wraps RPCServer which registers and executes methods.
-        self._mp = MethodProcessor(_DEFAULT_ERROR_CODE)
+        self._mp = MethodProcessor()
         kwargs = {
             "title": title,
             "version": version,
@@ -226,11 +228,16 @@ class RPCServer:
         :param data: A JSON-RPC2 request.
         :return: A valid JSON-RPC2 response.
         """
-        log.debug("Processing request: %s", data)
-        resp = self._mp.process(data)
-        if resp:
-            log.debug("Responding: %s", resp)
-        return resp
+        try:
+            log.debug("Processing request: %s", data)
+            resp = self._mp.process(data)
+            if resp:
+                log.debug("Responding: %s", resp)
+            return resp
+        except Exception as e:
+            error = ErrorObjectData(**INTERNAL_ERROR.dict())
+            error.data = f"{type(e).__name__}: {', '.join(e.args)}"
+            return error.json()
 
     async def process_request_async(self, data: Union[bytes, str]) -> Optional[str]:
         """Process a JSON-RPC2 request and get the response.
@@ -240,11 +247,16 @@ class RPCServer:
         :param data: A JSON-RPC2 request.
         :return: A valid JSON-RPC2 response.
         """
-        log.debug("Processing request: %s", data)
-        resp = await self._mp.process_async(data)
-        if resp:
-            log.debug("Responding: %s", resp)
-        return resp
+        try:
+            log.debug("Processing request: %s", data)
+            resp = await self._mp.process_async(data)
+            if resp:
+                log.debug("Responding: %s", resp)
+            return resp
+        except Exception as e:
+            error = ErrorObjectData(**INTERNAL_ERROR.dict())
+            error.data = f"{type(e).__name__}: {', '.join(e.args)}"
+            return error.json()
 
     def discover(self) -> dict[str, Any]:
         """The OpenRPC discover method."""
@@ -283,7 +295,9 @@ class RPCServer:
             required=self._is_required(get_type_hints(fun)["return"]),
         )
 
-    def _get_schema(self, annotation: Type) -> SchemaObject:
+    def _get_schema(self, annotation: Any) -> SchemaObject:
+        if isinstance(annotation, type) and issubclass(annotation, Enum):
+            return SchemaObject(enum=[it.value for it in annotation])
         if annotation == Any:
             return SchemaObject()
         if get_origin(annotation) == Union:

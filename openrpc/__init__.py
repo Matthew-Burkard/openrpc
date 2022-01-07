@@ -1,1 +1,1 @@
-"""Provides OpenRPC objects and the OpenRPCServer class."""
+"""Provides OpenRPC objects and the RPCServer class."""

@@ -28,9 +28,8 @@ pip install openrpc
 
 ## Usage
 
-This library provides an `OpenRPCServer` class that can be used to
-quickly create an OpenRPCServer; it takes as an argument an `InfoObject`
-which needs at minimum a title and version.
+This library provides an `RPCServer` class that can be used to quickly
+create an OpenRPC Server; it needs at minimum a title and version.
 
 ```python
 from openrpc.server import RPCServer
@@ -40,8 +39,8 @@ rpc = RPCServer(title="Demo Server", version="1.0.0")
 
 ### Register a function as an RPC Method
 
-To register a method with the OpenRPCServer add the `@rpc.method`
-decorator to a method.
+To register a method with the RPCServer add the `@rpc.method` decorator
+to a function.
 
 ```python
 @rpc.method
