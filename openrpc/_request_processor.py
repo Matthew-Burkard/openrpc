@@ -1,6 +1,7 @@
 """Provides RequestProcessor class for processing a single request."""
 import inspect
 import logging
+from enum import Enum
 from typing import (
     Any,
     Callable,
@@ -129,7 +130,8 @@ class RequestProcessor:
             return params
 
     def _deserialize(self, param: Any, p_type: Type) -> Any:
-        """Deserialize dict to python objects."""
+        if issubclass(p_type, Enum):
+            return p_type(param)
         if get_origin(p_type) == Union:
             for arg in get_args(p_type):
                 try:
