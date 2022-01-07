@@ -48,9 +48,6 @@ class NotDeserializedType:
     type needs to be made to represent a failure to deserialize.
     """
 
-    def __repr__(self) -> str:
-        return "JSON-RPC 2.0 Request value was not deserialized."
-
 
 NotDeserialized = NotDeserializedType()
 
