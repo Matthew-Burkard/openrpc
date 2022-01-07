@@ -1,4 +1,5 @@
 """Test Python enums to JSON Schema enums."""
+import json
 import unittest
 from enum import Enum
 
@@ -27,7 +28,7 @@ class EnumClassFieldExample(Enum):
 
 
 class EnumExampleWithNull(Enum):
-    """If any field is null "null" should be a valid type."""
+    """If any field is None, "null" should be a valid type."""
 
     STR_OPTION = r'\"\\"'
     OPT_INT_OPTION = None
@@ -61,6 +62,29 @@ class EnumTest(unittest.TestCase):
             "required": True,
         }
         res = self.rpc.discover()
-        print(res)
         self.assertEqual(params, res["methods"][0]["params"])
         self.assertEqual(result, res["methods"][0]["result"])
+
+    def test_calling_enums_method(self) -> None:
+        self.rpc.method(enum_test_func)
+        req = {
+            "id": 0,
+            "method": "enum_test_func",
+            "params": [3, {"int_field": 1}],
+            "jsonrpc": "2.0",
+        }
+        res = json.loads(self.rpc.process_request(json.dumps(req)))
+        self.assertEqual(EnumExampleWithNull.STR_OPTION.value, res["result"])
+
+    def test_calling_enums_method_with_bar_param(self) -> None:
+        self.rpc.method(enum_test_func)
+        req = {
+            "id": 0,
+            "method": "enum_test_func",
+            "params": [5, {"int_field": 1}],
+            "jsonrpc": "2.0",
+        }
+        res = json.loads(self.rpc.process_request(json.dumps(req)))
+        self.assertEqual(
+            "ValueError: 5 is not a valid EnumExample", res["error"]["data"]
+        )
