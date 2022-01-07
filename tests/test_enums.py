@@ -35,6 +35,8 @@ class EnumExampleWithNull(Enum):
 
 # noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
 def enum_test_func(ee: EnumExample, ecf: EnumClassFieldExample) -> EnumExampleWithNull:
+    assert isinstance(ee, EnumExample)
+    assert isinstance(ecf, EnumClassFieldExample)
     return EnumExampleWithNull.STR_OPTION
 
 
