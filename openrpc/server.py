@@ -2,6 +2,7 @@
 import inspect
 import logging
 import re
+from enum import Enum
 from functools import partial
 from typing import (
     Any,
@@ -299,6 +300,8 @@ class RPCServer:
     def _get_schema(self, annotation: Type) -> SchemaObject:
         if annotation == Any:
             return SchemaObject()
+        if issubclass(annotation, Enum):
+            return SchemaObject(enum=[it.value for it in annotation])
         if get_origin(annotation) == Union:
             return SchemaObject(
                 anyOf=[self._get_schema(a) for a in get_args(annotation)]
