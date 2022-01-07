@@ -297,11 +297,11 @@ class RPCServer:
             required=self._is_required(get_type_hints(fun)["return"]),
         )
 
-    def _get_schema(self, annotation: Type) -> SchemaObject:
+    def _get_schema(self, annotation: Any) -> SchemaObject:
+        if isinstance(annotation, type) and issubclass(annotation, Enum):
+            return SchemaObject(enum=[it.value for it in annotation])
         if annotation == Any:
             return SchemaObject()
-        if issubclass(annotation, Enum):
-            return SchemaObject(enum=[it.value for it in annotation])
         if get_origin(annotation) == Union:
             return SchemaObject(
                 anyOf=[self._get_schema(a) for a in get_args(annotation)]
