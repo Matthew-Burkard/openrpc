@@ -96,6 +96,7 @@ class SchemaObject(BaseModel):
     id: Optional[str] = Field(alias="$id", default=None)
     title: Optional[str] = None
     format: Optional[str] = None
+    enum: Optional[list[Any]] = None
     type: Optional[Union[str, list[str]]] = None
     all_of: Optional[list[SchemaObject]] = Field(alias="allOf", default=None)
     any_of: Optional[list[SchemaObject]] = Field(alias="anyOf", default=None)

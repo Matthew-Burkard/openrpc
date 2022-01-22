@@ -28,6 +28,7 @@ T = Type[Callable]
 log = logging.getLogger("openrpc")
 NotificationTypes = (NotificationObject, NotificationObjectParams)
 RequestTypes = (RequestObject, RequestObjectParams)
+_DEFAULT_ERROR_CODE = -32000
 
 
 @dataclass
@@ -39,9 +40,9 @@ class _RegisteredMethod:
 class MethodProcessor:
     """Class to register and execute methods."""
 
-    def __init__(self, server_error_code: int) -> None:
+    def __init__(self) -> None:
         self.methods: dict[str, _RegisteredMethod] = {}
-        self.uncaught_error_code: Optional[int] = server_error_code
+        self.uncaught_error_code = _DEFAULT_ERROR_CODE
 
     def method(self, func: T, method: MethodObject) -> T:
         """Register a method with this server for later calls."""
