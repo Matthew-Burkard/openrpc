@@ -98,14 +98,14 @@ class RPCServer:
 
         Can be used as a plain decorator, eg:
 
-        .. code-block::
+        .. code-block:: python
 
             @method
             def my_func()
 
         Or additional method info can be provided with a MethodObject:
 
-        .. code-block::
+        .. code-block:: python
 
             @method(method=MethodObject(deprecated=True))
             def my_func()
