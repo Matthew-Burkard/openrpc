@@ -50,8 +50,10 @@ def add(a: int, b: int) -> int:
 
 ### Process JSON RPC Request
 
-OpenRPC is transport agnostic. To use it, pass JSON RPC requests to the
-`process_request` method.
+OpenRPC is transport agnostic. To use it, pass JSON RPC requests as
+strings or byte strings to the `process_request` method.
+
+The `process_request` will return a JSON RPC response as a string.
 
 ```python
 req = """
