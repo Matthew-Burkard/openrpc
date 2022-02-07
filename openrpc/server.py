@@ -177,7 +177,7 @@ class RPCServer:
         self._info.version = version
 
     @property
-    def description(self) -> str:
+    def description(self) -> Optional[str]:
         """A verbose description of the application."""
         return self._info.description
 
@@ -186,7 +186,7 @@ class RPCServer:
         self._info.description = description
 
     @property
-    def terms_of_service(self) -> str:
+    def terms_of_service(self) -> Optional[str]:
         """A URL to the Terms of Service for the API."""
         return self._info.terms_of_service
 
@@ -195,7 +195,7 @@ class RPCServer:
         self._info.terms_of_service = terms_of_service
 
     @property
-    def contact(self) -> ContactObject:
+    def contact(self) -> Optional[ContactObject]:
         """The contact information for the exposed API."""
         return self._info.contact
 
@@ -204,7 +204,7 @@ class RPCServer:
         self._info.contact = contact
 
     @property
-    def license(self) -> LicenseObject:
+    def license(self) -> Optional[LicenseObject]:
         """The license information for the exposed API."""
         return self._info.license
 
@@ -234,10 +234,10 @@ class RPCServer:
             if resp:
                 log.debug("Responding: %s", resp)
             return resp
-        except Exception as e:
-            error = ErrorObjectData(**INTERNAL_ERROR.dict())
-            error.data = f"{type(e).__name__}: {', '.join(e.args)}"
-            return error.json()
+        except Exception as error:
+            error_object = ErrorObjectData(**INTERNAL_ERROR.dict())
+            error_object.data = f"{type(error).__name__}: {', '.join(error.args)}"
+            return error_object.json()
 
     async def process_request_async(self, data: Union[bytes, str]) -> Optional[str]:
         """Process a JSON-RPC2 request and get the response.
@@ -253,10 +253,10 @@ class RPCServer:
             if resp:
                 log.debug("Responding: %s", resp)
             return resp
-        except Exception as e:
-            error = ErrorObjectData(**INTERNAL_ERROR.dict())
-            error.data = f"{type(e).__name__}: {', '.join(e.args)}"
-            return error.json()
+        except Exception as error:
+            error_object = ErrorObjectData(**INTERNAL_ERROR.dict())
+            error_object.data = f"{type(error).__name__}: {', '.join(error.args)}"
+            return error_object.json()
 
     def discover(self) -> dict[str, Any]:
         """The OpenRPC discover method."""
@@ -296,6 +296,7 @@ class RPCServer:
         )
 
     def _get_schema(self, annotation: Any) -> SchemaObject:
+        self._components.schemas = self._components.schemas or {}
         if isinstance(annotation, type) and issubclass(annotation, Enum):
             return SchemaObject(enum=[it.value for it in annotation])
         if annotation == Any:
@@ -308,17 +309,13 @@ class RPCServer:
         schema_type = self._py_to_schema_type(annotation)
 
         if schema_type == "object":
-            try:
-                name = annotation.__name__
-            except AttributeError:
-                name = None
-            if "schema" in dir(annotation):
-                # noinspection PyUnresolvedReferences
+            name = annotation.__name__
+            if hasattr(annotation, "schema"):
                 schema = SchemaObject(**annotation.schema())
                 schema.title = schema.title or name
-                for k, v in (schema.definitions or {}).items():
-                    if k not in self._components.schemas:
-                        self._components.schemas[k] = v
+                for definition_name, definition in (schema.definitions or {}).items():
+                    if definition_name not in self._components.schemas:
+                        self._components.schemas[definition_name] = definition
                 # pydantic creates definitions, move them to components.
                 components = schema.properties or schema.definitions or {}
                 for prop in components.values():
@@ -327,22 +324,16 @@ class RPCServer:
                             r"^#/definitions", "#/components/schemas", prop.ref
                         )
                 del schema.definitions
-            elif get_origin(annotation) == dict:
+                if schema not in self._components.schemas.values():
+                    self._components.schemas[name] = schema
+                return SchemaObject(**{"$ref": f"#/components/schemas/{name}"})
+            if get_origin(annotation) == dict:
                 schema = SchemaObject()
                 schema.type = schema_type
                 schema.additional_properties = True
                 return schema
-            else:
-                schema = SchemaObject()
-                schema.type = schema_type
-                schema.properties = {
-                    k: self._get_schema(v)
-                    for k, v in get_type_hints(annotation).items()
-                    if k != "return"
-                }
-            if schema not in self._components.schemas.values():
-                self._components.schemas[name] = schema
-            return SchemaObject(**{"$ref": f"#/components/schemas/{name}"})
+
+            return SchemaObject(type=schema_type, additionalProperties=True)
 
         if schema_type == "array":
             schema = SchemaObject()
@@ -373,7 +364,7 @@ class RPCServer:
             return self._py_to_schema_type(get_args(annotation)[0])
         if args := get_args(annotation):
             return [
-                self._py_to_schema_type(arg)
+                str(self._py_to_schema_type(arg))
                 if "__name__" in dir(arg) and arg.__name__ != "NoneType"
                 else "null"
                 for arg in args
@@ -384,7 +375,7 @@ class RPCServer:
 
     def _get_properties(self, annotation: Type) -> dict[str, Any]:
         schema = self._get_schema(annotation)
-        properties = {}
+        properties: dict[str, Any] = {}
         if isinstance(schema, list):
             types = [arg.ref if arg.ref else arg.type for arg in schema]
             types = list(dict.fromkeys(types))

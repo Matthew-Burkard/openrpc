@@ -74,8 +74,8 @@ class RequestProcessor:
                 return None
             return ResultResponseObject(id=self.request.id, result=result).json()
 
-        except Exception as e:
-            return self._get_error_response(e)
+        except Exception as error:
+            return self._get_error_response(error)
 
     async def execute_async(self) -> Any:
         """Execute the method and get the JSON-RPC2 response.
@@ -91,8 +91,8 @@ class RequestProcessor:
                 return None
             return ResultResponseObject(id=self.request.id, result=result).json()
 
-        except Exception as e:
-            return self._get_error_response(e)
+        except Exception as error:
+            return self._get_error_response(error)
 
     def _execute(self) -> Any:
         annotations = get_type_hints(self.method)
@@ -120,16 +120,16 @@ class RequestProcessor:
         log.info('%s--> "%s"%s -->%s', id_msg, self.request.method, params_msg, res_msg)
         return result
 
-    def _get_error_response(self, e: Exception):
-        log.exception(f"{type(e).__name__}:")
-        if isinstance(e, JSONRPCError):
-            return ErrorResponseObject(id=self.request.id, error=e.rpc_error).json()
+    def _get_error_response(self, error: Exception):
+        log.exception(f"{type(error).__name__}:")
+        if isinstance(error, JSONRPCError):
+            return ErrorResponseObject(id=self.request.id, error=error.rpc_error).json()
         return ErrorResponseObject(
             id=self.request.id,
             error=ErrorObjectData(
                 code=self.uncaught_error_code,
                 message="Server error",
-                data=f"{type(e).__name__}: {e}",
+                data=f"{type(error).__name__}: {error}",
             ),
         ).json()
 
