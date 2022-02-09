@@ -336,17 +336,18 @@ class RPCServer:
             return SchemaObject(type=schema_type, additionalProperties=True)
 
         if schema_type == "array":
-            schema = SchemaObject()
+            schema = SchemaObject(type=schema_type)
             schema.type = schema_type
             if args := get_args(annotation):
-                schema.items = SchemaObject(**self._get_properties(args[0]))
+                schema.items = self._get_schema(args[0])
             return schema
 
         schema = SchemaObject()
         schema.type = schema_type
         return schema
 
-    def _py_to_schema_type(self, annotation: Any) -> Union[str, list[str]]:
+    @staticmethod
+    def _py_to_schema_type(annotation: Any) -> str:
         py_to_schema = {
             None: "null",
             str: "string",
@@ -360,35 +361,9 @@ class RPCServer:
             return "array"
         if dict in [origin, annotation]:
             return "object"
-        if Union in [origin, annotation]:
-            return self._py_to_schema_type(get_args(annotation)[0])
-        if args := get_args(annotation):
-            return [
-                str(self._py_to_schema_type(arg))
-                if "__name__" in dir(arg) and arg.__name__ != "NoneType"
-                else "null"
-                for arg in args
-            ]
         if type(None) is annotation:
             return "null"
         return py_to_schema.get(annotation) or "object"
-
-    def _get_properties(self, annotation: Type) -> dict[str, Any]:
-        schema = self._get_schema(annotation)
-        properties: dict[str, Any] = {}
-        if isinstance(schema, list):
-            types = [arg.ref if arg.ref else arg.type for arg in schema]
-            types = list(dict.fromkeys(types))
-            if len(types) > 1:
-                # noinspection PyTypedDict
-                properties["type"] = types
-                return properties
-            schema = schema[0]
-        if schema.ref:
-            properties["$ref"] = schema.ref
-        else:
-            properties["type"] = schema.type
-        return properties
 
     @staticmethod
     def _is_required(annotation: Any) -> bool:
