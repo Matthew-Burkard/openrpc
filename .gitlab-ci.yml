@@ -1,5 +1,30 @@
+image: "python:latest"
+
 include:
   - template: Security/Dependency-Scanning.gitlab-ci.yml
   - template: Security/License-Scanning.gitlab-ci.yml
   - template: Security/SAST.gitlab-ci.yml
   - template: Security/Secret-Detection.gitlab-ci.yml
+
+cache:
+  paths:
+    - .cache/pip
+    - venv/
+
+pytest:
+  script:
+    - pip install poetry
+    - poetry --version
+    - poetry config virtualenvs.in-project true
+    - poetry install -vv
+    - poetry run pytest tests/
+
+flake8:
+  script:
+    - pip install flake8
+    - flake8 --max-line-length=88 ./openrpc/*.py
+
+mypy:
+  script:
+    - pip install mypy
+    - mypy ./openrpc/
