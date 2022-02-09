@@ -165,7 +165,7 @@ def _get_request_object(
     try:
         is_request = data.get("id") is not None
         has_params = data.get("params") is not None
-        if is_request and has_params:
+        if is_request:
             return RequestObjectParams(**data) if has_params else RequestObject(**data)
         return (
             NotificationObjectParams(**data)
