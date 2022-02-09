@@ -149,6 +149,7 @@ class RPCTest(unittest.TestCase):
                 NotificationObjectParams(method="add", params=[1, 3]).json(),
                 "null",
                 NotificationObject(method="does_not_exist").json(),
+                NotificationObjectParams(method="divide", params=[0, 0]).json(),
                 RequestObject(id=1, method="does_not_exist").json(),
                 RequestObject(id=none_id, method="return_none").json(),
             ]
@@ -168,7 +169,7 @@ class RPCTest(unittest.TestCase):
         self.assertEqual(4, add_resp.result)
         self.assertEqual(0, subtract_resp.result)
         self.assertEqual(SERVER_ERROR, divide_resp.error.code)
-        self.assertEqual(None, none_resp.result)
+        self.assertIsNone(none_resp.result)
         self.assertEqual(len(responses), 6)
 
     def test_list_param(self) -> None:

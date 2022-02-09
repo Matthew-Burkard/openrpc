@@ -184,6 +184,7 @@ class RPCTest(unittest.TestCase):
         add_id = str(uuid.uuid4())
         subtract_id = str(uuid.uuid4())
         divide_id = str(uuid.uuid4())
+        none_id = str(uuid.uuid4())
         requests = ",".join(
             [
                 RequestObjectParams(id=add_id, method="add", params=[2, 2]).json(),
@@ -197,22 +198,27 @@ class RPCTest(unittest.TestCase):
                 '{"fail": "to parse", "as": "jsonrpc request"}',
                 NotificationObject(method="does_not_exist").json(),
                 RequestObject(id=1, method="does_not_exist").json(),
+                NotificationObjectParams(method="divide", params=[0, 0]).json(),
+                RequestObject(id=none_id, method="return_none").json(),
             ]
         )
         responses = json.loads(self.get_result_async(f"[{requests}]"))
         add_resp = [r for r in responses if r.get("id") == add_id][0]
         subtract_resp = [r for r in responses if r.get("id") == subtract_id][0]
         divide_resp = [r for r in responses if r.get("id") == divide_id][0]
+        none_resp = [r for r in responses if r.get("id") == none_id][0]
         add_resp = parse_response(json.dumps(add_resp))
         subtract_resp = parse_response(json.dumps(subtract_resp))
         divide_resp = parse_response(json.dumps(divide_resp))
+        none_resp = parse_response(json.dumps(none_resp))
         self.assertEqual(add_id, add_resp.id)
         self.assertEqual(subtract_id, subtract_resp.id)
         self.assertEqual(divide_id, divide_resp.id)
         self.assertEqual(4, add_resp.result)
         self.assertEqual(0, subtract_resp.result)
         self.assertEqual(SERVER_ERROR, divide_resp.error.code)
-        self.assertEqual(len(responses), 5)
+        self.assertIsNone(none_resp.result)
+        self.assertEqual(len(responses), 6)
 
     def test_list_param(self) -> None:
         async def increment_list(numbers: list[Union[int, float]]) -> list:
