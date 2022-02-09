@@ -96,7 +96,7 @@ class RequestProcessor:
 
     def _execute(self) -> Any:
         annotations = get_type_hints(self.method)
-        params = None
+        params: Optional[Union[dict, list]] = None
         # Call method.
         if isinstance(self.request, (RequestObject, NotificationObject)):
             result = self.method()
@@ -120,8 +120,10 @@ class RequestProcessor:
         log.info('%s--> "%s"%s -->%s', id_msg, self.request.method, params_msg, res_msg)
         return result
 
-    def _get_error_response(self, error: Exception):
+    def _get_error_response(self, error: Exception) -> Optional[str]:
         log.exception(f"{type(error).__name__}:")
+        if not isinstance(self.request, (RequestObjectParams, RequestObject)):
+            return None
         if isinstance(error, JSONRPCError):
             return ErrorResponseObject(id=self.request.id, error=error.rpc_error).json()
         return ErrorResponseObject(

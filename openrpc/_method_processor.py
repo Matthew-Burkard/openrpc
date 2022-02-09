@@ -4,7 +4,7 @@ import json
 import logging
 from dataclasses import dataclass
 from json import JSONDecodeError
-from typing import Any, Callable, Optional, Type, Union
+from typing import Any, Callable, Optional, TypeVar, Union
 
 from jsonrpcobjects.errors import INVALID_REQUEST, METHOD_NOT_FOUND, PARSE_ERROR
 from jsonrpcobjects.objects import (
@@ -24,7 +24,7 @@ from openrpc.objects import MethodObject
 
 __all__ = ("MethodProcessor",)
 
-T = Type[Callable]
+T = TypeVar("T", bound=Callable)
 log = logging.getLogger("openrpc")
 NotificationTypes = (NotificationObject, NotificationObjectParams)
 RequestTypes = (RequestObject, RequestObjectParams)
@@ -63,7 +63,7 @@ class MethodProcessor:
         # Batch
         if isinstance(parsed_json, list):
             requests = [_get_request_object(it) for it in parsed_json]
-            results = []
+            results: list[str] = []
             for req in requests:
                 if isinstance(req, ErrorResponseObject):
                     results.append(req.json())
@@ -74,13 +74,10 @@ class MethodProcessor:
                     continue
 
                 fun = self.methods[req.method].fun
-                if isinstance(req, RequestTypes):
-                    results.append(
-                        RequestProcessor(fun, self.uncaught_error_code, req).execute()
-                    )
-                else:
-                    # To get here, r must be a notification.
-                    RequestProcessor(fun, self.uncaught_error_code, req).execute()
+                resp = RequestProcessor(fun, self.uncaught_error_code, req).execute()
+                # If resp is None, request is a notification.
+                if resp is not None:
+                    results.append(resp)
             return f"[{','.join(results)}]"
 
         # Single Request
@@ -124,7 +121,7 @@ class MethodProcessor:
                     return await RequestProcessor(
                         fun, self.uncaught_error_code, request
                     ).execute_async()
-                # To get here, it must be a notification.
+                # To get here, request must be a notification.
                 await RequestProcessor(
                     fun, self.uncaught_error_code, request
                 ).execute_async()
@@ -168,9 +165,13 @@ def _get_request_object(
     try:
         is_request = data.get("id") is not None
         has_params = data.get("params") is not None
-        if is_request:
-            return (RequestObjectParams if has_params else RequestObject)(**data)
-        return (NotificationObjectParams if has_params else NotificationObject)(**data)
+        if is_request and has_params:
+            return RequestObjectParams(**data) if has_params else RequestObject(**data)
+        return (
+            NotificationObjectParams(**data)
+            if has_params
+            else NotificationObject(**data)
+        )
     except (TypeError, ValidationError) as error:
         log.exception(f"{type(error).__name__}:")
         return ErrorResponseObject(

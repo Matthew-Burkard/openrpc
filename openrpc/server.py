@@ -130,7 +130,7 @@ class RPCServer:
         :param links: A list of possible links from this method call.
         :param param_structure: The expected format of the parameters
         :param examples: Array of Example Pairing Objects.
-        :return: The decorated method.
+        :return: The method decorator.
         """
         kwargs = {
             "name": name,
@@ -151,7 +151,7 @@ class RPCServer:
         if args:
             func = args[0]
         else:
-            return partial(self.method, **kwargs)
+            return partial(self.method, **kwargs)  # type: ignore
         kwargs["name"] = kwargs.get("name") or func.__name__
         kwargs["params"] = kwargs.get("params") or self._get_params(func)
         kwargs["result"] = kwargs.get("result") or self._get_result(func)
@@ -311,7 +311,7 @@ class RPCServer:
         if schema_type == "object":
             name = annotation.__name__
             if hasattr(annotation, "schema"):
-                schema = SchemaObject(**annotation.schema())
+                schema = SchemaObject(**annotation.schema())  # type: ignore
                 schema.title = schema.title or name
                 for definition_name, definition in (schema.definitions or {}).items():
                     if definition_name not in self._components.schemas:
