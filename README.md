@@ -102,7 +102,7 @@ def add(a: int, b: int) -> int:
     return a + b
 
 
-@app.route("/api/v1/", methods=["POST"])
+@app.post("/api/v1/")
 def process_rpc() -> str:
     return rpc.process_request(request.data)
 
