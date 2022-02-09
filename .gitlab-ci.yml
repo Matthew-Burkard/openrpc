@@ -6,25 +6,53 @@ include:
   - template: Security/SAST.gitlab-ci.yml
   - template: Security/Secret-Detection.gitlab-ci.yml
 
-cache:
-  paths:
-    - .cache/pip
-    - venv/
+variables:
+  # Change pip's cache directory to be inside the project directory
+  # since we can only cache local items.
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  PROJCECT_SRC_DIR: "$CI_PROJECT_DIR/openrpc/"
 
-pytest:
-  script:
+.setup_environmentt: &setup_env
+  before_script:
+    - python --version
     - pip install poetry
     - poetry --version
     - poetry config virtualenvs.in-project true
     - poetry install -vv
-    - poetry run pytest tests/
+    - source ./.venv/bin/activate
+
+cache:
+  paths:
+    - .cache/pip
+    - .venv/
+
+stages:
+  - analysis
+  - test
+
+black:
+  stage: analysis
+  allow_failure: true
+  <<: *setup_env
+  script:
+    - black --check $PROJCECT_SRC_DIR
 
 flake8:
+  stage: analysis
+  allow_failure: true
+  <<: *setup_env
   script:
-    - pip install flake8
-    - flake8 --max-line-length=88 ./openrpc/*.py
+    - flake8 --max-line-length=88 $PROJCECT_SRC_DIR
 
 mypy:
+  stage: analysis
+  allow_failure: true
+  <<: *setup_env
   script:
-    - pip install mypy
-    - mypy ./openrpc/
+    - mypy $PROJCECT_SRC_DIR
+
+pytest:
+  stage: test
+  <<: *setup_env
+  script:
+    - poetry run pytest tests/
