@@ -18,6 +18,8 @@ class OpenRPCTest(unittest.TestCase):
         self.rpc.method(return_none)
         self.rpc.method(default_value)
         self.rpc.method(take_any_get_any)
+        self.rpc.method(dict_and_list)
+        self.rpc.method(typed_dict_and_list)
         self.rpc.title = self.rpc.title or "Test OpenRPC"
         self.rpc.version = self.rpc.version or "1.0.0"
         self.rpc.description = self.rpc.description or "Testing rpc.discover"
@@ -40,7 +42,7 @@ class OpenRPCTest(unittest.TestCase):
                 "contact": {"name": "mocha"},
                 "license": {"name": "AGPLv3"},
             },
-            self.discover_result["info"]
+            self.discover_result["info"],
         )
 
     def test_lists(self) -> None:
@@ -206,4 +208,16 @@ def return_none(optional_param: Optional[str]) -> None:
 
 # noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
 def take_any_get_any(any_param: Any) -> Any:
+    pass
+
+
+# noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
+def dict_and_list(dict_param: dict, list_param: list) -> dict[str, list]:
+    pass
+
+
+# noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
+def typed_dict_and_list(
+    dict_param: dict[str, int], list_param: list[dict[str, int]]
+) -> dict[str, list]:
     pass

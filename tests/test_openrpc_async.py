@@ -36,6 +36,7 @@ class RPCTest(unittest.TestCase):
         self.server.method(subtract)
         self.server.method(divide)
         self.server.method(args_and_kwargs)
+        self.server.method(return_none)
         super(RPCTest, self).__init__(*args)
 
     def get_result_async(self, request: Union[str, bytes]) -> Optional[str]:
@@ -259,7 +260,7 @@ class RPCTest(unittest.TestCase):
 
         async def optional_param(v: Optional[Vector3] = None) -> Optional[Vector3]:
             # This assertion won't fail test if it fails, that's why we
-            # assert the the response has a result.
+            # assert the response has a result.
             self.assertEqual(v, vector)
             return v
 
@@ -341,6 +342,11 @@ class RPCTest(unittest.TestCase):
         resp = json.loads(self.get_result_async(req.json()))
         self.assertTrue(resp["result"])
 
+    def test_return_none(self) -> None:
+        req = RequestObject(id=1, method="return_none")
+        resp = json.loads(self.get_result_async(req.json()))
+        self.assertIsNone(resp["result"])
+
 
 # noinspection PyMissingOrEmptyDocstring
 async def add(x: float, y: float) -> float:
@@ -360,6 +366,11 @@ async def divide(x: float, y: float) -> float:
 # noinspection PyMissingOrEmptyDocstring
 async def args_and_kwargs(*args, **kwargs) -> Any:
     return *args, {**kwargs}
+
+
+# noinspection PyMissingOrEmptyDocstring
+async def return_none() -> None:
+    return None
 
 
 # noinspection PyMissingOrEmptyDocstring
