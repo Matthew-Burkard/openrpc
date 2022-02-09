@@ -55,13 +55,21 @@ class OpenRPCTest(unittest.TestCase):
                 "params": [
                     {
                         "name": "numbers",
-                        "schema": {"type": "array", "items": {"type": None}},
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "anyOf": [{"type": "integer"}, {"type": "number"}]
+                            },
+                        },
                         "required": True,
                     }
                 ],
                 "result": {
                     "name": "result",
-                    "schema": {"type": "array", "items": {"type": None}},
+                    "schema": {
+                        "type": "array",
+                        "items": {"anyOf": [{"type": "integer"}, {"type": "string"}]},
+                    },
                     "required": True,
                 },
             },
