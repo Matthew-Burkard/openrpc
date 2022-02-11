@@ -4,10 +4,19 @@ import unittest
 from typing import Any, Optional, Union
 
 from jsonrpcobjects.objects import RequestObject
+from pydantic import BaseModel
 
 from openrpc.objects import ContactObject, LicenseObject
 from openrpc.server import RPCServer
 from tests.util import Vector3
+
+
+class NestedModels(BaseModel):
+    """To test models with other models as fields."""
+
+    name: str
+    position: Vector3
+    path: list[Vector3]
 
 
 class OpenRPCTest(unittest.TestCase):
@@ -20,6 +29,7 @@ class OpenRPCTest(unittest.TestCase):
         self.rpc.method(take_any_get_any)
         self.rpc.method(dict_and_list)
         self.rpc.method(typed_dict_and_list)
+        self.rpc.method(nested_model)
         self.rpc.title = self.rpc.title or "Test OpenRPC"
         self.rpc.version = self.rpc.version or "1.0.0"
         self.rpc.description = self.rpc.description or "Testing rpc.discover"
@@ -178,19 +188,37 @@ class OpenRPCTest(unittest.TestCase):
     def test_schemas(self) -> None:
         self.assertEqual(
             {
-                "Vector3": {
-                    "type": "object",
-                    "description": "x, y, and z values.",
-                    "properties": {
-                        "x": {"title": "X", "type": "number"},
-                        "y": {"title": "Y", "type": "number"},
-                        "z": {"title": "Z", "type": "number"},
-                    },
-                    "required": ["x", "y", "z"],
-                    "title": "Vector3",
-                }
+                "type": "object",
+                "title": "Vector3",
+                "description": "x, y, and z values.",
+                "properties": {
+                    "x": {"title": "X", "type": "number"},
+                    "y": {"title": "Y", "type": "number"},
+                    "z": {"title": "Z", "type": "number"},
+                },
+                "required": ["x", "y", "z"],
             },
-            self.discover_result["components"]["schemas"],
+            self.discover_result["components"]["schemas"]["Vector3"],
+        )
+        self.assertEqual(
+            {
+                "type": "object",
+                "description": "To test models with other models as fields.",
+                "properties": {
+                    "name": {"title": "Name", "type": "string"},
+                    "position": {
+                        "title": "Position",
+                        "$ref": "#/components/schemas/Vector3",
+                    },
+                    "path": {
+                        "type": "array",
+                        "items": {"$ref": "#/components/schemas/Vector3"},
+                    },
+                },
+                "required": ["name", "position", "path"],
+                "title": "NestedModels",
+            },
+            self.discover_result["components"]["schemas"]["NestedModels"],
         )
 
 
@@ -221,6 +249,11 @@ def take_any_get_any(any_param: Any) -> Any:
 
 # noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
 def dict_and_list(dict_param: dict, list_param: list) -> dict[str, list]:
+    pass
+
+
+# noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
+def nested_model(a: NestedModels) -> dict[str, NestedModels]:
     pass
 
 
