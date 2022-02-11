@@ -19,7 +19,7 @@ class NestedModels(BaseModel):
     path: list[Vector3]
 
 
-class OpenRPCTest(unittest.TestCase):
+class DiscoverTest(unittest.TestCase):
     def __init__(self, *args) -> None:
         self.rpc = RPCServer(title="Test OpenRPC", version="1.0.0")
         self.rpc.method(increment)
@@ -39,9 +39,9 @@ class OpenRPCTest(unittest.TestCase):
         request = RequestObject(id=1, method="rpc.discover")
         resp = json.loads(self.rpc.process_request(request.json()))
         self.discover_result = resp["result"]
-        super(OpenRPCTest, self).__init__(*args)
+        super(DiscoverTest, self).__init__(*args)
 
-    def test_open_rpc(self) -> None:
+    def test_open_rpc_info(self) -> None:
         self.assertEqual("1.2.6", self.discover_result["openrpc"])
         self.assertEqual(
             {
