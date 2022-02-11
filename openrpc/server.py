@@ -1,8 +1,5 @@
 """Provides RPCServer class."""
-import inspect
 import logging
-import re
-from enum import Enum
 from functools import partial
 from typing import (
     Any,
@@ -10,17 +7,15 @@ from typing import (
     Optional,
     Type,
     Union,
-    get_args,
-    get_origin,
-    get_type_hints,
 )
 
 from jsonrpcobjects.errors import INTERNAL_ERROR
 from jsonrpcobjects.objects import ErrorObjectData
 
+from openrpc._discover import DiscoverHandler
 from openrpc._method_processor import MethodProcessor
+from openrpc._util import Function
 from openrpc.objects import (
-    ComponentsObject,
     ContactObject,
     ContentDescriptorObject,
     ErrorObject,
@@ -29,8 +24,6 @@ from openrpc.objects import (
     InfoObject,
     LicenseObject,
     LinkObject,
-    MethodObject,
-    OpenRPCObject,
     ParamStructure,
     SchemaObject,
     ServerObject,
@@ -57,7 +50,7 @@ class RPCServer:
         contact: Optional[ContactObject] = None,
         license: Optional[LicenseObject] = None,
     ) -> None:
-        self._mp = MethodProcessor()
+        self._method_processor = MethodProcessor()
         kwargs = {
             "title": title,
             "version": version,
@@ -67,15 +60,14 @@ class RPCServer:
             "license": license,
         }
         self._info = InfoObject(**{k: v for k, v in kwargs.items() if v is not None})
-        self._components: ComponentsObject = ComponentsObject(schemas={})
-        rpc_discover = MethodObject(
+        self._functions: list[Function] = []
+        self.method(
             name="rpc.discover",
             params=[],
             result=ContentDescriptorObject(
                 name="OpenRPC Schema", schema=SchemaObject(**{"$ref": _META_REF})
             ),
-        )
-        self._mp.method(self.discover, method=rpc_discover)
+        )(self.discover)
 
     def method(
         self,
@@ -132,7 +124,7 @@ class RPCServer:
         :param examples: Array of Example Pairing Objects.
         :return: The method decorator.
         """
-        kwargs = {
+        metadata = {
             "name": name,
             "params": params,
             "result": result,
@@ -147,16 +139,15 @@ class RPCServer:
             "paramStructure": param_structure,
             "examples": examples,
         }
-        kwargs = {k: v for k, v in kwargs.items() if v is not None}
+        metadata = {k: v for k, v in metadata.items() if v is not None}
         if args:
             func = args[0]
         else:
-            return partial(self.method, **kwargs)  # type: ignore
-        kwargs["name"] = kwargs.get("name") or func.__name__
-        kwargs["params"] = kwargs.get("params") or self._get_params(func)
-        kwargs["result"] = kwargs.get("result") or self._get_result(func)
-        method = MethodObject(**kwargs)
-        return self._mp.method(func, method)
+            return partial(self.method, **metadata)  # type: ignore
+        metadata["name"] = metadata.get("name") or func.__name__
+        self._functions.append(Function(function=func, metadata=metadata))
+        log.debug("Registering method [%s]", func.__name__)
+        return self._method_processor.method(func, metadata["name"])
 
     @property
     def title(self) -> str:
@@ -216,11 +207,11 @@ class RPCServer:
     @property
     def default_error_code(self) -> int:
         """JSON-RPC error code used when a method raises an error."""
-        return self._mp.uncaught_error_code
+        return self._method_processor.uncaught_error_code
 
     @default_error_code.setter
     def default_error_code(self, default_error_code: int) -> None:
-        self._mp.uncaught_error_code = default_error_code
+        self._method_processor.uncaught_error_code = default_error_code
 
     def process_request(self, data: Union[bytes, str]) -> Optional[str]:
         """Process a JSON-RPC2 request and get the response.
@@ -230,7 +221,7 @@ class RPCServer:
         """
         try:
             log.debug("Processing request: %s", data)
-            resp = self._mp.process(data)
+            resp = self._method_processor.process(data)
             if resp:
                 log.debug("Responding: %s", resp)
             return resp
@@ -249,7 +240,7 @@ class RPCServer:
         """
         try:
             log.debug("Processing request: %s", data)
-            resp = await self._mp.process_async(data)
+            resp = await self._method_processor.process_async(data)
             if resp:
                 log.debug("Responding: %s", resp)
             return resp
@@ -259,118 +250,9 @@ class RPCServer:
             return error_object.json()
 
     def discover(self) -> dict[str, Any]:
-        """The OpenRPC discover method."""
-        return OpenRPCObject(
-            openrpc="1.2.6",
-            info=self._info,
-            methods=[
-                it.method
-                for it in self._mp.methods.values()
-                if it.method.name != "rpc.discover"
-            ],
-            components=self._components,
-        ).dict(by_alias=True, exclude_unset=True)
-
-    def _get_params(self, fun: Callable) -> list[ContentDescriptorObject]:
-        # noinspection PyUnresolvedReferences,PyProtectedMember
-        has_default = {
-            k
-            for k, v in inspect.signature(fun).parameters.items()
-            if v.default != inspect._empty
-        }
-        return [
-            ContentDescriptorObject(
-                name=name,
-                schema=self._get_schema(annotation),
-                required=name not in has_default and self._is_required(annotation),
-            )
-            for name, annotation in get_type_hints(fun).items()
-            if name != "return"
-        ]
-
-    def _get_result(self, fun: Callable) -> ContentDescriptorObject:
-        return ContentDescriptorObject(
-            name="result",
-            schema=self._get_schema(get_type_hints(fun)["return"]),
-            required=self._is_required(get_type_hints(fun)["return"]),
+        """The OpenRPC "rpc.discover" method."""
+        return (
+            DiscoverHandler(self._info, self._functions)
+            .execute()
+            .dict(by_alias=True, exclude_unset=True)
         )
-
-    def _get_schema(self, annotation: Any) -> SchemaObject:
-        self._components.schemas = self._components.schemas or {}
-        if isinstance(annotation, type) and issubclass(annotation, Enum):
-            return SchemaObject(enum=[it.value for it in annotation])
-        if annotation == Any:
-            return SchemaObject()
-        if get_origin(annotation) == Union:
-            return SchemaObject(
-                anyOf=[self._get_schema(a) for a in get_args(annotation)]
-            )
-
-        schema_type = self._py_to_schema_type(annotation)
-
-        if schema_type == "object":
-            name = annotation.__name__
-            if hasattr(annotation, "schema"):
-                schema = SchemaObject(**annotation.schema())  # type: ignore
-                schema.title = schema.title or name
-                for definition_name, definition in (schema.definitions or {}).items():
-                    if definition_name not in self._components.schemas:
-                        self._components.schemas[definition_name] = definition
-                # pydantic creates definitions, move them to components.
-                components = schema.properties or schema.definitions or {}
-                for prop in components.values():
-                    if prop.ref:
-                        prop.ref = re.sub(
-                            r"^#/definitions", "#/components/schemas", prop.ref
-                        )
-                del schema.definitions
-                if schema not in self._components.schemas.values():
-                    self._components.schemas[name] = schema
-                return SchemaObject(**{"$ref": f"#/components/schemas/{name}"})
-            if get_origin(annotation) == dict:
-                schema = SchemaObject()
-                schema.type = schema_type
-                schema.additional_properties = True
-                return schema
-
-            return SchemaObject(type=schema_type, additionalProperties=True)
-
-        if schema_type == "array":
-            schema = SchemaObject(type=schema_type)
-            schema.type = schema_type
-            if args := get_args(annotation):
-                schema.items = self._get_schema(args[0])
-            return schema
-
-        schema = SchemaObject()
-        schema.type = schema_type
-        return schema
-
-    @staticmethod
-    def _py_to_schema_type(annotation: Any) -> str:
-        py_to_schema = {
-            None: "null",
-            str: "string",
-            int: "integer",
-            float: "number",
-            bool: "boolean",
-        }
-        origin = get_origin(annotation)
-        flat_collections = [list, set, tuple]
-        if origin in flat_collections or annotation in flat_collections:
-            return "array"
-        if dict in [origin, annotation]:
-            return "object"
-        if type(None) is annotation:
-            return "null"
-        return py_to_schema.get(annotation) or "object"
-
-    @staticmethod
-    def _is_required(annotation: Any) -> bool:
-        def _get_name(arg: Any) -> str:
-            try:
-                return arg.__name__
-            except AttributeError:
-                return ""
-
-        return "NoneType" not in [_get_name(a) for a in get_args(annotation)]

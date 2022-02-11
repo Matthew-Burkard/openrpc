@@ -2,7 +2,6 @@
 import asyncio
 import json
 import logging
-from dataclasses import dataclass
 from json import JSONDecodeError
 from typing import Any, Callable, Optional, TypeVar, Union
 
@@ -20,7 +19,6 @@ from jsonrpcobjects.objects import (
 from pydantic import ValidationError
 
 from openrpc._request_processor import RequestProcessor
-from openrpc.objects import MethodObject
 
 __all__ = ("MethodProcessor",)
 
@@ -31,23 +29,16 @@ RequestTypes = (RequestObject, RequestObjectParams)
 _DEFAULT_ERROR_CODE = -32000
 
 
-@dataclass
-class _RegisteredMethod:
-    fun: Callable
-    method: MethodObject
-
-
 class MethodProcessor:
     """Class to register and execute methods."""
 
     def __init__(self) -> None:
-        self.methods: dict[str, _RegisteredMethod] = {}
+        self.methods: dict[str, Callable] = {}
         self.uncaught_error_code = _DEFAULT_ERROR_CODE
 
-    def method(self, func: T, method: MethodObject) -> T:
+    def method(self, func: T, method_name: str) -> T:
         """Register a method with this server for later calls."""
-        log.debug("Registering method [%s]", func.__name__)
-        self.methods[method.name] = _RegisteredMethod(func, method)
+        self.methods[method_name] = func
         return func
 
     def process(self, data: Union[bytes, str]) -> Optional[str]:
@@ -73,7 +64,7 @@ class MethodProcessor:
                         results.append(_get_method_not_found_error(req))
                     continue
 
-                fun = self.methods[req.method].fun
+                fun = self.methods[req.method]
                 resp = RequestProcessor(fun, self.uncaught_error_code, req).execute()
                 # If resp is None, request is a notification.
                 if resp is not None:
@@ -87,7 +78,7 @@ class MethodProcessor:
         if request.method not in self.methods:
             return _get_method_not_found_error(request)
         result = RequestProcessor(
-            self.methods[request.method].fun, self.uncaught_error_code, request
+            self.methods[request.method], self.uncaught_error_code, request
         ).execute()
         return None if isinstance(request, NotificationTypes) else result
 
@@ -116,7 +107,7 @@ class MethodProcessor:
                         return _get_method_not_found_error(request)
                     return None
 
-                fun = self.methods[request.method].fun
+                fun = self.methods[request.method]
                 if isinstance(request, RequestTypes):
                     return await RequestProcessor(
                         fun, self.uncaught_error_code, request
@@ -138,7 +129,7 @@ class MethodProcessor:
         if req.method not in self.methods:
             return _get_method_not_found_error(req)
         result = await RequestProcessor(
-            self.methods[req.method].fun, self.uncaught_error_code, req
+            self.methods[req.method], self.uncaught_error_code, req
         ).execute_async()
         return None if isinstance(req, NotificationTypes) else result
 
