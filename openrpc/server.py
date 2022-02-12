@@ -33,6 +33,7 @@ from openrpc.objects import (
 __all__ = ("RPCServer",)
 
 T = TypeVar("T", bound=Callable)
+C = TypeVar("C", bound=Callable)
 log = logging.getLogger("openrpc")
 _META_REF = "https://raw.githubusercontent.com/open-rpc/meta-schema/master/schema.json"
 
@@ -85,7 +86,7 @@ class RPCServer:
         links: Optional[list[LinkObject]] = None,
         param_structure: Optional[ParamStructure] = None,
         examples: Optional[list[ExamplePairingObject]] = None,
-    ) -> Union[T, Callable]:
+    ) -> Union[T, Callable[[C], C]]:
         """Register a method with this OpenRPC server.
 
         Can be used as a plain decorator, eg:
@@ -99,7 +100,7 @@ class RPCServer:
 
         .. code-block:: python
 
-            @method(method=MethodObject(deprecated=True))
+            @method(name="dot.case.method", deprecated=True)
             def my_func()
 
         :param args: The method if this is used as a plain decorator.
