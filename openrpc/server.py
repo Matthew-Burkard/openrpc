@@ -5,7 +5,7 @@ from typing import (
     Any,
     Callable,
     Optional,
-    Type,
+    TypeVar,
     Union,
 )
 
@@ -32,7 +32,7 @@ from openrpc.objects import (
 
 __all__ = ("RPCServer",)
 
-T = Type[Callable]
+T = TypeVar("T", bound=Callable)
 log = logging.getLogger("openrpc")
 _META_REF = "https://raw.githubusercontent.com/open-rpc/meta-schema/master/schema.json"
 
@@ -85,7 +85,7 @@ class RPCServer:
         links: Optional[list[LinkObject]] = None,
         param_structure: Optional[ParamStructure] = None,
         examples: Optional[list[ExamplePairingObject]] = None,
-    ) -> T:
+    ) -> Union[T, Callable]:
         """Register a method with this OpenRPC server.
 
         Can be used as a plain decorator, eg:
@@ -144,10 +144,11 @@ class RPCServer:
             func = args[0]
         else:
             return partial(self.method, **metadata)  # type: ignore
-        metadata["name"] = metadata.get("name") or func.__name__
+        name = name or func.__name__
+        metadata["name"] = name
         self._functions.append(Function(function=func, metadata=metadata))
         log.debug("Registering method [%s]", func.__name__)
-        return self._method_processor.method(func, metadata["name"])
+        return self._method_processor.method(func, name)
 
     @property
     def title(self) -> str:

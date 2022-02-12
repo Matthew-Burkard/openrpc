@@ -36,7 +36,7 @@ class DiscoverHandler:
 
     def _collect_schemas(self, functions: list[Function]) -> None:
         for func in functions:
-            func.metadata["name"] = func.metadata.get("name") or func.__name__
+            func.metadata["name"] = func.metadata.get("name") or func.function.__name__
             func.metadata["params"] = func.metadata.get("params") or self._get_params(
                 func.function
             )
@@ -71,7 +71,6 @@ class DiscoverHandler:
         )
 
     def _get_schema(self, annotation: Any) -> SchemaObject:
-        self._components.schemas = self._components.schemas or {}
         if isinstance(annotation, type) and issubclass(annotation, Enum):
             return SchemaObject(enum=[it.value for it in annotation])
         if annotation == Any:
