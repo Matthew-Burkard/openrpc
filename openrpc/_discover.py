@@ -22,6 +22,7 @@ class DiscoverHandler:
         self._methods: list[MethodObject] = []
         self._components: ComponentsObject = ComponentsObject(schemas={})
         self._collect_schemas(functions)
+        self._consolidate_schemas()
 
     def execute(self) -> OpenRPCObject:
         """Get an OpenRPCObject describing this API."""
@@ -45,6 +46,31 @@ class DiscoverHandler:
             )
             method = MethodObject(**func.metadata)
             self._methods.append(method)
+
+    def _consolidate_schemas(self) -> None:
+        for method in self._methods:
+            params = []
+            for param in method.params:
+                param.json_schema = self._consolidate_schema(param.json_schema)
+                params.append(param)
+            method.params = params
+            method.result.json_schema = self._consolidate_schema(
+                method.result.json_schema
+            )
+
+    def _consolidate_schema(self, schema: SchemaObject) -> SchemaObject:
+        if schema.title is None:
+            return schema
+        self._components.schemas = self._components.schemas or {}
+        # If this schema exists in components, return a reference to the
+        # existing one.
+        if schema in self._components.schemas.values():
+            for key, val in self._components.schemas.items():
+                if val == schema:
+                    return SchemaObject(**{"$ref": f"#/components/schemas/{key}"})
+        # Add this new schema to components and return a reference.
+        self._components.schemas[schema.title] = schema
+        return SchemaObject(**{"$ref": f"#/components/schemas/{schema.title}"})
 
     def _get_params(self, fun: Callable) -> list[ContentDescriptorObject]:
         # noinspection PyUnresolvedReferences,PyProtectedMember
@@ -87,7 +113,7 @@ class DiscoverHandler:
             if hasattr(annotation, "schema"):
                 schema = SchemaObject(**annotation.schema())  # type: ignore
                 schema.title = schema.title or name
-                return SchemaObject(**{"$ref": f"#/components/schemas/{name}"})
+                return schema
             if get_origin(annotation) == dict:
                 schema = SchemaObject()
                 schema.type = schema_type
