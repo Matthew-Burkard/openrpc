@@ -4,13 +4,32 @@ import unittest
 from typing import Any, Optional, Union
 
 from jsonrpcobjects.objects import RequestObject
+from pydantic import BaseModel
 
 from openrpc.objects import ContactObject, LicenseObject
 from openrpc.server import RPCServer
 from tests.util import Vector3
 
 
-class OpenRPCTest(unittest.TestCase):
+class Vector2(BaseModel):
+    """x and y values."""
+
+    x: float
+    y: float
+    vanilla_model: Vector3
+
+
+class NestedModels(BaseModel):
+    """To test models with other models as fields."""
+
+    name: str
+    position: Vector3
+    path: list[Vector3]
+    recursion: "NestedModels"
+    any_of: Union[Vector3, "NestedModels"]
+
+
+class DiscoverTest(unittest.TestCase):
     def __init__(self, *args) -> None:
         self.rpc = RPCServer(title="Test OpenRPC", version="1.0.0")
         self.rpc.method(increment)
@@ -18,6 +37,9 @@ class OpenRPCTest(unittest.TestCase):
         self.rpc.method(return_none)
         self.rpc.method(default_value)
         self.rpc.method(take_any_get_any)
+        self.rpc.method(dict_and_list)
+        self.rpc.method(typed_dict_and_list)
+        self.rpc.method(nested_model)
         self.rpc.title = self.rpc.title or "Test OpenRPC"
         self.rpc.version = self.rpc.version or "1.0.0"
         self.rpc.description = self.rpc.description or "Testing rpc.discover"
@@ -27,9 +49,9 @@ class OpenRPCTest(unittest.TestCase):
         request = RequestObject(id=1, method="rpc.discover")
         resp = json.loads(self.rpc.process_request(request.json()))
         self.discover_result = resp["result"]
-        super(OpenRPCTest, self).__init__(*args)
+        super(DiscoverTest, self).__init__(*args)
 
-    def test_open_rpc(self) -> None:
+    def test_open_rpc_info(self) -> None:
         self.assertEqual("1.2.6", self.discover_result["openrpc"])
         self.assertEqual(
             {
@@ -40,7 +62,7 @@ class OpenRPCTest(unittest.TestCase):
                 "contact": {"name": "mocha"},
                 "license": {"name": "AGPLv3"},
             },
-            self.discover_result["info"]
+            self.discover_result["info"],
         )
 
     def test_lists(self) -> None:
@@ -53,13 +75,21 @@ class OpenRPCTest(unittest.TestCase):
                 "params": [
                     {
                         "name": "numbers",
-                        "schema": {"type": "array", "items": {"type": None}},
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "anyOf": [{"type": "integer"}, {"type": "number"}]
+                            },
+                        },
                         "required": True,
                     }
                 ],
                 "result": {
                     "name": "result",
-                    "schema": {"type": "array", "items": {"type": None}},
+                    "schema": {
+                        "type": "array",
+                        "items": {"anyOf": [{"type": "integer"}, {"type": "string"}]},
+                    },
                     "required": True,
                 },
             },
@@ -76,18 +106,18 @@ class OpenRPCTest(unittest.TestCase):
                 "params": [
                     {
                         "name": "position",
-                        "schema": {"$ref": "#/components/schemas/Vector3"},
+                        "schema": {"$ref": "#/components/schemas/Vector2"},
                         "required": True,
                     },
                     {
                         "name": "target",
-                        "schema": {"$ref": "#/components/schemas/Vector3"},
+                        "schema": {"$ref": "#/components/schemas/Vector2"},
                         "required": True,
                     },
                 ],
                 "result": {
                     "name": "result",
-                    "schema": {"$ref": "#/components/schemas/Vector3"},
+                    "schema": {"$ref": "#/components/schemas/Vector2"},
                     "required": True,
                 },
             },
@@ -168,19 +198,55 @@ class OpenRPCTest(unittest.TestCase):
     def test_schemas(self) -> None:
         self.assertEqual(
             {
-                "Vector3": {
-                    "type": "object",
-                    "description": "x, y, and z values.",
-                    "properties": {
-                        "x": {"title": "X", "type": "number"},
-                        "y": {"title": "Y", "type": "number"},
-                        "z": {"title": "Z", "type": "number"},
-                    },
-                    "required": ["x", "y", "z"],
-                    "title": "Vector3",
-                }
+                "type": "object",
+                "title": "Vector3",
+                "description": "x, y, and z values.",
+                "properties": {
+                    "x": {"title": "X", "type": "number"},
+                    "y": {"title": "Y", "type": "number"},
+                    "z": {"title": "Z", "type": "number"},
+                },
+                "required": ["x", "y", "z"],
             },
-            self.discover_result["components"]["schemas"],
+            self.discover_result["components"]["schemas"]["Vector3"],
+        )
+
+    def test_recursive_schemas(self) -> None:
+        self.assertEqual(
+            {
+                "$ref": "#/definitions/NestedModels",
+                "definitions": {
+                    "NestedModels": {
+                        "type": "object",
+                        "description": "To test models with other models as fields.",
+                        "properties": {
+                            "name": {"title": "Name", "type": "string"},
+                            "position": {
+                                "$ref": "#/components/schemas/Vector3",
+                            },
+                            "path": {
+                                "title": "Path",
+                                "type": "array",
+                                "items": {"$ref": "#/components/schemas/Vector3"},
+                            },
+                            "recursion": {
+                                "$ref": "#/components/schemas/NestedModels",
+                            },
+                            "any_of": {
+                                "title": "Any Of",
+                                "anyOf": [
+                                    {"$ref": "#/components/schemas/Vector3"},
+                                    {"$ref": "#/components/schemas/NestedModels"},
+                                ],
+                            },
+                        },
+                        "required": ["name", "position", "path", "recursion", "any_of"],
+                        "title": "NestedModels",
+                    }
+                },
+                "title": "Nested Models"
+            },
+            self.discover_result["components"]["schemas"]["NestedModels"],
         )
 
 
@@ -190,7 +256,7 @@ def increment(numbers: list[Union[int, float]]) -> list[Union[int, str]]:
 
 
 # noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
-def get_distance(position: Vector3, target: Vector3) -> Vector3:
+def get_distance(position: Vector2, target: Vector2) -> Vector2:
     pass
 
 
@@ -206,4 +272,21 @@ def return_none(optional_param: Optional[str]) -> None:
 
 # noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
 def take_any_get_any(any_param: Any) -> Any:
+    pass
+
+
+# noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
+def dict_and_list(dict_param: dict, list_param: list) -> dict[str, list]:
+    pass
+
+
+# noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
+def nested_model(a: NestedModels) -> dict[str, NestedModels]:
+    pass
+
+
+# noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
+def typed_dict_and_list(
+    dict_param: dict[str, int], list_param: list[dict[str, int]]
+) -> dict[str, list]:
     pass

@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from openrpc.objects import InfoObject
 from openrpc.server import RPCServer
 from tests.util import (
-    INVALID_REQUEST,
+    INTERNAL_ERROR, INVALID_REQUEST,
     METHOD_NOT_FOUND,
     PARSE_ERROR,
     parse_response,
@@ -33,6 +33,7 @@ class RPCTest(unittest.TestCase):
         self.server.method(subtract)
         self.server.method(divide)
         self.server.method(args_and_kwargs)
+        self.server.method(return_none)
         super(RPCTest, self).__init__(*args)
 
     def test_array_params(self) -> None:
@@ -115,7 +116,7 @@ class RPCTest(unittest.TestCase):
         server.default_error_code = SERVER_ERROR
         server.method(divide)
         resp = json.loads(server.process_request(request.json()))
-        self.assertEqual(SERVER_ERROR, resp["error"]["code"])
+        self.assertEqual(server.default_error_code, resp["error"]["code"])
 
     def test_id_matching(self) -> None:
         # Result id.
@@ -135,6 +136,7 @@ class RPCTest(unittest.TestCase):
         add_id = str(uuid.uuid4())
         subtract_id = str(uuid.uuid4())
         divide_id = str(uuid.uuid4())
+        none_id = str(uuid.uuid4())
         requests = ",".join(
             [
                 RequestObjectParams(id=add_id, method="add", params=[2, 2]).json(),
@@ -145,25 +147,30 @@ class RPCTest(unittest.TestCase):
                     id=divide_id, method="divide", params=[0, 0]
                 ).json(),
                 NotificationObjectParams(method="add", params=[1, 3]).json(),
-                'null',
+                "null",
                 NotificationObject(method="does_not_exist").json(),
+                NotificationObjectParams(method="divide", params=[0, 0]).json(),
                 RequestObject(id=1, method="does_not_exist").json(),
+                RequestObject(id=none_id, method="return_none").json(),
             ]
         )
         responses = json.loads(self.server.process_request(f"[{requests}]"))
         add_resp = [r for r in responses if r.get("id") == add_id][0]
         subtract_resp = [r for r in responses if r.get("id") == subtract_id][0]
         divide_resp = [r for r in responses if r.get("id") == divide_id][0]
+        none_resp = [r for r in responses if r.get("id") == none_id][0]
         add_resp = parse_response(json.dumps(add_resp))
         subtract_resp = parse_response(json.dumps(subtract_resp))
         divide_resp = parse_response(json.dumps(divide_resp))
+        none_resp = parse_response(json.dumps(none_resp))
         self.assertEqual(add_id, add_resp.id)
         self.assertEqual(subtract_id, subtract_resp.id)
         self.assertEqual(divide_id, divide_resp.id)
         self.assertEqual(4, add_resp.result)
         self.assertEqual(0, subtract_resp.result)
         self.assertEqual(SERVER_ERROR, divide_resp.error.code)
-        self.assertEqual(len(responses), 5)
+        self.assertIsNone(none_resp.result)
+        self.assertEqual(len(responses), 6)
 
     def test_list_param(self) -> None:
         def increment_list(numbers: list[Union[int, float]]) -> list:
@@ -293,6 +300,19 @@ class RPCTest(unittest.TestCase):
         resp = json.loads(self.server.process_request(req.json()))
         self.assertTrue(resp["result"])
 
+    def test_return_none(self) -> None:
+        req = RequestObject(id=1, method="return_none")
+        resp = json.loads(self.server.process_request(req.json()))
+        self.assertIsNone(resp["result"])
+
+    def test_catchall_error(self) -> None:
+        req = RequestObject(id=1, method="return_none")
+        mp = self.server._method_processor
+        self.server._method_processor = None
+        resp = json.loads(self.server.process_request(req.json()))
+        self.assertEqual(INTERNAL_ERROR, resp["code"])
+        self.server._method_processor = mp
+
 
 # noinspection PyMissingOrEmptyDocstring
 def add(x: float, y: float) -> float:
@@ -312,3 +332,8 @@ def divide(x: float, y: float) -> float:
 # noinspection PyMissingOrEmptyDocstring
 def args_and_kwargs(*args, **kwargs) -> Any:
     return *args, {**kwargs}
+
+
+# noinspection PyMissingOrEmptyDocstring
+def return_none() -> None:
+    return None

@@ -9,6 +9,9 @@
   <img src="https://img.shields.io/pypi/v/openrpc.svg"
    height="20"
    alt="PyPI version">
+  <img src="https://img.shields.io/badge/coverage-100%25-success"
+   height="20"
+   alt="Code Coverage">
   <a href="https://gitlab.com/mburkard/openrpc/-/blob/main/CONTRIBUTING.md">
     <img src="https://img.shields.io/static/v1.svg?label=Contributions&message=Welcome&color=2267a0"
      height="20"
@@ -50,8 +53,10 @@ def add(a: int, b: int) -> int:
 
 ### Process JSON RPC Request
 
-OpenRPC is transport agnostic. To use it, pass JSON RPC requests to the
-`process_request` method.
+OpenRPC is transport agnostic. To use it, pass JSON RPC requests as
+strings or byte strings to the `process_request` method.
+
+The `process_request` will return a JSON RPC response as a string.
 
 ```python
 req = """
@@ -100,7 +105,7 @@ def add(a: int, b: int) -> int:
     return a + b
 
 
-@app.route("/api/v1/", methods=["POST"])
+@app.post("/api/v1/")
 def process_rpc() -> str:
     return rpc.process_request(request.data)
 
