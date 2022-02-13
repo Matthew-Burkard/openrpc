@@ -73,27 +73,32 @@ class DiscoverHandler:
     def _consolidate_schema(self, schema: SchemaObject) -> SchemaObject:
         if schema.title is None:
             return schema
+        # If this schema exists in components, return a reference to the
+        # existing one.
         self._components.schemas = self._components.schemas or {}
+        if schema in self._components.schemas.values():
+            for key, val in self._components.schemas.items():
+                if val == schema:
+                    return SchemaObject(**{"$ref": f"#/components/schemas/{key}"})
         # Consolidate schema definitions.
         reference_to_consolidated_schema = {}
         if schema.definitions:
             for key in schema.definitions.copy():
                 consolidated_schema = self._consolidate_schema(schema.definitions[key])
                 if consolidated_schema != schema.definitions[key]:
-                    schema.definitions.pop(key)
+                    recursive_ref = False
+                    # If this is a recursive schema, leave the ref as is.
+                    if schema.ref:
+                        recursive_ref = schema.ref.removeprefix("#/definitions/") == key
+                    if not recursive_ref:
+                        schema.definitions.pop(key)
                 reference_to_consolidated_schema[
                     f"#/definitions/{key}"
                 ] = consolidated_schema
-        # Update schema references.
-        _update_references(schema, reference_to_consolidated_schema)
         if schema.definitions == {}:
             schema.definitions = None
-        # If this schema exists in components, return a reference to the
-        # existing one.
-        if schema in self._components.schemas.values():
-            for key, val in self._components.schemas.items():
-                if val == schema:
-                    return SchemaObject(**{"$ref": f"#/components/schemas/{key}"})
+        # Update schema references.
+        _update_references(schema, reference_to_consolidated_schema)
         # Add this new schema to components and return a reference.
         self._components.schemas[schema.title] = schema
         return SchemaObject(**{"$ref": f"#/components/schemas/{schema.title}"})
@@ -242,6 +247,9 @@ def _update_references(
             )
         if schema.properties:
             for v in schema.properties.values():
+                _update_references(v, reference_to_consolidated_schema)
+        if schema.definitions:
+            for v in schema.definitions.values():
                 _update_references(v, reference_to_consolidated_schema)
 
 
