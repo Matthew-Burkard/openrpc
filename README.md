@@ -9,6 +9,9 @@
   <img src="https://img.shields.io/pypi/v/openrpc.svg"
    height="20"
    alt="PyPI version">
+  <img src="https://img.shields.io/badge/coverage-100%25-success"
+   height="20"
+   alt="Code Coverage">
   <a href="https://gitlab.com/mburkard/openrpc/-/blob/main/CONTRIBUTING.md">
     <img src="https://img.shields.io/static/v1.svg?label=Contributions&message=Welcome&color=2267a0"
      height="20"
