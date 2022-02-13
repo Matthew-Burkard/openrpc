@@ -22,6 +22,8 @@ from openrpc.objects import (
     SchemaObject,
 )
 
+import caseswitcher as cs
+
 __all__ = ("DiscoverHandler",)
 T = TypeVar("T", bound=Optional[SchemaObject])
 
@@ -100,7 +102,7 @@ class DiscoverHandler:
         # Update schema references.
         _update_references(schema, reference_to_consolidated_schema)
         # Add this new schema to components and return a reference.
-        self._components.schemas[schema.title] = schema
+        self._components.schemas[cs.to_pascal(schema.title)] = schema
         return SchemaObject(**{"$ref": f"#/components/schemas/{schema.title}"})
 
     def _get_params(self, fun: Callable) -> list[ContentDescriptorObject]:
@@ -143,7 +145,7 @@ class DiscoverHandler:
             name = annotation.__name__
             if hasattr(annotation, "schema"):
                 schema = SchemaObject(**annotation.schema())  # type: ignore
-                schema.title = schema.title or name
+                schema.title = schema.title or cs.to_title(name)
                 return schema
             if get_origin(annotation) == dict:
                 schema = SchemaObject()

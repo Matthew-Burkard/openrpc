@@ -244,7 +244,7 @@ class DiscoverTest(unittest.TestCase):
                         "title": "NestedModels",
                     }
                 },
-                "title": "NestedModels"
+                "title": "Nested Models"
             },
             self.discover_result["components"]["schemas"]["NestedModels"],
         )
