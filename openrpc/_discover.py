@@ -1,7 +1,16 @@
 """Handle the OpenRPC "rpc.discover" method."""
 import inspect
 from enum import Enum
-from typing import Any, Callable, get_args, get_origin, get_type_hints, Union
+from typing import (
+    Any,
+    Callable,
+    get_args,
+    get_origin,
+    get_type_hints,
+    Optional,
+    TypeVar,
+    Union,
+)
 
 from openrpc._util import Function
 from openrpc.objects import (
@@ -12,6 +21,9 @@ from openrpc.objects import (
     OpenRPCObject,
     SchemaObject,
 )
+
+__all__ = ("DiscoverHandler",)
+T = TypeVar("T", bound=Optional[SchemaObject])
 
 
 class DiscoverHandler:
@@ -62,6 +74,20 @@ class DiscoverHandler:
         if schema.title is None:
             return schema
         self._components.schemas = self._components.schemas or {}
+        # Consolidate schema definitions.
+        reference_to_consolidated_schema = {}
+        if schema.definitions:
+            for key in schema.definitions.copy():
+                consolidated_schema = self._consolidate_schema(schema.definitions[key])
+                if consolidated_schema != schema.definitions[key]:
+                    schema.definitions.pop(key)
+                reference_to_consolidated_schema[
+                    f"#/definitions/{key}"
+                ] = consolidated_schema
+        # Update schema references.
+        _update_references(schema, reference_to_consolidated_schema)
+        if schema.definitions == {}:
+            schema.definitions = None
         # If this schema exists in components, return a reference to the
         # existing one.
         if schema in self._components.schemas.values():
@@ -83,7 +109,7 @@ class DiscoverHandler:
             ContentDescriptorObject(
                 name=name,
                 schema=self._get_schema(annotation),
-                required=name not in has_default and self._is_required(annotation),
+                required=name not in has_default and _is_required(annotation),
             )
             for name, annotation in get_type_hints(fun).items()
             if name != "return"
@@ -93,7 +119,7 @@ class DiscoverHandler:
         return ContentDescriptorObject(
             name="result",
             schema=self._get_schema(get_type_hints(fun)["return"]),
-            required=self._is_required(get_type_hints(fun)["return"]),
+            required=_is_required(get_type_hints(fun)["return"]),
         )
 
     def _get_schema(self, annotation: Any) -> SchemaObject:
@@ -106,7 +132,7 @@ class DiscoverHandler:
                 anyOf=[self._get_schema(a) for a in get_args(annotation)]
             )
 
-        schema_type = self._py_to_schema_type(annotation)
+        schema_type = _py_to_schema_type(annotation)
 
         if schema_type == "object":
             name = annotation.__name__
@@ -133,31 +159,125 @@ class DiscoverHandler:
         schema.type = schema_type
         return schema
 
-    @staticmethod
-    def _py_to_schema_type(annotation: Any) -> str:
-        py_to_schema = {
-            None: "null",
-            str: "string",
-            int: "integer",
-            float: "number",
-            bool: "boolean",
-        }
-        origin = get_origin(annotation)
-        flat_collections = [list, set, tuple]
-        if origin in flat_collections or annotation in flat_collections:
-            return "array"
-        if dict in [origin, annotation]:
-            return "object"
-        if type(None) is annotation:
-            return "null"
-        return py_to_schema.get(annotation) or "object"
 
-    @staticmethod
-    def _is_required(annotation: Any) -> bool:
-        def _get_name(arg: Any) -> str:
-            try:
-                return arg.__name__
-            except AttributeError:
-                return ""
+def _py_to_schema_type(annotation: Any) -> str:
+    py_to_schema = {
+        None: "null",
+        str: "string",
+        int: "integer",
+        float: "number",
+        bool: "boolean",
+    }
+    origin = get_origin(annotation)
+    flat_collections = [list, set, tuple]
+    if origin in flat_collections or annotation in flat_collections:
+        return "array"
+    if dict in [origin, annotation]:
+        return "object"
+    if type(None) is annotation:
+        return "null"
+    return py_to_schema.get(annotation) or "object"
 
-        return "NoneType" not in [_get_name(a) for a in get_args(annotation)]
+
+def _is_required(annotation: Any) -> bool:
+    def _get_name(arg: Any) -> str:
+        try:
+            return arg.__name__
+        except AttributeError:
+            return ""
+
+    return "NoneType" not in [_get_name(a) for a in get_args(annotation)]
+
+
+def _update_references(
+    schema: SchemaObject,
+    reference_to_consolidated_schema: dict[str, SchemaObject],
+) -> None:
+    for ref, consolidated_schema in reference_to_consolidated_schema.items():
+        # Schema lists.
+        schema.all_of = _update_schema_list_references(
+            ref, consolidated_schema, schema.all_of
+        )
+        schema.any_of = _update_schema_list_references(
+            ref, consolidated_schema, schema.any_of
+        )
+        schema.one_of = _update_schema_list_references(
+            ref, consolidated_schema, schema.one_of
+        )
+        schema.prefix_items = _update_schema_list_references(
+            ref, consolidated_schema, schema.prefix_items
+        )
+        # Schema dicts.
+        schema.properties = _update_schema_dict_references(
+            ref, consolidated_schema, schema.properties
+        )
+        schema.pattern_properties = _update_schema_dict_references(
+            ref, consolidated_schema, schema.pattern_properties
+        )
+        schema.dependent_schemas = _update_schema_dict_references(
+            ref, consolidated_schema, schema.dependent_schemas
+        )
+        # Schemas.
+        schema.not_ = _get_updated_schema_references(
+            ref, consolidated_schema, schema.not_
+        )
+        schema.property_names = _get_updated_schema_references(
+            ref, consolidated_schema, schema.property_names
+        )
+        schema.contains = _get_updated_schema_references(
+            ref, consolidated_schema, schema.contains
+        )
+        schema.if_ = _get_updated_schema_references(
+            ref, consolidated_schema, schema.if_
+        )
+        schema.then = _get_updated_schema_references(
+            ref, consolidated_schema, schema.then
+        )
+        schema.else_ = _get_updated_schema_references(
+            ref, consolidated_schema, schema.else_
+        )
+        if isinstance(schema.items, SchemaObject):
+            schema.items = _get_updated_schema_references(
+                ref, consolidated_schema, schema.items
+            )
+        if schema.properties:
+            for v in schema.properties.values():
+                _update_references(v, reference_to_consolidated_schema)
+
+
+def _update_schema_list_references(
+    original_reference: str,
+    reference_schema: SchemaObject,
+    schemas: Optional[list[SchemaObject]],
+) -> Optional[list[SchemaObject]]:
+    updated_references_schemas = []
+    for schema in schemas or []:
+        updated_references_schemas.append(
+            _get_updated_schema_references(original_reference, reference_schema, schema)
+        )
+    return updated_references_schemas or None
+
+
+def _update_schema_dict_references(
+    original_reference: str,
+    reference_schema: SchemaObject,
+    schemas: Optional[dict[str, SchemaObject]],
+) -> Optional[dict[str, SchemaObject]]:
+    updated_references_schemas = {}
+    if schemas is None:
+        return None
+    for key, schema in schemas.items():
+        updated_references_schemas[key] = _get_updated_schema_references(
+            original_reference, reference_schema, schema
+        )
+    return updated_references_schemas or None
+
+
+def _get_updated_schema_references(
+    original_reference: str,
+    reference_schema: SchemaObject,
+    schema: T,
+) -> Union[T, SchemaObject]:
+    if isinstance(schema, SchemaObject):
+        return reference_schema if schema.ref == original_reference else schema
+    return schema

@@ -256,5 +256,5 @@ class RPCServer:
         return (
             DiscoverHandler(self._info, self._functions)
             .execute()
-            .dict(by_alias=True, exclude_unset=True)
+            .dict(by_alias=True, exclude_unset=True, exclude_none=True)
         )

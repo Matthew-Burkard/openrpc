@@ -207,10 +207,10 @@ class DiscoverTest(unittest.TestCase):
                 "properties": {
                     "name": {"title": "Name", "type": "string"},
                     "position": {
-                        "title": "Position",
                         "$ref": "#/components/schemas/Vector3",
                     },
                     "path": {
+                        "title": "Path",
                         "type": "array",
                         "items": {"$ref": "#/components/schemas/Vector3"},
                     },
