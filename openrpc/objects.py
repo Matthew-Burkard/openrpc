@@ -83,7 +83,7 @@ class ContentDescriptorObject(BaseModel):
     """Describes either parameters or result."""
 
     name: str
-    json_schema: SchemaObject = Field(alias="schema")
+    schema_: SchemaObject = Field(alias="schema")
     summary: Optional[str] = None
     description: Optional[str] = None
     required: Optional[bool] = None

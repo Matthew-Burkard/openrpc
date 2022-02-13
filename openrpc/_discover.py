@@ -65,11 +65,11 @@ class DiscoverHandler:
         for method in self._methods:
             params = []
             for param in method.params:
-                param.json_schema = self._consolidate_schema(param.json_schema)
+                param.schema_ = self._consolidate_schema(param.schema_)
                 params.append(param)
             method.params = params
-            method.result.json_schema = self._consolidate_schema(
-                method.result.json_schema
+            method.result.schema_ = self._consolidate_schema(
+                method.result.schema_
             )
 
     def _consolidate_schema(self, schema: SchemaObject) -> SchemaObject:
