@@ -11,6 +11,14 @@ from openrpc.server import RPCServer
 from tests.util import Vector3
 
 
+class Vector2(BaseModel):
+    """x and y values."""
+
+    x: float
+    y: float
+    vanilla_model: Vector3
+
+
 class NestedModels(BaseModel):
     """To test models with other models as fields."""
 
@@ -18,6 +26,7 @@ class NestedModels(BaseModel):
     position: Vector3
     path: list[Vector3]
     recursion: "NestedModels"
+    any_of: Union[Vector3, "NestedModels"]
 
 
 class DiscoverTest(unittest.TestCase):
@@ -97,18 +106,18 @@ class DiscoverTest(unittest.TestCase):
                 "params": [
                     {
                         "name": "position",
-                        "schema": {"$ref": "#/components/schemas/Vector3"},
+                        "schema": {"$ref": "#/components/schemas/Vector2"},
                         "required": True,
                     },
                     {
                         "name": "target",
-                        "schema": {"$ref": "#/components/schemas/Vector3"},
+                        "schema": {"$ref": "#/components/schemas/Vector2"},
                         "required": True,
                     },
                 ],
                 "result": {
                     "name": "result",
-                    "schema": {"$ref": "#/components/schemas/Vector3"},
+                    "schema": {"$ref": "#/components/schemas/Vector2"},
                     "required": True,
                 },
             },
@@ -201,6 +210,8 @@ class DiscoverTest(unittest.TestCase):
             },
             self.discover_result["components"]["schemas"]["Vector3"],
         )
+
+    def test_recursive_schemas(self) -> None:
         self.assertEqual(
             {
                 "$ref": "#/definitions/NestedModels",
@@ -221,8 +232,15 @@ class DiscoverTest(unittest.TestCase):
                             "recursion": {
                                 "$ref": "#/components/schemas/NestedModels",
                             },
+                            "any_of": {
+                                "title": "Any Of",
+                                "anyOf": [
+                                    {"$ref": "#/components/schemas/Vector3"},
+                                    {"$ref": "#/components/schemas/NestedModels"},
+                                ],
+                            },
                         },
-                        "required": ["name", "position", "path", "recursion"],
+                        "required": ["name", "position", "path", "recursion", "any_of"],
                         "title": "NestedModels",
                     }
                 },
@@ -238,7 +256,7 @@ def increment(numbers: list[Union[int, float]]) -> list[Union[int, str]]:
 
 
 # noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
-def get_distance(position: Vector3, target: Vector3) -> Vector3:
+def get_distance(position: Vector2, target: Vector2) -> Vector2:
     pass
 
 

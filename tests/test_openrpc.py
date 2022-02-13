@@ -116,7 +116,7 @@ class RPCTest(unittest.TestCase):
         server.default_error_code = SERVER_ERROR
         server.method(divide)
         resp = json.loads(server.process_request(request.json()))
-        self.assertEqual(SERVER_ERROR, resp["error"]["code"])
+        self.assertEqual(server.default_error_code, resp["error"]["code"])
 
     def test_id_matching(self) -> None:
         # Result id.
