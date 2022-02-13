@@ -68,9 +68,7 @@ class DiscoverHandler:
                 param.schema_ = self._consolidate_schema(param.schema_)
                 params.append(param)
             method.params = params
-            method.result.schema_ = self._consolidate_schema(
-                method.result.schema_
-            )
+            method.result.schema_ = self._consolidate_schema(method.result.schema_)
 
     def _consolidate_schema(self, schema: SchemaObject) -> SchemaObject:
         if schema.title is None:
