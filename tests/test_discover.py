@@ -203,26 +203,30 @@ class DiscoverTest(unittest.TestCase):
         )
         self.assertEqual(
             {
-                "type": "object",
-                "description": "To test models with other models as fields.",
-                "properties": {
-                    "name": {"title": "Name", "type": "string"},
-                    "position": {
-                        "$ref": "#/components/schemas/Vector3",
-                    },
-                    "path": {
-                        "title": "Path",
-                        "type": "array",
-                        "items": {"$ref": "#/components/schemas/Vector3"},
-                    },
-                    "recursion": {
-                        "title": "Recursion",
+                "$ref": "#/definitions/NestedModels",
+                "definitions": {
+                    "NestedModels": {
                         "type": "object",
-                        "items": {"$ref": "#/components/schemas/NestedModels"},
-                    },
+                        "description": "To test models with other models as fields.",
+                        "properties": {
+                            "name": {"title": "Name", "type": "string"},
+                            "position": {
+                                "$ref": "#/components/schemas/Vector3",
+                            },
+                            "path": {
+                                "title": "Path",
+                                "type": "array",
+                                "items": {"$ref": "#/components/schemas/Vector3"},
+                            },
+                            "recursion": {
+                                "$ref": "#/components/schemas/NestedModels",
+                            },
+                        },
+                        "required": ["name", "position", "path", "recursion"],
+                        "title": "NestedModels",
+                    }
                 },
-                "required": ["name", "position", "path", "recursion"],
-                "title": "NestedModels",
+                "title": "NestedModels"
             },
             self.discover_result["components"]["schemas"]["NestedModels"],
         )
