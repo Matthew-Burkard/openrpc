@@ -17,6 +17,7 @@ class NestedModels(BaseModel):
     name: str
     position: Vector3
     path: list[Vector3]
+    recursion: "NestedModels"
 
 
 class DiscoverTest(unittest.TestCase):
@@ -214,8 +215,13 @@ class DiscoverTest(unittest.TestCase):
                         "type": "array",
                         "items": {"$ref": "#/components/schemas/Vector3"},
                     },
+                    "recursion": {
+                        "title": "Recursion",
+                        "type": "object",
+                        "items": {"$ref": "#/components/schemas/NestedModels"},
+                    },
                 },
-                "required": ["name", "position", "path"],
+                "required": ["name", "position", "path", "recursion"],
                 "title": "NestedModels",
             },
             self.discover_result["components"]["schemas"]["NestedModels"],
