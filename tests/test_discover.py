@@ -244,7 +244,7 @@ class DiscoverTest(unittest.TestCase):
                         "title": "NestedModels",
                     }
                 },
-                "title": "Nested Models"
+                "title": "Nested Models",
             },
             self.discover_result["components"]["schemas"]["NestedModels"],
         )
@@ -252,41 +252,41 @@ class DiscoverTest(unittest.TestCase):
 
 # noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
 def increment(numbers: list[Union[int, float]]) -> list[Union[int, str]]:
-    pass
+    """pass"""
 
 
 # noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
 def get_distance(position: Vector2, target: Vector2) -> Vector2:
-    pass
+    """pass"""
 
 
 # noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
 def default_value(a: int = 2, b: float = 0.99792458, c: str = "c") -> str:
-    pass
+    """pass"""
 
 
 # noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
 def return_none(optional_param: Optional[str]) -> None:
-    pass
+    """pass"""
 
 
 # noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
 def take_any_get_any(any_param: Any) -> Any:
-    pass
+    """pass"""
 
 
 # noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
 def dict_and_list(dict_param: dict, list_param: list) -> dict[str, list]:
-    pass
+    """pass"""
 
 
 # noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
 def nested_model(a: NestedModels) -> dict[str, NestedModels]:
-    pass
+    """pass"""
 
 
 # noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
 def typed_dict_and_list(
     dict_param: dict[str, int], list_param: list[dict[str, int]]
 ) -> dict[str, list]:
-    pass
+    """pass"""
