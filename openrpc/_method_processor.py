@@ -76,7 +76,9 @@ class MethodProcessor:
         if isinstance(request, ErrorResponseObject):
             return request.json()
         if request.method not in self.methods:
-            return _get_method_not_found_error(request)
+            if isinstance(request, (RequestObject, RequestObjectParams)):
+                return _get_method_not_found_error(request)
+            return None
         result = RequestProcessor(
             self.methods[request.method], self.uncaught_error_code, request
         ).execute()
@@ -127,7 +129,9 @@ class MethodProcessor:
         if isinstance(req, ErrorResponseObject):
             return req.json()
         if req.method not in self.methods:
-            return _get_method_not_found_error(req)
+            if isinstance(req, (RequestObject, RequestObjectParams)):
+                return _get_method_not_found_error(req)
+            return None
         result = await RequestProcessor(
             self.methods[req.method], self.uncaught_error_code, req
         ).execute_async()

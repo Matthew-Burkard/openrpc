@@ -22,11 +22,10 @@ class DivideByZeroRPCError(JSONRPCError):
 
 
 @rpc.method
-def divide(a: float, b: float) -> float:
+def divide(a: float, b: float) -> None:
     """Test custom server error."""
     if a == 0 or b == 0:
         raise DivideByZeroRPCError({"a": a, "b": b})
-    return a / b
 
 
 class DecoratorTest(unittest.TestCase):
