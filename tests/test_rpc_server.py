@@ -317,6 +317,11 @@ class RPCTest(unittest.TestCase):
         self.assertEqual(INTERNAL_ERROR, resp["code"])
         self.server._method_processor = mp
 
+    def test_no_response_on_method_not_found_notify(self) -> None:
+        req = NotificationObject(method="not_a_method")
+        resp = json.loads(self.get_sync_and_async_resp(req.json()))
+        self.assertIsNone(resp)
+
     def get_sync_and_async_resp(self, request: Union[str, bytes]) -> str:
         sync_resp = self.server.process_request(request)
         loop = asyncio.new_event_loop()
