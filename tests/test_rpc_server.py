@@ -17,7 +17,8 @@ from pydantic import BaseModel
 from openrpc.objects import InfoObject
 from openrpc.server import RPCServer
 from tests.util import (
-    INTERNAL_ERROR, INVALID_REQUEST,
+    INTERNAL_ERROR,
+    INVALID_REQUEST,
     METHOD_NOT_FOUND,
     PARSE_ERROR,
     parse_response,
@@ -319,7 +320,7 @@ class RPCTest(unittest.TestCase):
 
     def test_no_response_on_method_not_found_notify(self) -> None:
         req = NotificationObject(method="not_a_method")
-        resp = json.loads(self.get_sync_and_async_resp(req.json()))
+        resp = self.get_sync_and_async_resp(req.json())
         self.assertIsNone(resp)
 
     def get_sync_and_async_resp(self, request: Union[str, bytes]) -> str:
@@ -329,7 +330,6 @@ class RPCTest(unittest.TestCase):
             request = re.sub(r'("method": ?)"(.+?)"', r'\1"async_\2"', request)
         async_resp = loop.run_until_complete(self.server.process_request_async(request))
         loop.close()
-        # if sync_resp and "Method not found" in sync_resp:
         if sync_resp != async_resp:
             async_resp = re.sub(r"_?async_?", "", async_resp)
         self.assertEqual(sync_resp, async_resp)
@@ -345,6 +345,7 @@ class RPCTest(unittest.TestCase):
 # noinspection PyUnresolvedReferences
 def get_as_async(func: Callable) -> Callable:
     """Get an async version of a function."""
+
     async def _wrapper(*args, **kwargs) -> Any:
         return func(*args, **kwargs)
 
