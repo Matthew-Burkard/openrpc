@@ -32,7 +32,7 @@ pip install openrpc
 ## Usage
 
 This library provides an `RPCServer` class that can be used to quickly
-create an OpenRPC Server; it needs at minimum a title and version.
+create an OpenRPC Server.
 
 ```python
 from openrpc.server import RPCServer

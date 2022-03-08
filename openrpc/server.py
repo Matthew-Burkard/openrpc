@@ -44,8 +44,8 @@ class RPCServer:
     # noinspection PyShadowingBuiltins
     def __init__(
         self,
-        title: str,
-        version: str,
+        title: Optional[str] = None,
+        version: Optional[str] = None,
         description: Optional[str] = None,
         terms_of_service: Optional[str] = None,
         contact: Optional[ContactObject] = None,
@@ -53,8 +53,8 @@ class RPCServer:
     ) -> None:
         self._method_processor = MethodProcessor()
         kwargs = {
-            "title": title,
-            "version": version,
+            "title": title or "RPC Server",
+            "version": version or "0.1.0",
             "description": description,
             "termsOfService": terms_of_service,
             "contact": contact,
