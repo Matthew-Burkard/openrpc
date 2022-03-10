@@ -23,7 +23,7 @@ class InfoObject(BaseModel):
     description: Optional[str] = None
     terms_of_service: Optional[str] = Field(None, alias="termsOfService")
     contact: Optional[ContactObject] = None
-    license: Optional[LicenseObject] = None
+    license_: Optional[LicenseObject] = Field(None, alias="license")
 
 
 class ContactObject(BaseModel):

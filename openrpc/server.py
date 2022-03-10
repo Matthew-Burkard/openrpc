@@ -41,7 +41,6 @@ _META_REF = "https://raw.githubusercontent.com/open-rpc/meta-schema/master/schem
 class RPCServer:
     """OpenRPC server to register methods with."""
 
-    # noinspection PyShadowingBuiltins
     def __init__(
         self,
         title: Optional[str] = None,
@@ -49,7 +48,7 @@ class RPCServer:
         description: Optional[str] = None,
         terms_of_service: Optional[str] = None,
         contact: Optional[ContactObject] = None,
-        license: Optional[LicenseObject] = None,
+        license_: Optional[LicenseObject] = None,
     ) -> None:
         self._method_processor = MethodProcessor()
         kwargs = {
@@ -58,7 +57,7 @@ class RPCServer:
             "description": description,
             "termsOfService": terms_of_service,
             "contact": contact,
-            "license": license,
+            "license": license_,
         }
         self._info = InfoObject(**{k: v for k, v in kwargs.items() if v is not None})
         self._functions: list[Function] = []
@@ -197,14 +196,13 @@ class RPCServer:
         self._info.contact = contact
 
     @property
-    def license(self) -> Optional[LicenseObject]:
+    def license_(self) -> Optional[LicenseObject]:
         """The license information for the exposed API."""
-        return self._info.license
+        return self._info.license_
 
-    # noinspection PyShadowingBuiltins
-    @license.setter
-    def license(self, license: LicenseObject) -> None:
-        self._info.license = license
+    @license_.setter
+    def license_(self, license_: LicenseObject) -> None:
+        self._info.license_ = license_
 
     @property
     def default_error_code(self) -> int:

@@ -29,6 +29,10 @@ OpenRPC is on PyPI and can be installed with:
 pip install openrpc
 ```
 
+```shell
+poetry add openrpc
+```
+
 ## Usage
 
 This library provides an `RPCServer` class that can be used to quickly

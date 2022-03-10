@@ -45,7 +45,7 @@ class DiscoverTest(unittest.TestCase):
         self.rpc.description = self.rpc.description or "Testing rpc.discover"
         self.rpc.terms_of_service = self.rpc.terms_of_service or "Coffee"
         self.rpc.contact = self.rpc.contact or ContactObject(name="mocha")
-        self.rpc.license = self.rpc.license or LicenseObject(name="AGPLv3")
+        self.rpc.license_ = self.rpc.license_ or LicenseObject(name="AGPLv3")
         request = RequestObject(id=1, method="rpc.discover")
         resp = json.loads(self.rpc.process_request(request.json()))
         self.discover_result = resp["result"]

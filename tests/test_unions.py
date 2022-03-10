@@ -20,7 +20,7 @@ class CustomB(BaseModel):
 
 # noinspection PyMissingOrEmptyDocstring
 def func(c: Union[CustomA, CustomB]) -> bool:
-    return isinstance(c, CustomA) or isinstance(c, CustomB)
+    return isinstance(c, (CustomA, CustomB))
 
 
 class UnionsTest(unittest.TestCase):
