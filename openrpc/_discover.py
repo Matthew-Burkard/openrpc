@@ -1,4 +1,5 @@
 """Handle the OpenRPC "rpc.discover" method."""
+import copy
 import inspect
 from enum import Enum
 from typing import (
@@ -35,7 +36,7 @@ class DiscoverHandler:
         self._info = info
         self._methods: list[MethodObject] = []
         self._components: ComponentsObject = ComponentsObject(schemas={})
-        self._collect_schemas(functions)
+        self._collect_schemas(copy.deepcopy(functions))
         self._consolidate_schemas()
 
     def execute(self) -> OpenRPCObject:

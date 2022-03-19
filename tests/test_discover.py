@@ -249,6 +249,11 @@ class DiscoverTest(unittest.TestCase):
             self.discover_result["components"]["schemas"]["NestedModels"],
         )
 
+    def test_multiple_discover(self) -> None:
+        # Once had problem where state was wrongfully mutated causing
+        # discover to only work right the first timme.
+        self.assertEqual(self.rpc.discover(), self.rpc.discover())
+
 
 # noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
 def increment(numbers: list[Union[int, float]]) -> list[Union[int, str]]:
