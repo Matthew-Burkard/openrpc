@@ -255,42 +255,42 @@ class DiscoverTest(unittest.TestCase):
         self.assertEqual(self.rpc.discover(), self.rpc.discover())
 
 
-# noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
+# noinspection PyUnusedLocal
 def increment(numbers: list[Union[int, float]]) -> list[Union[int, str]]:
     """pass"""
 
 
-# noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
+# noinspection PyUnusedLocal
 def get_distance(position: Vector2, target: Vector2) -> Vector2:
     """pass"""
 
 
-# noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
+# noinspection PyUnusedLocal
 def default_value(a: int = 2, b: float = 0.99792458, c: str = "c") -> str:
     """pass"""
 
 
-# noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
+# noinspection PyUnusedLocal
 def return_none(optional_param: Optional[str]) -> None:
     """pass"""
 
 
-# noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
+# noinspection PyUnusedLocal
 def take_any_get_any(any_param: Any) -> Any:
     """pass"""
 
 
-# noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
+# noinspection PyUnusedLocal
 def dict_and_list(dict_param: dict, list_param: list) -> dict[str, list]:
     """pass"""
 
 
-# noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
+# noinspection PyUnusedLocal
 def nested_model(a: NestedModels) -> dict[str, NestedModels]:
     """pass"""
 
 
-# noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
+# noinspection PyUnusedLocal
 def typed_dict_and_list(
     dict_param: dict[str, int], list_param: list[dict[str, int]]
 ) -> dict[str, list]:
