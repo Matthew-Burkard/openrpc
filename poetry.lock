@@ -44,7 +44,7 @@ uvloop = ["uvloop (>=0.15.2)"]
 
 [[package]]
 name = "case-switcher"
-version = "1.2.13"
+version = "1.3.0"
 description = "Library to change the casing of strings."
 category = "main"
 optional = false
@@ -316,8 +316,8 @@ black = [
     {file = "black-22.3.0.tar.gz", hash = "sha256:35020b8886c022ced9282b51b5a875b6d1ab0c387b31a065b84db7c33085ca79"},
 ]
 case-switcher = [
-    {file = "case-switcher-1.2.13.tar.gz", hash = "sha256:7a562e4c3fc075842011943c5303b29dcdb04145a8ab78882c4ada1d036e85bb"},
-    {file = "case_switcher-1.2.13-py3-none-any.whl", hash = "sha256:ce77348956be9b3730e5c35d255378c0a2218bd1061620fdbce8d4bda31953a1"},
+    {file = "case-switcher-1.3.0.tar.gz", hash = "sha256:15e1ba1c99e8acd97be9aaea134392aabc6716d18be7a587aac13e4c1e86be6c"},
+    {file = "case_switcher-1.3.0-py3-none-any.whl", hash = "sha256:2ce6d5c9573e6cd5f501ff079be8b46e3755e1a00da95e413a136dcbb9a86289"},
 ]
 click = [
     {file = "click-8.1.2-py3-none-any.whl", hash = "sha256:24e1a4a9ec5bf6299411369b208c1df2188d9eb8d916302fe6bf03faed227f1e"},
