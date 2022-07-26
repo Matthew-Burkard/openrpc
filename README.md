@@ -73,20 +73,19 @@ req = """
   "jsonrpc": "2.0"
 }
 """
-rpc.process_request(req)
 await rpc.process_request_async(req)
 # returns -> '{"id": 1, "result": 4, "jsonrpc": "2.0"}'
 ```
-
-### RPC Discover
-
-The `rpc.discover` method is automatically generated. It relies heavily on type hints.
 
 ### Pydantic Support
 
 For data classes to work properly use Pydantic. RPCServer will use Pydantic for JSON
 serialization/deserialization when calling methods and when generating schemas
 with `rpc.discover`.
+
+### RPC Discover
+
+The `rpc.discover` method is automatically generated. It relies heavily on type hints.
 
 ## Example Using Sanic
 
