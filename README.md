@@ -2,9 +2,9 @@
   <h1>OpenRPC</h1>
   <h3>OpenRPC provides classes to rapidly develop an
   <a href="https://open-rpc.org">OpenRPC</a> server.</h3>
-  <img src="https://img.shields.io/badge/License-AGPL%20v3-blue.svg"
+  <img src="https://img.shields.io/badge/License-MIT-blue.svg"
    height="20"
-   alt="License: AGPL v3">
+   alt="License: MIT">
   <img src="https://img.shields.io/badge/code%20style-black-000000.svg"
    height="20"
    alt="Code style: black">
