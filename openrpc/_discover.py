@@ -186,13 +186,7 @@ def _py_to_schema_type(annotation: Any) -> str:
 
 
 def _is_required(annotation: Any) -> bool:
-    def _get_name(arg: Any) -> str:
-        try:
-            return arg.__name__
-        except AttributeError:
-            return ""
-
-    return "NoneType" not in [_get_name(a) for a in get_args(annotation)]
+    return "NoneType" not in [a.__name__ for a in get_args(annotation)]
 
 
 def _update_references(
