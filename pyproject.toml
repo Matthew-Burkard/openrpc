@@ -1,11 +1,11 @@
 [tool.poetry]
 name = "openrpc"
-version = "5.0.16"
+version = "5.0.20"
 description = "OpenRPC provides classes to rapidly develop an OpenRPC server."
 readme = "README.md"
 repository = "https://gitlab.com/mburkard/openrpc"
 homepage = "https://gitlab.com/mburkard/openrpc"
-license = "AGPL-3.0-or-later"
+license = "MIT"
 authors = ["Matthew Burkard <matthewjburkard@gmail.com>"]
 classifiers = ["Programming Language :: Python :: 3"]
 
@@ -18,7 +18,7 @@ case-switcher = "^1.2.13"
 [tool.poetry.dev-dependencies]
 coverage = "^6.4.1"
 flake8 = "^4.0.1"
-mypy = "^0.961"
+mypy = "^0.971"
 black = "^22.3.0"
 pytest = "^7.1.2"
 

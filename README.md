@@ -2,9 +2,9 @@
   <h1>OpenRPC</h1>
   <h3>OpenRPC provides classes to rapidly develop an
   <a href="https://open-rpc.org">OpenRPC</a> server.</h3>
-  <img src="https://img.shields.io/badge/License-AGPL%20v3-blue.svg"
+  <img src="https://img.shields.io/badge/License-MIT-blue.svg"
    height="20"
-   alt="License: AGPL v3">
+   alt="License: MIT">
   <img src="https://img.shields.io/badge/code%20style-black-000000.svg"
    height="20"
    alt="Code style: black">
@@ -73,20 +73,19 @@ req = """
   "jsonrpc": "2.0"
 }
 """
-rpc.process_request(req)
 await rpc.process_request_async(req)
 # returns -> '{"id": 1, "result": 4, "jsonrpc": "2.0"}'
 ```
-
-### RPC Discover
-
-The `rpc.discover` method is automatically generated. It relies heavily on type hints.
 
 ### Pydantic Support
 
 For data classes to work properly use Pydantic. RPCServer will use Pydantic for JSON
 serialization/deserialization when calling methods and when generating schemas
 with `rpc.discover`.
+
+### RPC Discover
+
+The `rpc.discover` method is automatically generated. It relies heavily on type hints.
 
 ## Example Using Sanic
 
