@@ -36,9 +36,7 @@ class DeserializationError(InternalError):
 
     def __init__(self, param: Any, p_type: Any) -> None:
         msg = f"Failed to deserialize request param [{param}] to type [{p_type}]"
-        super(DeserializationError, self).__init__(
-            ErrorObjectData(**{**INTERNAL_ERROR.dict(), **{"data": msg}})
-        )
+        super().__init__(ErrorObjectData(**{**INTERNAL_ERROR.dict(), **{"data": msg}}))
 
 
 class NotDeserializedType:
@@ -121,7 +119,7 @@ class RequestProcessor:
         return result
 
     def _get_error_response(self, error: Exception) -> Optional[str]:
-        log.exception(f"{type(error).__name__}:")
+        log.exception("%s:", type(error).__name__)
         if not isinstance(self.request, (RequestObjectParams, RequestObject)):
             return None
         if isinstance(error, JSONRPCError):

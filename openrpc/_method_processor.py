@@ -149,7 +149,7 @@ def _get_parsed_json(data: Union[bytes, str]) -> Union[ErrorResponseObject, dict
     try:
         parsed_json = json.loads(data)
     except (TypeError, JSONDecodeError) as error:
-        log.exception(f"{type(error).__name__}:")
+        log.exception("%s:", type(error).__name__)
         return ErrorResponseObject(error=PARSE_ERROR)
     return parsed_json
 
@@ -168,7 +168,7 @@ def _get_request_object(
             else NotificationObject(**data)
         )
     except (TypeError, ValidationError) as error:
-        log.exception(f"{type(error).__name__}:")
+        log.exception("%s:", type(error).__name__)
         return ErrorResponseObject(
             id=data.get("id"),
             error=ErrorObjectData(**{**INVALID_REQUEST.dict(), **{"data": data}}),

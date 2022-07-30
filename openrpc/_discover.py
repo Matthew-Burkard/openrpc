@@ -2,6 +2,7 @@
 import copy
 import inspect
 from enum import Enum
+from types import NoneType
 from typing import (
     Any,
     Callable,
@@ -13,6 +14,8 @@ from typing import (
     Union,
 )
 
+import caseswitcher as cs
+
 from openrpc._util import Function
 from openrpc.objects import (
     ComponentsObject,
@@ -22,8 +25,6 @@ from openrpc.objects import (
     OpenRPCObject,
     SchemaObject,
 )
-
-import caseswitcher as cs
 
 __all__ = ("DiscoverHandler",)
 T = TypeVar("T", bound=Optional[SchemaObject])
@@ -129,10 +130,10 @@ class DiscoverHandler:
         )
 
     def _get_schema(self, annotation: Any) -> SchemaObject:
-        if isinstance(annotation, type) and issubclass(annotation, Enum):
-            return SchemaObject(enum=[it.value for it in annotation])
         if annotation == Any:
             return SchemaObject()
+        if isinstance(annotation, type) and issubclass(annotation, Enum):
+            return SchemaObject(enum=[it.value for it in annotation])
         if get_origin(annotation) == Union:
             return SchemaObject(
                 anyOf=[self._get_schema(a) for a in get_args(annotation)]
@@ -141,10 +142,9 @@ class DiscoverHandler:
         schema_type = _py_to_schema_type(annotation)
 
         if schema_type == "object":
-            name = annotation.__name__
             if hasattr(annotation, "schema"):
                 schema = SchemaObject(**annotation.schema())  # type: ignore
-                schema.title = schema.title or cs.to_title(name)
+                schema.title = schema.title or cs.to_title(annotation.__name__)
                 return schema
             if get_origin(annotation) == dict:
                 schema = SchemaObject()
@@ -161,9 +161,7 @@ class DiscoverHandler:
                 schema.items = self._get_schema(args[0])
             return schema
 
-        schema = SchemaObject()
-        schema.type = schema_type
-        return schema
+        return SchemaObject(type=schema_type)
 
 
 def _py_to_schema_type(annotation: Any) -> str:
@@ -180,7 +178,7 @@ def _py_to_schema_type(annotation: Any) -> str:
         return "array"
     if dict in [origin, annotation]:
         return "object"
-    if type(None) is annotation:
+    if NoneType is annotation:
         return "null"
     return py_to_schema.get(annotation) or "object"
 
@@ -241,11 +239,11 @@ def _update_references(
                 ref, consolidated_schema, schema.items
             )
         if schema.properties:
-            for v in schema.properties.values():
-                _update_references(v, reference_to_consolidated_schema)
+            for val in schema.properties.values():
+                _update_references(val, reference_to_consolidated_schema)
         if schema.definitions:
-            for v in schema.definitions.values():
-                _update_references(v, reference_to_consolidated_schema)
+            for val in schema.definitions.values():
+                _update_references(val, reference_to_consolidated_schema)
 
 
 def _update_schema_list_references(
