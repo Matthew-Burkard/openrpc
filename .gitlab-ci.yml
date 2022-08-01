@@ -9,7 +9,7 @@ variables:
   # Change pip's cache directory to be inside the project directory
   # since we can only cache local items.
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-  PROJCECT_SRC_DIR: "$CI_PROJECT_DIR/openrpc/"
+  PROJECT_SRC_DIR: "$CI_PROJECT_DIR/openrpc/"
 
 .setup_environmentt: &setup_env
   before_script:
@@ -34,21 +34,21 @@ black:
   allow_failure: true
   <<: *setup_env
   script:
-    - black --check $PROJCECT_SRC_DIR
+    - black --check $PROJECT_SRC_DIR
 
 flake8:
   stage: analysis
   allow_failure: true
   <<: *setup_env
   script:
-    - flake8 --max-line-length=88 $PROJCECT_SRC_DIR
+    - flake8 --max-line-length=88 $PROJECT_SRC_DIR
 
 mypy:
   stage: analysis
   allow_failure: true
   <<: *setup_env
   script:
-    - mypy $PROJCECT_SRC_DIR
+    - mypy $PROJECT_SRC_DIR
 
 pytest:
   stage: test
