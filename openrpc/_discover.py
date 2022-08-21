@@ -2,7 +2,6 @@
 import copy
 import inspect
 from enum import Enum
-from types import NoneType
 from typing import (
     Any,
     Callable,
@@ -28,6 +27,7 @@ from openrpc.objects import (
 
 __all__ = ("DiscoverHandler",)
 T = TypeVar("T", bound=Optional[SchemaObject])
+NoneType = type(None)
 
 
 class DiscoverHandler:
