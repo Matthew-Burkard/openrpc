@@ -33,6 +33,7 @@ class MethodProcessor:
     """Class to register and execute methods."""
 
     def __init__(self) -> None:
+        """Init a MethodProcessor."""
         self.methods: dict[str, Callable] = {}
         self.uncaught_error_code = _DEFAULT_ERROR_CODE
 

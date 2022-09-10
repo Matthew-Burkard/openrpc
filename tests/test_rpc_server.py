@@ -1,4 +1,6 @@
-"""Synchronous OpenRPC tests."""
+"""OpenRPC tests."""
+from __future__ import annotations
+
 import asyncio
 import json
 import re
@@ -25,6 +27,18 @@ from tests.util import (
     SERVER_ERROR,
     Vector3,
 )
+
+
+# This needs to be defined at top level for future annotations to work.
+# noinspection PyMissingOrEmptyDocstring
+class RecursiveModel(BaseModel):
+    name: str
+    position: Vector3
+    another_thing: Optional[RecursiveModel] = None
+    another_thing_no_future_annotations: Optional["RecursiveModel"] = None
+
+
+RecursiveModel.update_forward_refs()
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -275,18 +289,13 @@ class RPCTest(unittest.TestCase):
         self.assertEqual(None, resp)
 
     def test_deserialize_nested_objects(self) -> None:
-        # noinspection PyMissingOrEmptyDocstring
-        class Thing(BaseModel):
-            name: str
-            position: Vector3
-            another_thing: Optional["Thing"] = None
-
-        Thing.update_forward_refs()
-
-        def take_thing(thing: Thing) -> bool:
-            self.assertTrue(isinstance(thing, Thing))
-            self.assertTrue(isinstance(thing.another_thing, Thing))
+        def take_thing(thing: RecursiveModel) -> bool:
+            self.assertTrue(isinstance(thing, RecursiveModel))
+            self.assertTrue(isinstance(thing.another_thing, RecursiveModel))
             self.assertTrue(isinstance(thing.another_thing.position, Vector3))
+            self.assertTrue(
+                isinstance(thing.another_thing_no_future_annotations.position, Vector3)
+            )
             return True
 
         # noinspection DuplicatedCode
@@ -295,10 +304,15 @@ class RPCTest(unittest.TestCase):
             id=1,
             method="take_thing",
             params=[
-                Thing(
+                RecursiveModel(
                     name="ping",
                     position=Vector3(x=1, y=3, z=5),
-                    another_thing=Thing(name="pong", position=Vector3(x=7, y=11, z=13)),
+                    another_thing=RecursiveModel(
+                        name="pong", position=Vector3(x=7, y=11, z=13)
+                    ),
+                    another_thing_no_future_annotations=RecursiveModel(
+                        name="pong", position=Vector3(x=7, y=11, z=13)
+                    ),
                 )
             ],
         )

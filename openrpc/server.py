@@ -50,6 +50,15 @@ class RPCServer:
         contact: Optional[ContactObject] = None,
         license_: Optional[LicenseObject] = None,
     ) -> None:
+        """Init an OpenRPC server.
+
+        :param title: OpenRPC title.
+        :param version: API version.
+        :param description: Description of the app.
+        :param terms_of_service: App terms of service.
+        :param contact: Contact information.
+        :param license_: App license.
+        """
         self._method_processor = MethodProcessor()
         kwargs = {
             "title": title or "RPC Server",
@@ -152,7 +161,7 @@ class RPCServer:
 
     @property
     def title(self) -> str:
-        """The title of the application."""
+        """Title of the application."""
         return self._info.title
 
     @title.setter
@@ -161,7 +170,7 @@ class RPCServer:
 
     @property
     def version(self) -> str:
-        """The version of the OpenRPC document."""
+        """Version of the OpenRPC document."""
         return self._info.version
 
     @version.setter
@@ -170,7 +179,7 @@ class RPCServer:
 
     @property
     def description(self) -> Optional[str]:
-        """A verbose description of the application."""
+        """Verbose description of the application."""
         return self._info.description
 
     @description.setter
@@ -179,7 +188,7 @@ class RPCServer:
 
     @property
     def terms_of_service(self) -> Optional[str]:
-        """A URL to the Terms of Service for the API."""
+        """URL to the Terms of Service for the API."""
         return self._info.terms_of_service
 
     @terms_of_service.setter
@@ -188,7 +197,7 @@ class RPCServer:
 
     @property
     def contact(self) -> Optional[ContactObject]:
-        """The contact information for the exposed API."""
+        """Contact information for the exposed API."""
         return self._info.contact
 
     @contact.setter
@@ -197,7 +206,7 @@ class RPCServer:
 
     @property
     def license_(self) -> Optional[LicenseObject]:
-        """The license information for the exposed API."""
+        """License information for the exposed API."""
         return self._info.license_
 
     @license_.setter
@@ -226,6 +235,7 @@ class RPCServer:
                 log.debug("Responding: %s", resp)
             return resp
         except Exception as error:
+            log.exception("%s:", type(error).__name__)
             error_object = ErrorObjectData(**INTERNAL_ERROR.dict())
             error_object.data = f"{type(error).__name__}: {', '.join(error.args)}"
             return error_object.json()
@@ -245,12 +255,13 @@ class RPCServer:
                 log.debug("Responding: %s", resp)
             return resp
         except Exception as error:
+            log.exception("%s:", type(error).__name__)
             error_object = ErrorObjectData(**INTERNAL_ERROR.dict())
             error_object.data = f"{type(error).__name__}: {', '.join(error.args)}"
             return error_object.json()
 
     def discover(self) -> dict[str, Any]:
-        """The OpenRPC "rpc.discover" method."""
+        """Execute "rpc.discover" method defined in OpenRPC spec."""
         return (
             DiscoverHandler(self._info, self._functions)
             .execute()

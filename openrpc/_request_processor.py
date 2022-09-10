@@ -40,7 +40,7 @@ class DeserializationError(InternalError):
 
 
 class NotDeserializedType:
-    """To be returned by deserialization method if deserialization fails
+    """Returned by deserialization method if deserialization fails.
 
     The deserialized value may very well be False or None, so a custom
     type needs to be made to represent a failure to deserialize.
@@ -59,6 +59,12 @@ class RequestProcessor:
         uncaught_error_code: int,
         request: Union[RequestType, NotificationType],
     ) -> None:
+        """Init a request processor.
+
+        :param method: The Python callable.
+        :param uncaught_error_code: Code for errors raised by method.
+        :param request: Request to execute.
+        """
         self.method = method
         self.request = request
         self.uncaught_error_code = uncaught_error_code

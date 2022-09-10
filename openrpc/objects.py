@@ -6,6 +6,27 @@ from typing import Any, Optional, Union
 
 from pydantic import BaseModel, Field
 
+__all__ = (
+    "ParamStructure",
+    "InfoObject",
+    "ContactObject",
+    "LicenseObject",
+    "ServerObject",
+    "ServerVariableObject",
+    "MethodObject",
+    "ContentDescriptorObject",
+    "SchemaObject",
+    "ExamplePairingObject",
+    "ExampleObject",
+    "LinkObject",
+    "ErrorObject",
+    "ComponentsObject",
+    "TagObject",
+    "ExternalDocumentationObject",
+    "ReferenceObject",
+    "OpenRPCObject",
+)
+
 
 class ParamStructure(Enum):
     """OpenRPC method param structure options."""
