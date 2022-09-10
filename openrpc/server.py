@@ -235,6 +235,7 @@ class RPCServer:
                 log.debug("Responding: %s", resp)
             return resp
         except Exception as error:
+            log.exception("%s:", type(error).__name__)
             error_object = ErrorObjectData(**INTERNAL_ERROR.dict())
             error_object.data = f"{type(error).__name__}: {', '.join(error.args)}"
             return error_object.json()
@@ -254,6 +255,7 @@ class RPCServer:
                 log.debug("Responding: %s", resp)
             return resp
         except Exception as error:
+            log.exception("%s:", type(error).__name__)
             error_object = ErrorObjectData(**INTERNAL_ERROR.dict())
             error_object.data = f"{type(error).__name__}: {', '.join(error.args)}"
             return error_object.json()
