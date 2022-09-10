@@ -6,10 +6,27 @@ community!
 This is on GitHub as a read-only mirror, the main repository is hosted
 [here](https://gitlab.com/mburkard/openrpc).
 
+## Requirements
+
+- [Poetry](https://python-poetry.org/docs/)
+- [pre-commit](https://pre-commit.com/)
+
+## Getting Started
+
+Fork or clone this repository, then run the following.
+
+```shell
+cd openrpc
+poetry shell
+poetry install
+pre-commit install
+pre-commit run
+```
+
+Start hacking!
+
 ## Pull Requests
 
-- OpenRPC uses [poetry](https://python-poetry.org/docs/) for dependency
-  management and packaging.
 - An [issue](https://gitlab.com/mburkard/openrpc/-/issues) should be
   made for any substantial changes.
 - Commit messages should follow the

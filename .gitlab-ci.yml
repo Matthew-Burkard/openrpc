@@ -11,7 +11,7 @@ variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   PROJECT_SRC_DIR: "$CI_PROJECT_DIR/openrpc/"
 
-.setup_environmentt: &setup_env
+.setup_environment: &setup_env
   before_script:
     - python --version
     - pip install poetry
