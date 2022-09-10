@@ -1,4 +1,6 @@
 """Synchronous OpenRPC tests."""
+from __future__ import annotations
+
 import asyncio
 import json
 import re
@@ -279,7 +281,7 @@ class RPCTest(unittest.TestCase):
         class Thing(BaseModel):
             name: str
             position: Vector3
-            another_thing: Optional["Thing"] = None
+            another_thing: Optional[Thing] = None
 
         Thing.update_forward_refs()
 

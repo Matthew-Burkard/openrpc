@@ -34,6 +34,11 @@ class DiscoverHandler:
     """Used to discover an OpenRPC API."""
 
     def __init__(self, info: InfoObject, functions: list[Function]) -> None:
+        """Init a DiscoverHandler for an OpenRPC server.
+
+        :param info: OpenRPC info object.
+        :param functions: Functions to include in discover.
+        """
         self._info = info
         self._methods: list[MethodObject] = []
         self._components: ComponentsObject = ComponentsObject(schemas={})

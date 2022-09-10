@@ -14,9 +14,6 @@
   <img src="https://img.shields.io/badge/coverage-100%25-success"
    height="20"
    alt="Code Coverage">
-  <a href="https://www.codefactor.io/repository/github/matthew-burkard/openrpc">
-    <img src="https://www.codefactor.io/repository/github/matthew-burkard/openrpc/badge" 
-     alt="CodeFactor" /></a>
   <a href="https://gitlab.com/mburkard/openrpc/-/blob/main/CONTRIBUTING.md">
     <img src="https://img.shields.io/static/v1.svg?label=Contributions&message=Welcome&color=2267a0"
      height="20"
