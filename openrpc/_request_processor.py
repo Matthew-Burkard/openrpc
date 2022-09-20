@@ -100,28 +100,28 @@ class RequestProcessor:
 
     def _execute(self) -> Any:
         annotations = get_type_hints(self.method)
-        params: Optional[Union[dict, list]] = None
+        params: Optional[Union[dict, list]]
+        params_msg = ""
         # Call method.
         if isinstance(self.request, (RequestObject, NotificationObject)):
             result = self.method()
         elif isinstance(self.request.params, list):
             params = self._get_list_params(self.request.params, annotations)
             result = self.method(*params)
+            params_msg = ", ".join(str(p) for p in params)
         else:
             params = self._get_dict_params(self.request.params, annotations)
             result = self.method(**params)
+            params_msg = ", ".join(f"{k}={v}" for k, v in params.items())
 
         # Logging
-        id_msg = ""
-        res_msg = ""
+        id_msg = "None"
         if isinstance(self.request, (RequestObject, RequestObjectParams)):
-            res_msg = f" {result}"
             if isinstance(self.request.id, str):
-                id_msg = f'"{self.request.id}" '
+                id_msg = f'"{self.request.id}"'
             else:
-                id_msg = f"{self.request.id} "
-        params_msg = f" {params}" if params is not None else ""
-        log.info('%s--> "%s"%s -->%s', id_msg, self.request.method, params_msg, res_msg)
+                id_msg = str(self.request.id)
+        log.info("%s: %s(%s) -> %s", id_msg, self.request.method, params_msg, result)
         return result
 
     def _get_error_response(self, error: Exception) -> Optional[str]:
