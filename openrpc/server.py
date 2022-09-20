@@ -24,6 +24,7 @@ from openrpc.objects import (
     InfoObject,
     LicenseObject,
     LinkObject,
+    MethodObject,
     ParamStructure,
     SchemaObject,
     ServerObject,
@@ -69,7 +70,7 @@ class RPCServer:
             "license": license_,
         }
         self._info = InfoObject(**{k: v for k, v in kwargs.items() if v is not None})
-        self._functions: list[Function] = []
+        self._functions: dict[str, Function] = {}
         self.method(
             name="rpc.discover",
             params=[],
@@ -77,6 +78,74 @@ class RPCServer:
                 name="OpenRPC Schema", schema=SchemaObject(**{"$ref": _META_REF})
             ),
         )(self.discover)
+
+    @property
+    def title(self) -> str:
+        """Title of the application."""
+        return self._info.title
+
+    @title.setter
+    def title(self, title: str) -> None:
+        self._info.title = title
+
+    @property
+    def version(self) -> str:
+        """Version of the OpenRPC document."""
+        return self._info.version
+
+    @version.setter
+    def version(self, version: str) -> None:
+        self._info.version = version
+
+    @property
+    def description(self) -> Optional[str]:
+        """Verbose description of the application."""
+        return self._info.description
+
+    @description.setter
+    def description(self, description: str) -> None:
+        self._info.description = description
+
+    @property
+    def terms_of_service(self) -> Optional[str]:
+        """URL to the Terms of Service for the API."""
+        return self._info.terms_of_service
+
+    @terms_of_service.setter
+    def terms_of_service(self, terms_of_service: str) -> None:
+        self._info.terms_of_service = terms_of_service
+
+    @property
+    def contact(self) -> Optional[ContactObject]:
+        """Contact information for the exposed API."""
+        return self._info.contact
+
+    @contact.setter
+    def contact(self, contact: ContactObject) -> None:
+        self._info.contact = contact
+
+    @property
+    def license_(self) -> Optional[LicenseObject]:
+        """License information for the exposed API."""
+        return self._info.license_
+
+    @license_.setter
+    def license_(self, license_: LicenseObject) -> None:
+        self._info.license_ = license_
+
+    @property
+    def default_error_code(self) -> int:
+        """JSON-RPC error code used when a method raises an error."""
+        return self._method_processor.uncaught_error_code
+
+    @default_error_code.setter
+    def default_error_code(self, default_error_code: int) -> None:
+        self._method_processor.uncaught_error_code = default_error_code
+
+    @property
+    def methods(self) -> list[MethodObject]:
+        """Get all methods of this server."""
+        return DiscoverHandler(self._info, self._functions.values()).execute().methods
 
     def method(
         self,
@@ -155,72 +224,13 @@ class RPCServer:
             return partial(self.method, **metadata)  # type: ignore
         name = name or func.__name__
         metadata["name"] = name
-        self._functions.append(Function(function=func, metadata=metadata))
+        self._functions[name] = Function(function=func, metadata=metadata)
         log.debug("Registering method [%s]", func.__name__)
         return self._method_processor.method(func, name)
 
-    @property
-    def title(self) -> str:
-        """Title of the application."""
-        return self._info.title
-
-    @title.setter
-    def title(self, title: str) -> None:
-        self._info.title = title
-
-    @property
-    def version(self) -> str:
-        """Version of the OpenRPC document."""
-        return self._info.version
-
-    @version.setter
-    def version(self, version: str) -> None:
-        self._info.version = version
-
-    @property
-    def description(self) -> Optional[str]:
-        """Verbose description of the application."""
-        return self._info.description
-
-    @description.setter
-    def description(self, description: str) -> None:
-        self._info.description = description
-
-    @property
-    def terms_of_service(self) -> Optional[str]:
-        """URL to the Terms of Service for the API."""
-        return self._info.terms_of_service
-
-    @terms_of_service.setter
-    def terms_of_service(self, terms_of_service: str) -> None:
-        self._info.terms_of_service = terms_of_service
-
-    @property
-    def contact(self) -> Optional[ContactObject]:
-        """Contact information for the exposed API."""
-        return self._info.contact
-
-    @contact.setter
-    def contact(self, contact: ContactObject) -> None:
-        self._info.contact = contact
-
-    @property
-    def license_(self) -> Optional[LicenseObject]:
-        """License information for the exposed API."""
-        return self._info.license_
-
-    @license_.setter
-    def license_(self, license_: LicenseObject) -> None:
-        self._info.license_ = license_
-
-    @property
-    def default_error_code(self) -> int:
-        """JSON-RPC error code used when a method raises an error."""
-        return self._method_processor.uncaught_error_code
-
-    @default_error_code.setter
-    def default_error_code(self, default_error_code: int) -> None:
-        self._method_processor.uncaught_error_code = default_error_code
+    def remove(self, method: str) -> None:
+        """Remove a method from this server by name."""
+        self._functions.pop(method)
 
     def process_request(self, data: Union[bytes, str]) -> Optional[str]:
         """Process a JSON-RPC2 request and get the response.
@@ -263,7 +273,7 @@ class RPCServer:
     def discover(self) -> dict[str, Any]:
         """Execute "rpc.discover" method defined in OpenRPC spec."""
         return (
-            DiscoverHandler(self._info, self._functions)
+            DiscoverHandler(self._info, self._functions.values())
             .execute()
             .dict(by_alias=True, exclude_unset=True, exclude_none=True)
         )

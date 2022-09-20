@@ -8,6 +8,7 @@ from typing import (
     get_args,
     get_origin,
     get_type_hints,
+    Iterable,
     Optional,
     TypeVar,
     Union,
@@ -33,7 +34,7 @@ NoneType = type(None)
 class DiscoverHandler:
     """Used to discover an OpenRPC API."""
 
-    def __init__(self, info: InfoObject, functions: list[Function]) -> None:
+    def __init__(self, info: InfoObject, functions: Iterable[Function]) -> None:
         """Init a DiscoverHandler for an OpenRPC server.
 
         :param info: OpenRPC info object.
@@ -42,7 +43,7 @@ class DiscoverHandler:
         self._info = info
         self._methods: list[MethodObject] = []
         self._components: ComponentsObject = ComponentsObject(schemas={})
-        self._collect_schemas(copy.deepcopy(functions))
+        self._collect_schemas(copy.deepcopy(list(functions)))
         self._consolidate_schemas()
 
     def execute(self) -> OpenRPCObject:
