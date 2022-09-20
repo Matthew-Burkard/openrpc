@@ -120,7 +120,7 @@ class RequestProcessor:
             if isinstance(self.request.id, str):
                 id_msg = f'"{self.request.id}"'
             else:
-                id_msg = self.request.id
+                id_msg = str(self.request.id)
         log.info("%s: %s(%s) -> %s", id_msg, self.request.method, params_msg, result)
         return result
 
