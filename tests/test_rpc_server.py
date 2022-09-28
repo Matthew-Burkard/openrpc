@@ -16,8 +16,7 @@ from jsonrpcobjects.objects import (
 )
 from pydantic import BaseModel
 
-from openrpc.objects import InfoObject
-from openrpc.server import RPCServer
+from openrpc import InfoObject, RPCServer
 from tests.util import (
     INTERNAL_ERROR,
     INVALID_REQUEST,

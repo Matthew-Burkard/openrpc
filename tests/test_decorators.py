@@ -2,7 +2,7 @@
 import json
 import unittest
 
-from openrpc.server import RPCServer
+from openrpc import RPCServer
 
 rpc = RPCServer(title="Test Decorators", version="1.0.0")
 

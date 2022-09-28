@@ -5,7 +5,7 @@ from enum import Enum
 
 from pydantic import BaseModel
 
-from openrpc.server import RPCServer
+from openrpc import RPCServer
 
 
 class Model(BaseModel):

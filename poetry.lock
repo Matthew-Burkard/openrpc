@@ -114,11 +114,11 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "mypy"
-version = "0.971"
+version = "0.981"
 description = "Optional static typing for Python"
 category = "dev"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.7"
 
 [package.dependencies]
 mypy-extensions = ">=0.4.3"
@@ -270,7 +270,7 @@ python-versions = ">=3.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "e06441e0676ef97564a4b45c5961948436897cf2d92c2e0fa0f4fc957d0e573e"
+content-hash = "0ff069e067db87ddd15ac82f46718661827ac8305a3606f52dcdd527f1660434"
 
 [metadata.files]
 attrs = []

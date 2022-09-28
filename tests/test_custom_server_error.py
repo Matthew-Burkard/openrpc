@@ -6,7 +6,7 @@ from typing import Any
 from jsonrpcobjects.errors import JSONRPCError
 from jsonrpcobjects.objects import ErrorObjectData, RequestObjectParams
 
-from openrpc.server import RPCServer
+from openrpc import RPCServer
 
 rpc = RPCServer(title="Test Errors", version="1.0.0")
 custom_error_object = ErrorObjectData(code=-32001, message="Cannot divide by zero")

@@ -39,7 +39,7 @@ This library provides an `RPCServer` class that can be used to quickly create an
 Server.
 
 ```python
-from openrpc.server import RPCServer
+from openrpc import RPCServer
 
 rpc = RPCServer(title="Demo Server", version="1.0.0")
 ```
@@ -92,7 +92,7 @@ using [Sanic](https://sanic.dev/en/).
 ```python
 from sanic import HTTPResponse, Request, Sanic, text
 
-from openrpc.server import RPCServer
+from openrpc import RPCServer
 
 app = Sanic("DemoServer")
 rpc = RPCServer(title="DemoServer", version="1.0.0")

@@ -6,8 +6,7 @@ from typing import Optional, Union
 
 from jsonrpcobjects.objects import RequestObject
 
-from openrpc.objects import InfoObject
-from openrpc.server import RPCServer
+from openrpc import InfoObject, RPCServer
 
 
 # noinspection PyMissingOrEmptyDocstring
