@@ -63,7 +63,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
 name = "coverage"
-version = "6.4.4"
+version = "6.5.0"
 description = "Code coverage measurement for Python"
 category = "dev"
 optional = false
@@ -114,7 +114,7 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "mypy"
-version = "0.981"
+version = "0.982"
 description = "Optional static typing for Python"
 category = "dev"
 optional = false
@@ -270,7 +270,7 @@ python-versions = ">=3.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "0ff069e067db87ddd15ac82f46718661827ac8305a3606f52dcdd527f1660434"
+content-hash = "16e78d61df3ea87e9c256f136bba6a82bad82784974a51239e698d2117f6bf65"
 
 [metadata.files]
 attrs = []
