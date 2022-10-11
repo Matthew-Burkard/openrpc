@@ -5,7 +5,7 @@ from typing import Union
 
 from pydantic import BaseModel, StrictInt, StrictStr
 
-from openrpc.server import RPCServer
+from openrpc import RPCServer
 
 
 # noinspection PyMissingOrEmptyDocstring
