@@ -1,8 +1,7 @@
 """Test removing a method from a server."""
 import unittest
 
-from openrpc.objects import InfoObject
-from openrpc.server import RPCServer
+from openrpc import InfoObject, RPCServer
 
 
 # noinspection PyUnusedLocal

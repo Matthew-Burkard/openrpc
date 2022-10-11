@@ -14,8 +14,7 @@ from jsonrpcobjects.objects import ErrorObjectData
 
 from openrpc._discover import DiscoverHandler
 from openrpc._method_processor import MethodProcessor
-from openrpc._util import Function
-from openrpc.objects import (
+from openrpc._objects import (
     ContactObject,
     ContentDescriptorObject,
     ErrorObject,
@@ -30,6 +29,7 @@ from openrpc.objects import (
     ServerObject,
     TagObject,
 )
+from openrpc._util import Function
 
 __all__ = ("RPCServer",)
 

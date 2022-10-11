@@ -6,8 +6,7 @@ from typing import Any, Optional, Union
 from jsonrpcobjects.objects import RequestObject
 from pydantic import BaseModel
 
-from openrpc.objects import ContactObject, LicenseObject
-from openrpc.server import RPCServer
+from openrpc import ContactObject, LicenseObject, RPCServer
 from tests.util import Vector3
 
 

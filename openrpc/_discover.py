@@ -17,7 +17,7 @@ from typing import (
 import caseswitcher as cs
 
 from openrpc._util import Function
-from openrpc.objects import (
+from openrpc._objects import (
     ComponentsObject,
     ContentDescriptorObject,
     InfoObject,
