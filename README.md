@@ -105,7 +105,7 @@ def add(a: int, b: int) -> int:
 
 @app.post("/api/v1/")
 def process_rpc(request: Request) -> HTTPResponse:
-    return text(rpc.process_request(request.body))
+    return text(rpc.process_request(request.body) or "Notify complete.")
 
 
 if __name__ == "__main__":
