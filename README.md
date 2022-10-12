@@ -160,6 +160,9 @@ Example Result Out
 
 ## Support The Development
 
-<div>
-<a href="https://www.buymeacoffee.com/mburkard" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-blue.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
-</div>
+<a href="https://www.buymeacoffee.com/mburkard" target="_blank">
+  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-blue.png"
+       width="217"
+       height="60"
+       alt="Buy Me A Coffee">
+</a>
