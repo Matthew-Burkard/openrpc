@@ -158,7 +158,7 @@ Example Result Out
 ]
 ```
 
-## Support The Development
+## Support The Developer
 
 <a href="https://www.buymeacoffee.com/mburkard" target="_blank">
   <img src="https://cdn.buymeacoffee.com/buttons/v2/default-blue.png"
