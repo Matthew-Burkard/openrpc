@@ -28,24 +28,25 @@ cache:
 stages:
   - analysis
   - test
+  - deploy
 
 black:
   stage: analysis
-  allow_failure: true
+  allow_failure: false
   <<: *setup_env
   script:
     - black --check $PROJECT_SRC_DIR
 
 flake8:
   stage: analysis
-  allow_failure: true
+  allow_failure: false
   <<: *setup_env
   script:
     - flake8 --max-line-length=88 $PROJECT_SRC_DIR
 
 mypy:
   stage: analysis
-  allow_failure: true
+  allow_failure: false
   <<: *setup_env
   script:
     - mypy $PROJECT_SRC_DIR
@@ -55,3 +56,12 @@ pytest:
   <<: *setup_env
   script:
     - poetry run pytest tests/
+
+deploy:
+  stage: deploy
+  <<: *setup_env
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+  script:
+    - poetry build
+    - poetry publish -u "$PYPI_USERNAME" -p "$PYPI_TOKEN"
