@@ -32,21 +32,18 @@ stages:
 
 black:
   stage: analysis
-  allow_failure: false
   <<: *setup_env
   script:
     - black --check $PROJECT_SRC_DIR
 
 flake8:
   stage: analysis
-  allow_failure: false
   <<: *setup_env
   script:
     - flake8 --max-line-length=88 $PROJECT_SRC_DIR
 
 mypy:
   stage: analysis
-  allow_failure: false
   <<: *setup_env
   script:
     - mypy $PROJECT_SRC_DIR

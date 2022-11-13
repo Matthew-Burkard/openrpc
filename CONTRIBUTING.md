@@ -27,6 +27,7 @@ Start hacking!
 
 ## Pull Requests
 
+- Pull requests should target the `develop` branch.
 - An [issue](https://gitlab.com/mburkard/openrpc/-/issues) should be
   made for any substantial changes.
 - Commit messages should follow the
