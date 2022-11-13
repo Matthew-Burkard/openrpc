@@ -125,7 +125,7 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "mypy"
-version = "0.982"
+version = "0.990"
 description = "Optional static typing for Python"
 category = "dev"
 optional = false
@@ -138,6 +138,7 @@ typing-extensions = ">=3.10"
 
 [package.extras]
 dmypy = ["psutil (>=4.0)"]
+install-types = ["pip"]
 python2 = ["typed-ast (>=1.4.0,<2)"]
 reports = ["lxml"]
 
@@ -273,7 +274,7 @@ python-versions = ">=3.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "16e78d61df3ea87e9c256f136bba6a82bad82784974a51239e698d2117f6bf65"
+content-hash = "fb4c9aea761f7913d667328db8a6fc9fb7e9d910b07142ccd8a50952e1592e62"
 
 [metadata.files]
 attrs = []
