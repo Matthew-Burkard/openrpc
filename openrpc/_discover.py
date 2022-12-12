@@ -86,7 +86,6 @@ class DiscoverHandler:
                     return SchemaObject(**{"$ref": f"#/components/schemas/{key}"})
         # Consolidate schema definitions.
         reference_to_consolidated_schema = {}
-        component_schema_keys = []
         if schema.definitions:
             for key in schema.definitions.copy():
                 consolidated_schema = self._consolidate_schema(schema.definitions[key])
@@ -96,23 +95,16 @@ class DiscoverHandler:
                     if schema.ref:
                         recursive_ref = schema.ref.removeprefix("#/definitions/") == key
                     if not recursive_ref:
-                        # Components added in recursive call of this
-                        # function also need to have references updated.
-                        component_schema_keys.append(
-                            cs.to_pascal(schema.definitions.pop(key).title)
-                        )
+                        schema.definitions.pop(key)
                 reference_to_consolidated_schema[
                     f"#/definitions/{key}"
                 ] = consolidated_schema
         if schema.definitions == {}:
             schema.definitions = None
-        # Update schema and component references.
+        # Update schema and other component references.
         _update_references(schema, reference_to_consolidated_schema)
-        for component_schema_key in component_schema_keys:
-            _update_references(
-                self._components.schemas[component_schema_key],
-                reference_to_consolidated_schema,
-            )
+        for component_schema in self._components.schemas.values():
+            _update_references(component_schema, reference_to_consolidated_schema)
         # Add this new schema to components and return a reference.
         self._components.schemas[cs.to_pascal(schema.title)] = schema
         return SchemaObject(**{"$ref": f"#/components/schemas/{schema.title}"})
