@@ -59,13 +59,9 @@ class DiscoverHandler:
 
     def _collect_schemas(self, functions: list[Function]) -> None:
         for func in functions:
-            func.metadata["name"] = func.metadata.get("name") or func.function.__name__
-            func.metadata["params"] = func.metadata.get("params") or self._get_params(
-                func.function
-            )
-            func.metadata["result"] = func.metadata.get("result") or self._get_result(
-                func.function
-            )
+            func.metadata["name"] = func.metadata.get("name")
+            func.metadata["params"] = self._get_params(func.function)
+            func.metadata["result"] = self._get_result(func.function)
             method = MethodObject(**func.metadata)
             self._methods.append(method)
 
@@ -105,8 +101,10 @@ class DiscoverHandler:
                 ] = consolidated_schema
         if schema.definitions == {}:
             schema.definitions = None
-        # Update schema references.
+        # Update schema and other component references.
         _update_references(schema, reference_to_consolidated_schema)
+        for component_schema in self._components.schemas.values():
+            _update_references(component_schema, reference_to_consolidated_schema)
         # Add this new schema to components and return a reference.
         self._components.schemas[cs.to_pascal(schema.title)] = schema
         return SchemaObject(**{"$ref": f"#/components/schemas/{schema.title}"})
