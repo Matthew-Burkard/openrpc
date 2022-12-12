@@ -59,13 +59,9 @@ class DiscoverHandler:
 
     def _collect_schemas(self, functions: list[Function]) -> None:
         for func in functions:
-            func.metadata["name"] = func.metadata.get("name") or func.function.__name__
-            func.metadata["params"] = func.metadata.get("params") or self._get_params(
-                func.function
-            )
-            func.metadata["result"] = func.metadata.get("result") or self._get_result(
-                func.function
-            )
+            func.metadata["name"] = func.metadata.get("name")
+            func.metadata["params"] = self._get_params(func.function)
+            func.metadata["result"] = self._get_result(func.function)
             method = MethodObject(**func.metadata)
             self._methods.append(method)
 
@@ -90,6 +86,7 @@ class DiscoverHandler:
                     return SchemaObject(**{"$ref": f"#/components/schemas/{key}"})
         # Consolidate schema definitions.
         reference_to_consolidated_schema = {}
+        component_schema_keys = []
         if schema.definitions:
             for key in schema.definitions.copy():
                 consolidated_schema = self._consolidate_schema(schema.definitions[key])
@@ -99,14 +96,23 @@ class DiscoverHandler:
                     if schema.ref:
                         recursive_ref = schema.ref.removeprefix("#/definitions/") == key
                     if not recursive_ref:
-                        schema.definitions.pop(key)
+                        # Components added in recursive call of this
+                        # function also need to have references updated.
+                        component_schema_keys.append(
+                            cs.to_pascal(schema.definitions.pop(key).title)
+                        )
                 reference_to_consolidated_schema[
                     f"#/definitions/{key}"
                 ] = consolidated_schema
         if schema.definitions == {}:
             schema.definitions = None
-        # Update schema references.
+        # Update schema and component references.
         _update_references(schema, reference_to_consolidated_schema)
+        for component_schema_key in component_schema_keys:
+            _update_references(
+                self._components.schemas[component_schema_key],
+                reference_to_consolidated_schema,
+            )
         # Add this new schema to components and return a reference.
         self._components.schemas[cs.to_pascal(schema.title)] = schema
         return SchemaObject(**{"$ref": f"#/components/schemas/{schema.title}"})
