@@ -1,12 +1,13 @@
 """Module providing RPCServer class."""
 import logging
-from typing import Any, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 from jsonrpcobjects.errors import INTERNAL_ERROR
 from jsonrpcobjects.objects import ErrorObjectData
 
+from openrpc import RPCRouter
 from openrpc._discover import DiscoverHandler
-from openrpc._method_registrar import MethodRegistrar
+from openrpc._method_registrar import CallableType, MethodMetaData, MethodRegistrar
 from openrpc._objects import (
     ContactObject,
     ContentDescriptorObject,
@@ -14,6 +15,7 @@ from openrpc._objects import (
     LicenseObject,
     MethodObject,
     SchemaObject,
+    TagObject,
 )
 
 __all__ = ("RPCServer",)
@@ -44,6 +46,7 @@ class RPCServer(MethodRegistrar):
         :param license_: App license.
         """
         super().__init__()
+        # Set OpenRPC server info.
         kwargs = {
             "title": title or "RPC Server",
             "version": version or "0.1.0",
@@ -53,6 +56,7 @@ class RPCServer(MethodRegistrar):
             "license": license_,
         }
         self._info = InfoObject(**{k: v for k, v in kwargs.items() if v is not None})
+        # Register discover method.
         self.method(
             name="rpc.discover",
             params=[],
@@ -127,7 +131,56 @@ class RPCServer(MethodRegistrar):
     @property
     def methods(self) -> list[MethodObject]:
         """Get all methods of this server."""
-        return DiscoverHandler(self._info, self._functions.values()).execute().methods
+        return DiscoverHandler(self._info, self._rpc_methods.values()).execute().methods
+
+    def include_router(
+        self,
+        router: RPCRouter,
+        prefix: Optional[str] = None,
+        tags: Optional[list[TagObject]] = None,
+    ) -> None:
+        """Add an RPC method router to this server.
+
+        :param router: Router to add to this server.
+        :param prefix: Prefix to add to method names in this router.
+        :param tags: Tags to add to methods in this router.
+        :return: None.
+        """
+
+        def _add_router_method(
+            func: CallableType, metadata: MethodMetaData
+        ) -> CallableType:
+            new_data = metadata.copy()
+            if prefix:
+                new_data.name = f"{prefix}{metadata.name}"
+            if tags:
+                if new_data.tags:
+                    new_data.tags.extend(tags)
+                else:
+                    new_data.tags = tags
+            return self._method(func, new_data)
+
+        def _router_method_decorator(
+            func: CallableType,
+        ) -> Callable[[CallableType, MethodMetaData], CallableType]:
+            def _wrapper(fun: CallableType, metadata: MethodMetaData) -> CallableType:
+                _add_router_method(fun, metadata)
+                return func(fun, metadata)
+
+            return _wrapper
+
+        def _router_remove_partial(method: str) -> None:
+            if prefix:
+                self.remove(f"{prefix}{method}")
+            else:
+                self.remove(method)
+            router._rpc_methods.pop(method)
+            router._method_processor.methods.pop(method)
+
+        for rpc_method in router._rpc_methods.values():
+            _add_router_method(rpc_method.function, rpc_method.metadata)
+        router._method = _router_method_decorator(router._method)  # type: ignore
+        router.remove = _router_remove_partial  # type: ignore
 
     def process_request(self, data: Union[bytes, str]) -> Optional[str]:
         """Process a JSON-RPC2 request and get the response.
@@ -170,7 +223,7 @@ class RPCServer(MethodRegistrar):
     def discover(self) -> dict[str, Any]:
         """Execute "rpc.discover" method defined in OpenRPC spec."""
         return (
-            DiscoverHandler(self._info, self._functions.values())
+            DiscoverHandler(self._info, self._rpc_methods.values())
             .execute()
             .dict(by_alias=True, exclude_unset=True, exclude_none=True)
         )

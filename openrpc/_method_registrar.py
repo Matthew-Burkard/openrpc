@@ -3,9 +3,11 @@ import logging
 from functools import partial
 from typing import Callable, Optional, TypeVar, Union
 
-from openrpc import ContentDescriptorObject
+from pydantic import BaseModel
+
 from openrpc._method_processor import MethodProcessor
 from openrpc._objects import (
+    ContentDescriptorObject,
     ErrorObject,
     ExamplePairingObject,
     ExternalDocumentationObject,
@@ -14,9 +16,8 @@ from openrpc._objects import (
     ServerObject,
     TagObject,
 )
-from openrpc._util import Function
 
-__all__ = ("MethodRegistrar",)
+__all__ = ("MethodRegistrar", "RPCMethod", "MethodMetaData", "CallableType")
 
 log = logging.getLogger("openrpc")
 
@@ -24,12 +25,37 @@ CallableType = TypeVar("CallableType", bound=Callable)
 DecoratedCallableType = TypeVar("DecoratedCallableType", bound=Callable)
 
 
+class MethodMetaData(BaseModel):
+    """Hold RPC method data."""
+
+    name: str
+    params: Optional[list[ContentDescriptorObject]] = None
+    result: Optional[ContentDescriptorObject] = None
+    tags: Optional[list[TagObject]] = None
+    summary: Optional[str] = None
+    description: Optional[str] = None
+    externalDocs: Optional[ExternalDocumentationObject] = None
+    deprecated: Optional[bool] = None
+    servers: Optional[list[ServerObject]] = None
+    errors: Optional[list[ErrorObject]] = None
+    links: Optional[list[LinkObject]] = None
+    paramStructure: Optional[ParamStructure] = None
+    examples: Optional[list[ExamplePairingObject]] = None
+
+
+class RPCMethod(BaseModel):
+    """Hold information about a decorated Python function."""
+
+    function: Callable
+    metadata: MethodMetaData
+
+
 class MethodRegistrar:
     """Interface for registering RPC methods."""
 
     def __init__(self) -> None:
         """Initialize a new instance of the MethodRegistrar class."""
-        self._functions: dict[str, Function] = {}
+        self._rpc_methods: dict[str, RPCMethod] = {}
         self._method_processor = MethodProcessor()
 
     def method(
@@ -103,15 +129,12 @@ class MethodRegistrar:
             "examples": examples,
         }
         metadata = {k: v for k, v in metadata.items() if v is not None}
-        if args:
-            func = args[0]
-        else:
+        if not args:
             return partial(self.method, **metadata)  # type: ignore
+        func = args[0]
         name = name or func.__name__
         metadata["name"] = name
-        self._functions[name] = Function(function=func, metadata=metadata)
-        log.debug("Registering method [%s]", func.__name__)
-        return self._method_processor.method(func, name)
+        return self._method(func, MethodMetaData(**metadata))
 
     def remove(self, method: str) -> None:
         """Remove a method from this server by name.
@@ -119,4 +142,12 @@ class MethodRegistrar:
         :param method: Name of the method to remove.
         :return: None.
         """
-        self._functions.pop(method)
+        self._rpc_methods.pop(method)
+        self._method_processor.methods.pop(method)
+
+    def _method(self, func: CallableType, metadata: MethodMetaData) -> CallableType:
+        self._rpc_methods[metadata.name] = RPCMethod(function=func, metadata=metadata)
+        log.debug(
+            "Registering function [%s] as method [%s]", func.__name__, metadata.name
+        )
+        return self._method_processor.method(func, metadata.name)

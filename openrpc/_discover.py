@@ -16,7 +16,7 @@ from typing import (
 
 import caseswitcher as cs
 
-from openrpc._util import Function
+from openrpc._method_registrar import RPCMethod
 from openrpc._objects import (
     ComponentsObject,
     ContentDescriptorObject,
@@ -34,7 +34,7 @@ NoneType = type(None)
 class DiscoverHandler:
     """Used to discover an OpenRPC API."""
 
-    def __init__(self, info: InfoObject, functions: Iterable[Function]) -> None:
+    def __init__(self, info: InfoObject, functions: Iterable[RPCMethod]) -> None:
         """Init a DiscoverHandler for an OpenRPC server.
 
         :param info: OpenRPC info object.
@@ -57,12 +57,13 @@ class DiscoverHandler:
             components=self._components,
         )
 
-    def _collect_schemas(self, functions: list[Function]) -> None:
+    def _collect_schemas(self, functions: list[RPCMethod]) -> None:
         for func in functions:
-            func.metadata["name"] = func.metadata.get("name")
-            func.metadata["params"] = self._get_params(func.function)
-            func.metadata["result"] = self._get_result(func.function)
-            method = MethodObject(**func.metadata)
+            params = self._get_params(func.function)
+            result = self._get_result(func.function)
+            method = MethodObject(
+                **{**func.metadata.dict(), **{"params": params, "result": result}}
+            )
             self._methods.append(method)
 
     def _consolidate_schemas(self) -> None:
