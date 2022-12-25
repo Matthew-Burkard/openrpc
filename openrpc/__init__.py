@@ -14,7 +14,9 @@ from openrpc._objects import (
     SchemaObject,
     ServerObject,
     ServerVariableObject,
+    TagObject,
 )
+from openrpc._router import RPCRouter
 from openrpc._server import RPCServer
 
 __all__ = (
@@ -31,5 +33,7 @@ __all__ = (
     "SchemaObject",
     "ServerObject",
     "ServerVariableObject",
+    "TagObject",
+    "RPCRouter",
     "RPCServer",
 )

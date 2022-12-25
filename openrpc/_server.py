@@ -1,45 +1,30 @@
-"""Provides RPCServer class."""
+"""Module providing RPCServer class."""
 import logging
-from functools import partial
-from typing import (
-    Any,
-    Callable,
-    Optional,
-    TypeVar,
-    Union,
-)
+from typing import Any, Callable, Optional, Union
 
 from jsonrpcobjects.errors import INTERNAL_ERROR
 from jsonrpcobjects.objects import ErrorObjectData
 
+from openrpc import RPCRouter
 from openrpc._discover import DiscoverHandler
-from openrpc._method_processor import MethodProcessor
+from openrpc._method_registrar import CallableType, MethodMetaData, MethodRegistrar
 from openrpc._objects import (
     ContactObject,
     ContentDescriptorObject,
-    ErrorObject,
-    ExamplePairingObject,
-    ExternalDocumentationObject,
     InfoObject,
     LicenseObject,
-    LinkObject,
     MethodObject,
-    ParamStructure,
     SchemaObject,
-    ServerObject,
     TagObject,
 )
-from openrpc._util import Function
 
 __all__ = ("RPCServer",)
 
-T = TypeVar("T", bound=Callable)
-C = TypeVar("C", bound=Callable)
 log = logging.getLogger("openrpc")
 _META_REF = "https://raw.githubusercontent.com/open-rpc/meta-schema/master/schema.json"
 
 
-class RPCServer:
+class RPCServer(MethodRegistrar):
     """OpenRPC server to register methods with."""
 
     def __init__(
@@ -60,7 +45,8 @@ class RPCServer:
         :param contact: Contact information.
         :param license_: App license.
         """
-        self._method_processor = MethodProcessor()
+        super().__init__()
+        # Set OpenRPC server info.
         kwargs = {
             "title": title or "RPC Server",
             "version": version or "0.1.0",
@@ -70,7 +56,7 @@ class RPCServer:
             "license": license_,
         }
         self._info = InfoObject(**{k: v for k, v in kwargs.items() if v is not None})
-        self._functions: dict[str, Function] = {}
+        # Register discover method.
         self.method(
             name="rpc.discover",
             params=[],
@@ -145,92 +131,56 @@ class RPCServer:
     @property
     def methods(self) -> list[MethodObject]:
         """Get all methods of this server."""
-        return DiscoverHandler(self._info, self._functions.values()).execute().methods
+        return DiscoverHandler(self._info, self._rpc_methods.values()).execute().methods
 
-    def method(
+    def include_router(
         self,
-        *args: T,
-        name: Optional[str] = None,
-        params: Optional[list[ContentDescriptorObject]] = None,
-        result: Optional[ContentDescriptorObject] = None,
+        router: RPCRouter,
+        prefix: Optional[str] = None,
         tags: Optional[list[TagObject]] = None,
-        summary: Optional[str] = None,
-        description: Optional[str] = None,
-        external_docs: Optional[ExternalDocumentationObject] = None,
-        deprecated: Optional[bool] = None,
-        servers: Optional[list[ServerObject]] = None,
-        errors: Optional[list[ErrorObject]] = None,
-        links: Optional[list[LinkObject]] = None,
-        param_structure: Optional[ParamStructure] = None,
-        examples: Optional[list[ExamplePairingObject]] = None,
-    ) -> Union[T, Callable[[C], C]]:
-        """Register a method with this OpenRPC server.
+    ) -> None:
+        """Add an RPC method router to this server.
 
-        Can be used as a plain decorator, eg:
-
-        .. code-block:: python
-
-            @method
-            def my_func()
-
-        Or additional method info can be provided with a MethodObject:
-
-        .. code-block:: python
-
-            @method(name="dot.case.method", deprecated=True)
-            def my_func()
-
-        :param args: The method if this is used as a plain decorator.
-        :param name: The canonical name for the method.
-        :param params: A list of parameters that are applicable for this
-            method.
-        :param result: The description of the result returned by the
-            method.
-        :param tags: A list of tags for API documentation control.
-        :param summary: A short summary of what the method does.
-        :param description: A verbose explanation of the method
-            behavior.
-        :param external_docs: Additional external documentation for this
-            method.
-        :param deprecated: Declares this method to be deprecated.
-        :param servers: An alternative servers array to service this
-            method.
-        :param errors: A list of custom application defined errors that
-            MAY be returned.
-        :param links: A list of possible links from this method call.
-        :param param_structure: The expected format of the parameters
-        :param examples: Array of Example Pairing Objects.
-        :return: The method decorator.
+        :param router: Router to add to this server.
+        :param prefix: Prefix to add to method names in this router.
+        :param tags: Tags to add to methods in this router.
+        :return: None.
         """
-        metadata = {
-            "name": name,
-            "params": params,
-            "result": result,
-            "tags": tags,
-            "summary": summary,
-            "description": description,
-            "externalDocs": external_docs,
-            "deprecated": deprecated,
-            "servers": servers,
-            "errors": errors,
-            "links": links,
-            "paramStructure": param_structure,
-            "examples": examples,
-        }
-        metadata = {k: v for k, v in metadata.items() if v is not None}
-        if args:
-            func = args[0]
-        else:
-            return partial(self.method, **metadata)  # type: ignore
-        name = name or func.__name__
-        metadata["name"] = name
-        self._functions[name] = Function(function=func, metadata=metadata)
-        log.debug("Registering method [%s]", func.__name__)
-        return self._method_processor.method(func, name)
 
-    def remove(self, method: str) -> None:
-        """Remove a method from this server by name."""
-        self._functions.pop(method)
+        def _add_router_method(
+            func: CallableType, metadata: MethodMetaData
+        ) -> CallableType:
+            new_data = metadata.copy()
+            if prefix:
+                new_data.name = f"{prefix}{metadata.name}"
+            if tags:
+                if new_data.tags:
+                    new_data.tags.extend(tags)
+                else:
+                    new_data.tags = tags
+            return self._method(func, new_data)
+
+        def _router_method_decorator(
+            func: CallableType,
+        ) -> Callable[[CallableType, MethodMetaData], CallableType]:
+            def _wrapper(fun: CallableType, metadata: MethodMetaData) -> CallableType:
+                _add_router_method(fun, metadata)
+                return func(fun, metadata)
+
+            return _wrapper
+
+        def _router_remove_partial(method: str) -> None:
+            if prefix:
+                self.remove(f"{prefix}{method}")
+            else:
+                self.remove(method)
+            router._rpc_methods.pop(method)
+            router._method_processor.methods.pop(method)
+
+        for rpc_method in router._rpc_methods.values():
+            _add_router_method(rpc_method.function, rpc_method.metadata)
+        router._method = _router_method_decorator(router._method)  # type: ignore
+        router.remove = _router_remove_partial  # type: ignore
 
     def process_request(self, data: Union[bytes, str]) -> Optional[str]:
         """Process a JSON-RPC2 request and get the response.
@@ -273,7 +223,7 @@ class RPCServer:
     def discover(self) -> dict[str, Any]:
         """Execute "rpc.discover" method defined in OpenRPC spec."""
         return (
-            DiscoverHandler(self._info, self._functions.values())
+            DiscoverHandler(self._info, self._rpc_methods.values())
             .execute()
             .dict(by_alias=True, exclude_unset=True, exclude_none=True)
         )
