@@ -202,14 +202,14 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "pydantic"
-version = "1.10.2"
+version = "1.10.4"
 description = "Data validation and settings management using python type hints"
 category = "main"
 optional = false
 python-versions = ">=3.7"
 
 [package.dependencies]
-typing-extensions = ">=4.1.0"
+typing-extensions = ">=4.2.0"
 
 [package.extras]
 dotenv = ["python-dotenv (>=0.10.4)"]
@@ -262,7 +262,7 @@ python-versions = ">=3.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "f95cd75d646e197ef1446446e355027e0ea51cb4eee6a681a4407b25cb2f2bc3"
+content-hash = "6f661d8cb1938d7536968c4546795622dbcd6c85e558c7c816ca3039d475d253"
 
 [metadata.files]
 attrs = []

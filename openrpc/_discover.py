@@ -24,10 +24,11 @@ from openrpc._objects import (
     MethodObject,
     OpenRPCObject,
     SchemaObject,
+    SchemaType,
 )
 
 __all__ = ("DiscoverHandler",)
-T = TypeVar("T", bound=Optional[SchemaObject])
+T = TypeVar("T", bound=Optional[SchemaType])
 NoneType = type(None)
 
 
@@ -75,8 +76,8 @@ class DiscoverHandler:
             method.params = params
             method.result.schema_ = self._consolidate_schema(method.result.schema_)
 
-    def _consolidate_schema(self, schema: SchemaObject) -> SchemaObject:
-        if schema.title is None:
+    def _consolidate_schema(self, schema: SchemaType) -> SchemaType:
+        if isinstance(schema, bool) or schema.title is None:
             return schema
         # If this schema exists in components, return a reference to the
         # existing one.
@@ -193,10 +194,14 @@ def _is_required(annotation: Any) -> bool:
 
 
 def _update_references(
-    schema: SchemaObject,
-    reference_to_consolidated_schema: dict[str, SchemaObject],
+    schema: SchemaType,
+    reference_to_consolidated_schema: dict[str, SchemaType],
 ) -> None:
+    if isinstance(schema, bool):
+        return None
     for ref, consolidated_schema in reference_to_consolidated_schema.items():
+        if isinstance(consolidated_schema, bool):
+            continue
         # Schema lists.
         schema.all_of = _update_schema_list_references(
             ref, consolidated_schema, schema.all_of
@@ -253,37 +258,41 @@ def _update_references(
 
 def _update_schema_list_references(
     original_reference: str,
-    reference_schema: SchemaObject,
-    schemas: Optional[list[SchemaObject]],
-) -> Optional[list[SchemaObject]]:
+    reference_schema: SchemaType,
+    schemas: Optional[list[SchemaType]],
+) -> Optional[list[SchemaType]]:
     updated_references_schemas = []
     for schema in schemas or []:
-        updated_references_schemas.append(
-            _get_updated_schema_references(original_reference, reference_schema, schema)
+        updated_ref = _get_updated_schema_references(
+            original_reference, reference_schema, schema
         )
+        if updated_ref is not None:
+            updated_references_schemas.append(updated_ref)
     return updated_references_schemas or None
 
 
 def _update_schema_dict_references(
     original_reference: str,
-    reference_schema: SchemaObject,
-    schemas: Optional[dict[str, SchemaObject]],
-) -> Optional[dict[str, SchemaObject]]:
+    reference_schema: SchemaType,
+    schemas: Optional[dict[str, SchemaType]],
+) -> Optional[dict[str, SchemaType]]:
     updated_references_schemas = {}
     if schemas is None:
         return None
     for key, schema in schemas.items():
-        updated_references_schemas[key] = _get_updated_schema_references(
+        updated_ref = _get_updated_schema_references(
             original_reference, reference_schema, schema
         )
+        if updated_ref is not None:
+            updated_references_schemas[key] = updated_ref
     return updated_references_schemas or None
 
 
 def _get_updated_schema_references(
     original_reference: str,
-    reference_schema: SchemaObject,
-    schema: T,
-) -> Union[T, SchemaObject]:
+    reference_schema: SchemaType,
+    schema: Optional[SchemaType],
+) -> Optional[SchemaType]:
     if isinstance(schema, SchemaObject):
         return reference_schema if schema.ref == original_reference else schema
     return schema

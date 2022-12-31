@@ -7,25 +7,28 @@ from typing import Any, Optional, Union
 from pydantic import BaseModel, Field
 
 __all__ = (
-    "ParamStructure",
-    "InfoObject",
+    "ComponentsObject",
     "ContactObject",
+    "ContentDescriptorObject",
+    "ErrorObject",
+    "ExampleObject",
+    "ExamplePairingObject",
+    "ExternalDocumentationObject",
+    "InfoObject",
     "LicenseObject",
+    "LinkObject",
+    "MethodObject",
+    "OpenRPCObject",
+    "ParamStructure",
+    "ReferenceObject",
+    "SchemaObject",
+    "SchemaType",
     "ServerObject",
     "ServerVariableObject",
-    "MethodObject",
-    "ContentDescriptorObject",
-    "SchemaObject",
-    "ExamplePairingObject",
-    "ExampleObject",
-    "LinkObject",
-    "ErrorObject",
-    "ComponentsObject",
     "TagObject",
-    "ExternalDocumentationObject",
-    "ReferenceObject",
-    "OpenRPCObject",
 )
+
+SchemaType = Union["SchemaObject", bool]
 
 
 class ParamStructure(Enum):
@@ -104,7 +107,7 @@ class ContentDescriptorObject(BaseModel):
     """Describes either parameters or result."""
 
     name: str
-    schema_: SchemaObject = Field(alias="schema")
+    schema_: SchemaType = Field(alias="schema")
     summary: Optional[str] = None
     description: Optional[str] = None
     required: Optional[bool] = None
@@ -119,10 +122,10 @@ class SchemaObject(BaseModel):
     format: Optional[str] = None
     enum: Optional[list[Any]] = None
     type: Optional[Union[str, list[str]]] = None
-    all_of: Optional[list[SchemaObject]] = Field(alias="allOf", default=None)
-    any_of: Optional[list[SchemaObject]] = Field(alias="anyOf", default=None)
-    one_of: Optional[list[SchemaObject]] = Field(alias="oneOf", default=None)
-    not_: Optional[SchemaObject] = Field(alias="not", default=None)
+    all_of: Optional[list[SchemaType]] = Field(alias="allOf", default=None)
+    any_of: Optional[list[SchemaType]] = Field(alias="anyOf", default=None)
+    one_of: Optional[list[SchemaType]] = Field(alias="oneOf", default=None)
+    not_: Optional[SchemaType] = Field(alias="not", default=None)
     pattern: Optional[str] = None
     minimum: Optional[float] = None
     maximum: Optional[float] = None
@@ -131,23 +134,21 @@ class SchemaObject(BaseModel):
     multiple_of: Optional[float] = Field(alias="multipleOf", default=None)
     min_length: Optional[int] = Field(alias="minLength", default=None)
     max_length: Optional[int] = Field(alias="maxLength", default=None)
-    properties: Optional[dict[str, SchemaObject]] = None
-    pattern_properties: Optional[dict[str, SchemaObject]] = Field(
+    properties: Optional[dict[str, Union[SchemaType]]] = None
+    pattern_properties: Optional[dict[str, SchemaType]] = Field(
         alias="patternProperties", default=None
     )
     additional_properties: Optional[Union[bool, dict[str, Any]]] = Field(
         alias="additionalProperties", default=None
     )
-    property_names: Optional[SchemaObject] = Field(alias="propertyNames", default=None)
+    property_names: Optional[SchemaType] = Field(alias="propertyNames", default=None)
     min_properties: Optional[int] = Field(alias="minProperties", default=None)
     max_properties: Optional[int] = Field(alias="maxProperties", default=None)
     required: Optional[list[str]] = None
-    definitions: Optional[dict[str, SchemaObject]] = None
-    items: Optional[Union[SchemaObject, bool]] = None
-    prefix_items: Optional[list[SchemaObject]] = Field(
-        alias="prefixItems", default=None
-    )
-    contains: Optional[SchemaObject] = None
+    definitions: Optional[dict[str, SchemaType]] = None
+    items: Optional[Union[SchemaType, bool]] = None
+    prefix_items: Optional[list[SchemaType]] = Field(alias="prefixItems", default=None)
+    contains: Optional[SchemaType] = None
     min_contains: Optional[int] = Field(alias="minContains", default=None)
     max_contains: Optional[int] = Field(alias="maxContains", default=None)
     min_items: Optional[int] = Field(alias="minItems", default=None)
@@ -164,12 +165,12 @@ class SchemaObject(BaseModel):
     dependent_required: Optional[dict[str, list[str]]] = Field(
         alias="dependentRequired", default=None
     )
-    dependent_schemas: Optional[dict[str, SchemaObject]] = Field(
+    dependent_schemas: Optional[dict[str, SchemaType]] = Field(
         alias="dependentSchemas", default=None
     )
-    if_: Optional[SchemaObject] = Field(alias="if", default=None)
-    then: Optional[SchemaObject] = None
-    else_: Optional[SchemaObject] = Field(alias="else", default=None)
+    if_: Optional[SchemaType] = Field(alias="if", default=None)
+    then: Optional[SchemaType] = None
+    else_: Optional[SchemaType] = Field(alias="else", default=None)
     schema_: Optional[str] = Field(alias="$schema", default=None)
 
 
@@ -218,7 +219,7 @@ class ComponentsObject(BaseModel):
     content_descriptors: Optional[dict[str, ContentDescriptorObject]] = Field(
         None, alias="contentDescriptors"
     )
-    schemas: Optional[dict[str, SchemaObject]] = None
+    schemas: Optional[dict[str, SchemaType]] = None
     examples: Optional[dict[str, ExampleObject]] = None
     links: Optional[dict[str, LinkObject]] = None
     errors: Optional[dict[str, ErrorObject]] = None

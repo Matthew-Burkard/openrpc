@@ -6,7 +6,8 @@ from typing import Any, Optional, Union
 from jsonrpcobjects.objects import RequestObject
 from pydantic import BaseModel
 
-from openrpc import ContactObject, LicenseObject, RPCServer
+# noinspection PyProtectedMember
+from openrpc import _discover, ContactObject, LicenseObject, RPCServer, SchemaObject
 from tests.util import Vector3
 
 
@@ -49,6 +50,11 @@ class DiscoverTest(unittest.TestCase):
         resp = json.loads(self.rpc.process_request(request.json()))
         self.discover_result = resp["result"]
         super(DiscoverTest, self).__init__(*args)
+
+    def test_bool_schemas(self) -> None:
+        _discover._update_references(True, {})
+        _discover._update_references(SchemaObject(**Vector2.schema()), {"test": True})
+        self.assertTrue(True)
 
     def test_open_rpc_info(self) -> None:
         self.assertEqual("1.2.6", self.discover_result["openrpc"])
