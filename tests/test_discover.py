@@ -4,7 +4,7 @@ import unittest
 from typing import Any, List, Optional, Union
 
 from jsonrpcobjects.objects import RequestObject
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 # noinspection PyProtectedMember
 from openrpc import _discover, ContactObject, LicenseObject, RPCServer, SchemaObject
@@ -28,6 +28,7 @@ class NestedModels(BaseModel):
     recursion: "NestedModels"
     list_recursion: List["NestedModels"]
     any_of: Union[Vector3, "NestedModels"]
+    dict_model_values: dict[int, Vector2] = Field(default_factory=dict)
 
 
 class DiscoverTest(unittest.TestCase):
@@ -220,29 +221,35 @@ class DiscoverTest(unittest.TestCase):
     def test_recursive_schemas(self) -> None:
         self.assertEqual(
             {
-                "title": "NestedModels",
-                "type": "object",
+                "description": "To test models with other models as fields.",
                 "properties": {
-                    "name": {"title": "Name", "type": "string"},
-                    "position": {"$ref": "#/components/schemas/Vector3"},
-                    "path": {
-                        "title": "Path",
-                        "type": "array",
-                        "items": {"$ref": "#/components/schemas/Vector3"},
-                    },
-                    "recursion": {"$ref": "#/components/schemas/NestedModels"},
-                    "list_recursion": {
-                        "title": "List Recursion",
-                        "type": "array",
-                        "items": {"$ref": "#/components/schemas/NestedModels"},
-                    },
                     "any_of": {
-                        "title": "Any Of",
                         "anyOf": [
                             {"$ref": "#/components/schemas/Vector3"},
                             {"$ref": "#/components/schemas/NestedModels"},
                         ],
+                        "title": "Any Of",
                     },
+                    "dict_model_values": {
+                        "additionalProperties": {
+                            "$ref": "#/components/schemas/Vector2"
+                        },
+                        "title": "Dict Model Values",
+                        "type": "object",
+                    },
+                    "list_recursion": {
+                        "items": {"$ref": "#/components/schemas/NestedModels"},
+                        "title": "List Recursion",
+                        "type": "array",
+                    },
+                    "name": {"title": "Name", "type": "string"},
+                    "path": {
+                        "items": {"$ref": "#/components/schemas/Vector3"},
+                        "title": "Path",
+                        "type": "array",
+                    },
+                    "position": {"$ref": "#/components/schemas/Vector3"},
+                    "recursion": {"$ref": "#/components/schemas/NestedModels"},
                 },
                 "required": [
                     "name",
@@ -252,7 +259,8 @@ class DiscoverTest(unittest.TestCase):
                     "list_recursion",
                     "any_of",
                 ],
-                "description": "To test models with other models as fields.",
+                "title": "NestedModels",
+                "type": "object",
             },
             self.discover_result["components"]["schemas"]["NestedModels"],
         )
