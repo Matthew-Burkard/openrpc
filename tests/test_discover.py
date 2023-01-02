@@ -1,7 +1,7 @@
 """Test the generated "rpc.discover" method."""
 import json
 import unittest
-from typing import Any, Optional, Union
+from typing import Any, List, Optional, Union
 
 from jsonrpcobjects.objects import RequestObject
 from pydantic import BaseModel
@@ -26,6 +26,7 @@ class NestedModels(BaseModel):
     position: Vector3
     path: list[Vector3]
     recursion: "NestedModels"
+    list_recursion: List["NestedModels"]
     any_of: Union[Vector3, "NestedModels"]
 
 
@@ -219,37 +220,39 @@ class DiscoverTest(unittest.TestCase):
     def test_recursive_schemas(self) -> None:
         self.assertEqual(
             {
-                "$ref": "#/definitions/NestedModels",
-                "definitions": {
-                    "NestedModels": {
-                        "type": "object",
-                        "description": "To test models with other models as fields.",
-                        "properties": {
-                            "name": {"title": "Name", "type": "string"},
-                            "position": {
-                                "$ref": "#/components/schemas/Vector3",
-                            },
-                            "path": {
-                                "title": "Path",
-                                "type": "array",
-                                "items": {"$ref": "#/components/schemas/Vector3"},
-                            },
-                            "recursion": {
-                                "$ref": "#/components/schemas/NestedModels",
-                            },
-                            "any_of": {
-                                "title": "Any Of",
-                                "anyOf": [
-                                    {"$ref": "#/components/schemas/Vector3"},
-                                    {"$ref": "#/components/schemas/NestedModels"},
-                                ],
-                            },
-                        },
-                        "required": ["name", "position", "path", "recursion", "any_of"],
-                        "title": "NestedModels",
-                    }
+                "title": "NestedModels",
+                "type": "object",
+                "properties": {
+                    "name": {"title": "Name", "type": "string"},
+                    "position": {"$ref": "#/components/schemas/Vector3"},
+                    "path": {
+                        "title": "Path",
+                        "type": "array",
+                        "items": {"$ref": "#/components/schemas/Vector3"},
+                    },
+                    "recursion": {"$ref": "#/components/schemas/NestedModels"},
+                    "list_recursion": {
+                        "title": "List Recursion",
+                        "type": "array",
+                        "items": {"$ref": "#/components/schemas/NestedModels"},
+                    },
+                    "any_of": {
+                        "title": "Any Of",
+                        "anyOf": [
+                            {"$ref": "#/components/schemas/Vector3"},
+                            {"$ref": "#/components/schemas/NestedModels"},
+                        ],
+                    },
                 },
-                "title": "Nested Models",
+                "required": [
+                    "name",
+                    "position",
+                    "path",
+                    "recursion",
+                    "list_recursion",
+                    "any_of",
+                ],
+                "description": "To test models with other models as fields.",
             },
             self.discover_result["components"]["schemas"]["NestedModels"],
         )

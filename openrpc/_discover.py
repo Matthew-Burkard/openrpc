@@ -79,6 +79,7 @@ class DiscoverHandler:
     def _consolidate_schema(self, schema: SchemaType) -> SchemaType:
         if isinstance(schema, bool) or schema.title is None:
             return schema
+        title = schema.title
         # If this schema exists in components, return a reference to the
         # existing one.
         self._components.schemas = self._components.schemas or {}
@@ -88,19 +89,19 @@ class DiscoverHandler:
                     return SchemaObject(**{"$ref": f"#/components/schemas/{key}"})
         # Consolidate schema definitions.
         reference_to_consolidated_schema = {}
+        recurred_schema = None
         if schema.definitions:
-            for key in schema.definitions.copy():
-                consolidated_schema = self._consolidate_schema(schema.definitions[key])
-                if consolidated_schema != schema.definitions[key]:
-                    recursive_ref = False
-                    # If this is a recursive schema, leave the ref as is.
-                    if schema.ref:
-                        recursive_ref = schema.ref.removeprefix("#/definitions/") == key
-                    if not recursive_ref:
+            # Copy because we pop/re-assign within this loop.
+            definitions = schema.definitions.copy()
+            for key in definitions:
+                ref_schema = self._consolidate_schema(schema.definitions[key])
+                if ref_schema != schema.definitions[key]:
+                    # If this is a recursive ref, use the definition.
+                    if schema.ref and schema.ref.removeprefix("#/definitions/") == key:
+                        recurred_schema = schema.definitions[key]
+                    else:
                         schema.definitions.pop(key)
-                reference_to_consolidated_schema[
-                    f"#/definitions/{key}"
-                ] = consolidated_schema
+                reference_to_consolidated_schema[f"#/definitions/{key}"] = ref_schema
         if schema.definitions == {}:
             schema.definitions = None
         # Update schema and other component references.
@@ -108,7 +109,9 @@ class DiscoverHandler:
         for component_schema in self._components.schemas.values():
             _update_references(component_schema, reference_to_consolidated_schema)
         # Add this new schema to components and return a reference.
-        self._components.schemas[cs.to_pascal(schema.title)] = schema
+        if recurred_schema is not None and not isinstance(recurred_schema, bool):
+            schema = recurred_schema
+        self._components.schemas[cs.to_pascal(title)] = schema
         return SchemaObject(**{"$ref": f"#/components/schemas/{schema.title}"})
 
     def _get_params(self, fun: Callable) -> list[ContentDescriptorObject]:
@@ -250,9 +253,6 @@ def _update_references(
             )
         if schema.properties:
             for val in schema.properties.values():
-                _update_references(val, reference_to_consolidated_schema)
-        if schema.definitions:
-            for val in schema.definitions.values():
                 _update_references(val, reference_to_consolidated_schema)
 
 
