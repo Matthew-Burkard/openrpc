@@ -251,6 +251,10 @@ def _update_references(
             schema.items = _get_updated_schema_references(
                 ref, consolidated_schema, schema.items
             )
+        if isinstance(schema.additional_properties, SchemaObject):
+            schema.additional_properties = _get_updated_schema_references(
+                ref, consolidated_schema, schema.additional_properties
+            )
         if schema.properties:
             for val in schema.properties.values():
                 _update_references(val, reference_to_consolidated_schema)

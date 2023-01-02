@@ -138,7 +138,7 @@ class SchemaObject(BaseModel):
     pattern_properties: Optional[dict[str, SchemaType]] = Field(
         alias="patternProperties", default=None
     )
-    additional_properties: Optional[Union[bool, dict[str, Any]]] = Field(
+    additional_properties: Optional[SchemaType] = Field(
         alias="additionalProperties", default=None
     )
     property_names: Optional[SchemaType] = Field(alias="propertyNames", default=None)
