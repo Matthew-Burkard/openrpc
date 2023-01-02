@@ -24,10 +24,11 @@ from openrpc._objects import (
     MethodObject,
     OpenRPCObject,
     SchemaObject,
+    SchemaType,
 )
 
 __all__ = ("DiscoverHandler",)
-T = TypeVar("T", bound=Optional[SchemaObject])
+T = TypeVar("T", bound=Optional[SchemaType])
 NoneType = type(None)
 
 
@@ -75,9 +76,10 @@ class DiscoverHandler:
             method.params = params
             method.result.schema_ = self._consolidate_schema(method.result.schema_)
 
-    def _consolidate_schema(self, schema: SchemaObject) -> SchemaObject:
-        if schema.title is None:
+    def _consolidate_schema(self, schema: SchemaType) -> SchemaType:
+        if isinstance(schema, bool) or schema.title is None:
             return schema
+        title = schema.title
         # If this schema exists in components, return a reference to the
         # existing one.
         self._components.schemas = self._components.schemas or {}
@@ -87,19 +89,19 @@ class DiscoverHandler:
                     return SchemaObject(**{"$ref": f"#/components/schemas/{key}"})
         # Consolidate schema definitions.
         reference_to_consolidated_schema = {}
+        recurred_schema = None
         if schema.definitions:
-            for key in schema.definitions.copy():
-                consolidated_schema = self._consolidate_schema(schema.definitions[key])
-                if consolidated_schema != schema.definitions[key]:
-                    recursive_ref = False
-                    # If this is a recursive schema, leave the ref as is.
-                    if schema.ref:
-                        recursive_ref = schema.ref.removeprefix("#/definitions/") == key
-                    if not recursive_ref:
+            # Copy because we pop/re-assign within this loop.
+            definitions = schema.definitions.copy()
+            for key in definitions:
+                ref_schema = self._consolidate_schema(schema.definitions[key])
+                if ref_schema != schema.definitions[key]:
+                    # If this is a recursive ref, use the definition.
+                    if schema.ref and schema.ref.removeprefix("#/definitions/") == key:
+                        recurred_schema = schema.definitions[key]
+                    else:
                         schema.definitions.pop(key)
-                reference_to_consolidated_schema[
-                    f"#/definitions/{key}"
-                ] = consolidated_schema
+                reference_to_consolidated_schema[f"#/definitions/{key}"] = ref_schema
         if schema.definitions == {}:
             schema.definitions = None
         # Update schema and other component references.
@@ -107,7 +109,9 @@ class DiscoverHandler:
         for component_schema in self._components.schemas.values():
             _update_references(component_schema, reference_to_consolidated_schema)
         # Add this new schema to components and return a reference.
-        self._components.schemas[cs.to_pascal(schema.title)] = schema
+        if recurred_schema is not None and not isinstance(recurred_schema, bool):
+            schema = recurred_schema
+        self._components.schemas[cs.to_pascal(title)] = schema
         return SchemaObject(**{"$ref": f"#/components/schemas/{schema.title}"})
 
     def _get_params(self, fun: Callable) -> list[ContentDescriptorObject]:
@@ -193,10 +197,14 @@ def _is_required(annotation: Any) -> bool:
 
 
 def _update_references(
-    schema: SchemaObject,
-    reference_to_consolidated_schema: dict[str, SchemaObject],
+    schema: SchemaType,
+    reference_to_consolidated_schema: dict[str, SchemaType],
 ) -> None:
+    if isinstance(schema, bool):
+        return None
     for ref, consolidated_schema in reference_to_consolidated_schema.items():
+        if isinstance(consolidated_schema, bool):
+            continue
         # Schema lists.
         schema.all_of = _update_schema_list_references(
             ref, consolidated_schema, schema.all_of
@@ -246,44 +254,45 @@ def _update_references(
         if schema.properties:
             for val in schema.properties.values():
                 _update_references(val, reference_to_consolidated_schema)
-        if schema.definitions:
-            for val in schema.definitions.values():
-                _update_references(val, reference_to_consolidated_schema)
 
 
 def _update_schema_list_references(
     original_reference: str,
-    reference_schema: SchemaObject,
-    schemas: Optional[list[SchemaObject]],
-) -> Optional[list[SchemaObject]]:
+    reference_schema: SchemaType,
+    schemas: Optional[list[SchemaType]],
+) -> Optional[list[SchemaType]]:
     updated_references_schemas = []
     for schema in schemas or []:
-        updated_references_schemas.append(
-            _get_updated_schema_references(original_reference, reference_schema, schema)
+        updated_ref = _get_updated_schema_references(
+            original_reference, reference_schema, schema
         )
+        if updated_ref is not None:
+            updated_references_schemas.append(updated_ref)
     return updated_references_schemas or None
 
 
 def _update_schema_dict_references(
     original_reference: str,
-    reference_schema: SchemaObject,
-    schemas: Optional[dict[str, SchemaObject]],
-) -> Optional[dict[str, SchemaObject]]:
+    reference_schema: SchemaType,
+    schemas: Optional[dict[str, SchemaType]],
+) -> Optional[dict[str, SchemaType]]:
     updated_references_schemas = {}
     if schemas is None:
         return None
     for key, schema in schemas.items():
-        updated_references_schemas[key] = _get_updated_schema_references(
+        updated_ref = _get_updated_schema_references(
             original_reference, reference_schema, schema
         )
+        if updated_ref is not None:
+            updated_references_schemas[key] = updated_ref
     return updated_references_schemas or None
 
 
 def _get_updated_schema_references(
     original_reference: str,
-    reference_schema: SchemaObject,
-    schema: T,
-) -> Union[T, SchemaObject]:
+    reference_schema: SchemaType,
+    schema: Optional[SchemaType],
+) -> Optional[SchemaType]:
     if isinstance(schema, SchemaObject):
         return reference_schema if schema.ref == original_reference else schema
     return schema
