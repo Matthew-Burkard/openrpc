@@ -64,7 +64,7 @@ class MethodRegistrar:
         name: Optional[str] = None,
         params: Optional[list[ContentDescriptorObject]] = None,
         result: Optional[ContentDescriptorObject] = None,
-        tags: Optional[list[TagObject]] = None,
+        tags: Optional[list[Union[TagObject, str]]] = None,
         summary: Optional[str] = None,
         description: Optional[str] = None,
         external_docs: Optional[ExternalDocumentationObject] = None,
@@ -113,11 +113,16 @@ class MethodRegistrar:
         :param examples: Array of Example Pairing Objects.
         :return: The method decorator.
         """
+        tag_objects = (
+            [tag if isinstance(tag, TagObject) else TagObject(name=tag) for tag in tags]
+            if tags is not None
+            else None
+        )
         metadata = {
             "name": name,
             "params": params,
             "result": result,
-            "tags": tags,
+            "tags": tag_objects,
             "summary": summary,
             "description": description,
             "externalDocs": external_docs,

@@ -137,7 +137,7 @@ class RPCServer(MethodRegistrar):
         self,
         router: RPCRouter,
         prefix: Optional[str] = None,
-        tags: Optional[list[TagObject]] = None,
+        tags: Optional[list[Union[TagObject, str]]] = None,
     ) -> None:
         """Add an RPC method router to this server.
 
@@ -154,10 +154,13 @@ class RPCServer(MethodRegistrar):
             if prefix:
                 new_data.name = f"{prefix}{metadata.name}"
             if tags:
+                tag_objects = [
+                    t if isinstance(t, TagObject) else TagObject(name=t) for t in tags
+                ]
                 if new_data.tags:
-                    new_data.tags.extend(tags)
+                    new_data.tags.extend(tag_objects)
                 else:
-                    new_data.tags = tags
+                    new_data.tags = tag_objects
             return self._method(func, new_data)
 
         def _router_method_decorator(
@@ -170,10 +173,7 @@ class RPCServer(MethodRegistrar):
             return _wrapper
 
         def _router_remove_partial(method: str) -> None:
-            if prefix:
-                self.remove(f"{prefix}{method}")
-            else:
-                self.remove(method)
+            self.remove(f"{prefix}{method}") if prefix else self.remove(method)
             router._rpc_methods.pop(method)
             router._method_processor.methods.pop(method)
 
