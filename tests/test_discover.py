@@ -7,7 +7,14 @@ from jsonrpcobjects.objects import RequestObject
 from pydantic import BaseModel, Field
 
 # noinspection PyProtectedMember
-from openrpc import _discover, ContactObject, LicenseObject, RPCServer, SchemaObject
+from openrpc import (
+    _discover,
+    ContactObject,
+    Depends,
+    LicenseObject,
+    RPCServer,
+    SchemaObject,
+)
 from tests.util import Vector3
 
 
@@ -292,7 +299,7 @@ def return_none(optional_param: Optional[str]) -> None:
 
 
 # noinspection PyUnusedLocal
-def take_any_get_any(any_param: Any) -> Any:
+def take_any_get_any(any_param: Any, dep: str = Depends) -> Any:
     """pass"""
 
 

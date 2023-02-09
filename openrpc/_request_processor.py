@@ -4,7 +4,6 @@ import logging
 from enum import Enum
 from typing import (
     Any,
-    Callable,
     get_args,
     get_origin,
     get_type_hints,
@@ -26,8 +25,9 @@ from jsonrpcobjects.objects import (
     ResultResponseObject,
 )
 
-__all__ = ("RequestProcessor",)
+from openrpc._rpcmethod import RPCMethod
 
+__all__ = ("RequestProcessor",)
 log = logging.getLogger("openrpc")
 
 
@@ -55,19 +55,22 @@ class RequestProcessor:
 
     def __init__(
         self,
-        method: Callable,
+        method: RPCMethod,
         uncaught_error_code: int,
         request: Union[RequestType, NotificationType],
+        depends_values: Optional[dict[str, Any]],
     ) -> None:
         """Init a request processor.
 
         :param method: The Python callable.
         :param uncaught_error_code: Code for errors raised by method.
         :param request: Request to execute.
+        :param depends_values: Values passed to functions with dependencies.
         """
         self.method = method
         self.request = request
         self.uncaught_error_code = uncaught_error_code
+        self.depends = depends_values or {}
 
     def execute(self) -> Optional[str]:
         """Execute the method and get the JSON-RPC2 response."""
@@ -99,19 +102,20 @@ class RequestProcessor:
             return self._get_error_response(error)
 
     def _execute(self) -> Any:
-        annotations = get_type_hints(self.method)
+        annotations = get_type_hints(self.method.function)
         params: Optional[Union[dict, list]]
         params_msg = ""
+        dependencies = {k: self.depends.get(k) for k in self.method.depends_params}
         # Call method.
         if isinstance(self.request, (RequestObject, NotificationObject)):
-            result = self.method()
+            result = self.method.function(**dependencies)
         elif isinstance(self.request.params, list):
             params = self._get_list_params(self.request.params, annotations)
-            result = self.method(*params)
+            result = self.method.function(*params, **dependencies)
             params_msg = ", ".join(str(p) for p in params)
         else:
             params = self._get_dict_params(self.request.params, annotations)
-            result = self.method(**params)
+            result = self.method.function(**params, **dependencies)
             params_msg = ", ".join(f"{k}={v}" for k, v in params.items())
 
         # Logging

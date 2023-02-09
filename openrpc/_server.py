@@ -7,7 +7,7 @@ from jsonrpcobjects.objects import ErrorObjectData
 
 from openrpc import RPCRouter
 from openrpc._discover import DiscoverHandler
-from openrpc._method_registrar import CallableType, MethodMetaData, MethodRegistrar
+from openrpc._method_registrar import CallableType, MethodRegistrar
 from openrpc._objects import (
     ContactObject,
     ContentDescriptorObject,
@@ -17,9 +17,9 @@ from openrpc._objects import (
     SchemaObject,
     TagObject,
 )
+from openrpc._rpcmethod import MethodMetaData
 
 __all__ = ("RPCServer",)
-
 log = logging.getLogger("openrpc")
 _META_REF = "https://raw.githubusercontent.com/open-rpc/meta-schema/master/schema.json"
 
@@ -182,15 +182,20 @@ class RPCServer(MethodRegistrar):
         router._method = _router_method_decorator(router._method)  # type: ignore
         router.remove = _router_remove_partial  # type: ignore
 
-    def process_request(self, data: Union[bytes, str]) -> Optional[str]:
+    def process_request(
+        self, data: Union[bytes, str], depends: Optional[dict[str, Any]] = None
+    ) -> Optional[str]:
         """Process a JSON-RPC2 request and get the response.
 
         :param data: A JSON-RPC2 request.
+        :param depends: Values passed to functions with dependencies.
+            Values will be passed if the keyname matches the arg name
+            that is a dependency.
         :return: A valid JSON-RPC2 response.
         """
         try:
             log.debug("Processing request: %s", data)
-            resp = self._method_processor.process(data)
+            resp = self._method_processor.process(data, depends)
             if resp:
                 log.debug("Responding: %s", resp)
             return resp
@@ -200,17 +205,22 @@ class RPCServer(MethodRegistrar):
             error_object.data = f"{type(error).__name__}: {', '.join(error.args)}"
             return error_object.json()
 
-    async def process_request_async(self, data: Union[bytes, str]) -> Optional[str]:
+    async def process_request_async(
+        self, data: Union[bytes, str], depends: Optional[dict[str, Any]] = None
+    ) -> Optional[str]:
         """Process a JSON-RPC2 request and get the response.
 
         If the method called by the request is async it will be awaited.
 
         :param data: A JSON-RPC2 request.
+        :param depends: Values passed to functions with dependencies.
+            Values will be passed if the keyname matches the arg name
+            that is a dependency.
         :return: A valid JSON-RPC2 response.
         """
         try:
             log.debug("Processing request: %s", data)
-            resp = await self._method_processor.process_async(data)
+            resp = await self._method_processor.process_async(data, depends)
             if resp:
                 log.debug("Responding: %s", resp)
             return resp

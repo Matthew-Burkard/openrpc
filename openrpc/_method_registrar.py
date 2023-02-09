@@ -1,10 +1,10 @@
 """Module providing method registrar interface."""
+import inspect
 import logging
 from functools import partial
 from typing import Callable, Optional, TypeVar, Union
 
-from pydantic import BaseModel
-
+from openrpc import Depends
 from openrpc._method_processor import MethodProcessor
 from openrpc._objects import (
     ContentDescriptorObject,
@@ -16,38 +16,15 @@ from openrpc._objects import (
     ServerObject,
     TagObject,
 )
+from openrpc._rpcmethod import MethodMetaData, RPCMethod
 
-__all__ = ("MethodRegistrar", "RPCMethod", "MethodMetaData", "CallableType")
+__all__ = ("MethodRegistrar", "CallableType")
+
 
 log = logging.getLogger("openrpc")
 
 CallableType = TypeVar("CallableType", bound=Callable)
 DecoratedCallableType = TypeVar("DecoratedCallableType", bound=Callable)
-
-
-class MethodMetaData(BaseModel):
-    """Hold RPC method data."""
-
-    name: str
-    params: Optional[list[ContentDescriptorObject]] = None
-    result: Optional[ContentDescriptorObject] = None
-    tags: Optional[list[TagObject]] = None
-    summary: Optional[str] = None
-    description: Optional[str] = None
-    externalDocs: Optional[ExternalDocumentationObject] = None
-    deprecated: Optional[bool] = None
-    servers: Optional[list[ServerObject]] = None
-    errors: Optional[list[ErrorObject]] = None
-    links: Optional[list[LinkObject]] = None
-    paramStructure: Optional[ParamStructure] = None
-    examples: Optional[list[ExamplePairingObject]] = None
-
-
-class RPCMethod(BaseModel):
-    """Hold information about a decorated Python function."""
-
-    function: Callable
-    metadata: MethodMetaData
 
 
 class MethodRegistrar:
@@ -151,8 +128,17 @@ class MethodRegistrar:
         self._method_processor.methods.pop(method)
 
     def _method(self, func: CallableType, metadata: MethodMetaData) -> CallableType:
-        self._rpc_methods[metadata.name] = RPCMethod(function=func, metadata=metadata)
+        dependencies = [
+            k
+            for k, v in inspect.signature(func).parameters.items()
+            if v.default is Depends
+        ]
+        rpc_method = RPCMethod(
+            function=func, metadata=metadata, depends_params=dependencies
+        )
+        self._rpc_methods[metadata.name] = rpc_method
         log.debug(
             "Registering function [%s] as method [%s]", func.__name__, metadata.name
         )
-        return self._method_processor.method(func, metadata.name)
+        self._method_processor.method(rpc_method, metadata.name)
+        return func

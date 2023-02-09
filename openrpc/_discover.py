@@ -10,13 +10,12 @@ from typing import (
     get_type_hints,
     Iterable,
     Optional,
-    TypeVar,
     Union,
 )
 
 import caseswitcher as cs
 
-from openrpc._method_registrar import RPCMethod
+from openrpc import Depends
 from openrpc._objects import (
     ComponentsObject,
     ContentDescriptorObject,
@@ -26,9 +25,9 @@ from openrpc._objects import (
     SchemaObject,
     SchemaType,
 )
+from openrpc._rpcmethod import RPCMethod
 
 __all__ = ("DiscoverHandler",)
-T = TypeVar("T", bound=Optional[SchemaType])
 NoneType = type(None)
 
 
@@ -121,6 +120,11 @@ class DiscoverHandler:
             for k, v in inspect.signature(fun).parameters.items()
             if v.default != inspect._empty
         }
+        depends = [
+            k
+            for k, v in inspect.signature(fun).parameters.items()
+            if v.default is Depends
+        ]
         return [
             ContentDescriptorObject(
                 name=name,
@@ -128,7 +132,7 @@ class DiscoverHandler:
                 required=name not in has_default and _is_required(annotation),
             )
             for name, annotation in get_type_hints(fun).items()
-            if name != "return"
+            if name not in depends + ["return"]
         ]
 
     def _get_result(self, fun: Callable) -> ContentDescriptorObject:
