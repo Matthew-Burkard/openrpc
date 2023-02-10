@@ -1,6 +1,8 @@
 """Test depends."""
 import json
 
+import pytest
+
 from openrpc import Depends, RPCServer
 
 rpc = RPCServer(title="Test Depends", version="0.1.0")
@@ -13,10 +15,9 @@ def method_with_dep(arg: int, dep: str = Depends) -> str:
 
 
 @rpc.method
-async def async_method_with_dep(arg: int, dep: str = Depends) -> None:
+async def async_method_with_dep(arg: int, dep: str = Depends) -> str:
     """Method with dependency to test."""
-    assert arg == 1
-    assert dep == "Coffee"
+    return f"{arg}-{dep}"
 
 
 def test_depends() -> None:
@@ -24,8 +25,38 @@ def test_depends() -> None:
     req = {"id": 1, "method": "method_with_dep", "params": [1], "jsonrpc": "2.0"}
     result = json.loads(rpc.process_request(json.dumps(req), {"dep": user}))
     assert result["result"] == f"1-{user}"
+    req = {"id": 1, "method": "method_with_dep", "params": {"arg": 1}, "jsonrpc": "2.0"}
+    result = json.loads(rpc.process_request(json.dumps(req), {"dep": user}))
+    assert result["result"] == f"1-{user}"
 
 
+def test_depends_missing_dependency() -> None:
+    req = {
+        "id": 1,
+        "method": "method_with_dep",
+        "params": {"arg": 1},
+        "jsonrpc": "2.0",
+    }
+    result = json.loads(rpc.process_request(json.dumps(req)))
+    assert result["error"]["message"] == "Server error"
+
+
+def test_depends_extra_dependencies() -> None:
+    user = "Coffee"
+    name = "Mocha"
+    req = {
+        "id": 1,
+        "method": "method_with_dep",
+        "params": {"arg": 1},
+        "jsonrpc": "2.0",
+    }
+    result = json.loads(
+        rpc.process_request(json.dumps(req), {"dep": user, "name": name})
+    )
+    assert result["result"] == f"1-{user}"
+
+
+@pytest.mark.asyncio
 async def test_depends_async() -> None:
     user = "Coffee"
     req = {
@@ -34,4 +65,5 @@ async def test_depends_async() -> None:
         "params": {"arg": 1},
         "jsonrpc": "2.0",
     }
-    await rpc.process_request_async(str(req), {"dep": user})
+    result = json.loads(await rpc.process_request_async(json.dumps(req), {"dep": user}))
+    assert result["result"] == f"1-{user}"

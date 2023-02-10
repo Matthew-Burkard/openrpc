@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openrpc"
-version = "6.3.0"
+version = "6.3.1"
 description = "OpenRPC provides classes to rapidly develop an OpenRPC server."
 readme = "README.md"
 repository = "https://gitlab.com/mburkard/openrpc"
@@ -31,6 +31,7 @@ flake8 = "^6.0.0"
 mypy = "^1.0.0"
 black = "^23.1.0"
 pytest = "^7.2.1"
+pytest-asyncio = "^0.20.3"
 
 [build-system]
 

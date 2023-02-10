@@ -105,6 +105,14 @@ class RequestProcessor:
         annotations = get_type_hints(self.method.function)
         params: Optional[Union[dict, list]]
         params_msg = ""
+        missing_dependencies = [
+            k for k in self.method.depends_params if k not in self.depends
+        ]
+        if missing_dependencies:
+            raise AttributeError(
+                f"Missing dependent values {missing_dependencies}"
+                f" for method [{self.method.metadata.name}]"
+            )
         dependencies = {k: self.depends.get(k) for k in self.method.depends_params}
         # Call method.
         if isinstance(self.request, (RequestObject, NotificationObject)):
