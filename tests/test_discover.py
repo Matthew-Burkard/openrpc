@@ -38,6 +38,12 @@ class NestedModels(BaseModel):
     dict_model_values: dict[int, Vector2] = Field(default_factory=dict)
 
 
+class ListResultModel(BaseModel):
+    """To test models as a list result."""
+
+    name: str
+
+
 class DiscoverTest(unittest.TestCase):
     def __init__(self, *args) -> None:
         self.rpc = RPCServer(title="Test OpenRPC", version="1.0.0")
@@ -47,8 +53,9 @@ class DiscoverTest(unittest.TestCase):
         self.rpc.method(default_value)
         self.rpc.method(take_any_get_any)
         self.rpc.method(dict_and_list)
-        self.rpc.method(typed_dict_and_list)
         self.rpc.method(nested_model)
+        self.rpc.method(typed_dict_and_list)
+        self.rpc.method(list_model_result)
         self.rpc.title = self.rpc.title or "Test OpenRPC"
         self.rpc.version = self.rpc.version or "1.0.0"
         self.rpc.description = self.rpc.description or "Testing rpc.discover"
@@ -63,6 +70,7 @@ class DiscoverTest(unittest.TestCase):
     def test_bool_schemas(self) -> None:
         _discover._update_references(True, {})
         _discover._update_references(SchemaObject(**Vector2.schema()), {"test": True})
+        _discover.DiscoverHandler(self.rpc._info, [])._flatten_schema(True)
         self.assertTrue(True)
 
     def test_open_rpc_info(self) -> None:
@@ -317,4 +325,9 @@ def nested_model(a: NestedModels) -> dict[str, NestedModels]:
 def typed_dict_and_list(
     dict_param: dict[str, int], list_param: list[dict[str, int]]
 ) -> dict[str, list]:
+    """pass"""
+
+
+# noinspection PyUnusedLocal
+def list_model_result() -> list[ListResultModel]:
     """pass"""
