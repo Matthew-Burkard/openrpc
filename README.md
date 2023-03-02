@@ -98,14 +98,14 @@ rpc = RPCServer(title="DemoServer", version="1.0.0")
 
 
 @rpc.method
-def add(a: int, b: int) -> int:
+async def add(a: int, b: int) -> int:
     return a + b
 
 
 @app.websocket("/api/v1/")
-async def process_webssocket(_request: Request, ws: Websocket) -> None:
+async def process_websocket(_request: Request, ws: Websocket) -> None:
     async for msg in ws:
-        json_rpc_response = rpc.process_request(msg)
+        json_rpc_response = await rpc.process_request_async(msg)
         await ws.send(json_rpc_response)
 
 
