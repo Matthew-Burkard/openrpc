@@ -24,12 +24,12 @@ class MethodMetaData(BaseModel):
     tags: Optional[list[TagObject]] = None
     summary: Optional[str] = None
     description: Optional[str] = None
-    externalDocs: Optional[ExternalDocumentationObject] = None
+    external_docs: Optional[ExternalDocumentationObject] = None
     deprecated: Optional[bool] = None
     servers: Optional[list[ServerObject]] = None
     errors: Optional[list[ErrorObject]] = None
     links: Optional[list[LinkObject]] = None
-    paramStructure: Optional[ParamStructure] = None
+    param_structure: Optional[ParamStructure] = None
     examples: Optional[list[ExamplePairingObject]] = None
 
 

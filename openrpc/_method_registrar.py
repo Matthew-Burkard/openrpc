@@ -95,28 +95,43 @@ class MethodRegistrar:
             if tags is not None
             else None
         )
-        metadata = {
-            "name": name,
-            "params": params,
-            "result": result,
-            "tags": tag_objects,
-            "summary": summary,
-            "description": description,
-            "externalDocs": external_docs,
-            "deprecated": deprecated,
-            "servers": servers,
-            "errors": errors,
-            "links": links,
-            "paramStructure": param_structure,
-            "examples": examples,
-        }
-        metadata = {k: v for k, v in metadata.items() if v is not None}
         if not args:
-            return partial(self.method, **metadata)  # type: ignore
+            return partial(  # type: ignore
+                self.method,
+                name=name,
+                params=params,
+                result=result,
+                tags=tag_objects,
+                summary=summary,
+                description=description,
+                external_docs=external_docs,
+                deprecated=deprecated,
+                servers=servers,
+                errors=errors,
+                links=links,
+                param_structure=param_structure,
+                examples=examples,
+            )
         func = args[0]
         name = name or func.__name__
-        metadata["name"] = name
-        return self._method(func, MethodMetaData(**metadata))
+        return self._method(
+            func,
+            MethodMetaData(
+                name=name,
+                params=params,
+                result=result,
+                tags=tag_objects,
+                summary=summary,
+                description=description,
+                external_docs=external_docs,
+                deprecated=deprecated,
+                servers=servers,
+                errors=errors,
+                links=links,
+                param_structure=param_structure,
+                examples=examples,
+            ),
+        )
 
     def remove(self, method: str) -> None:
         """Remove a method from this server by name.

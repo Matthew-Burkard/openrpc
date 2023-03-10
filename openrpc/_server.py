@@ -47,22 +47,21 @@ class RPCServer(MethodRegistrar):
         """
         super().__init__()
         # Set OpenRPC server info.
-        kwargs = {
-            "title": title or "RPC Server",
-            "version": version or "0.1.0",
-            "description": description,
-            "termsOfService": terms_of_service,
-            "contact": contact,
-            "license": license_,
-        }
-        self._info = InfoObject(**{k: v for k, v in kwargs.items() if v is not None})
+        self._info = InfoObject(
+            title=title or "RPC Server",
+            version=version or "0.1.0",
+            description=description,
+            termsOfService=terms_of_service,
+            contact=contact,
+            license=license_,
+        )
         # Register discover method.
+        schema = SchemaObject()
+        schema.ref = _META_REF
         self.method(
             name="rpc.discover",
             params=[],
-            result=ContentDescriptorObject(
-                name="OpenRPC Schema", schema=SchemaObject(**{"$ref": _META_REF})
-            ),
+            result=ContentDescriptorObject(name="OpenRPC Schema", schema=schema),
         )(self.discover)
 
     @property
