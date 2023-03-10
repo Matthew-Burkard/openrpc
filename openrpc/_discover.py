@@ -10,13 +10,12 @@ from typing import (
     get_type_hints,
     Iterable,
     Optional,
-    TypeVar,
     Union,
 )
 
 import caseswitcher as cs
 
-from openrpc._method_registrar import RPCMethod
+from openrpc import Depends
 from openrpc._objects import (
     ComponentsObject,
     ContentDescriptorObject,
@@ -26,9 +25,9 @@ from openrpc._objects import (
     SchemaObject,
     SchemaType,
 )
+from openrpc._rpcmethod import RPCMethod
 
 __all__ = ("DiscoverHandler",)
-T = TypeVar("T", bound=Optional[SchemaType])
 NoneType = type(None)
 
 
@@ -44,7 +43,7 @@ class DiscoverHandler:
         self._info = info
         self._methods: list[MethodObject] = []
         self._schemas: dict[str, SchemaObject] = {}
-        self._flattened_schemas: dict[str, SchemaObject] = {}
+        self._flattened_schemas: dict[str, SchemaType] = {}
         self._collect_schemas(copy.deepcopy(list(functions)))
         for schema in self._schemas.values():
             self._flatten_schema(schema)
@@ -78,9 +77,11 @@ class DiscoverHandler:
         if schema in self._flattened_schemas.values():
             for key, val in self._flattened_schemas.items():
                 if val == schema:
-                    return SchemaObject(**{"$ref": f"#/components/schemas/{key}"})
+                    ref_existing_schema = SchemaObject()
+                    ref_existing_schema.ref = f"#/components/schemas/{key}"
+                    return ref_existing_schema
         # Consolidate schema definitions.
-        reference_to_consolidated_schema = {}
+        reference_to_consolidated_schema: dict[str, SchemaType] = {}
         recurred_schema = None
         if schema.definitions:
             # Copy because we pop/re-assign within this loop.
@@ -104,7 +105,9 @@ class DiscoverHandler:
         if recurred_schema is not None and not isinstance(recurred_schema, bool):
             schema = recurred_schema
         self._flattened_schemas[cs.to_pascal(title)] = schema
-        return SchemaObject(**{"$ref": f"#/components/schemas/{schema.title}"})
+        ref_schema = SchemaObject()
+        ref_schema.ref = f"#/components/schemas/{schema.title}"
+        return ref_schema
 
     def _get_params(self, fun: Callable) -> list[ContentDescriptorObject]:
         # noinspection PyUnresolvedReferences,PyProtectedMember
@@ -113,6 +116,11 @@ class DiscoverHandler:
             for k, v in inspect.signature(fun).parameters.items()
             if v.default != inspect._empty
         }
+        depends = [
+            k
+            for k, v in inspect.signature(fun).parameters.items()
+            if v.default is Depends
+        ]
         return [
             ContentDescriptorObject(
                 name=name,
@@ -120,7 +128,7 @@ class DiscoverHandler:
                 required=name not in has_default and _is_required(annotation),
             )
             for name, annotation in get_type_hints(fun).items()
-            if name != "return"
+            if name not in depends + ["return"]
         ]
 
     def _get_result(self, fun: Callable) -> ContentDescriptorObject:
@@ -147,7 +155,9 @@ class DiscoverHandler:
                 schema = SchemaObject(**annotation.schema())  # type: ignore
                 schema.title = schema.title or cs.to_pascal(annotation.__name__)
                 self._schemas[schema.title] = schema
-                return SchemaObject(**{"$ref": f"#/components/schemas/{schema.title}"})
+                ref_schema = SchemaObject()
+                ref_schema.ref = f"#/components/schemas/{schema.title}"
+                return ref_schema
             if get_origin(annotation) == dict:
                 schema = SchemaObject()
                 schema.type = schema_type

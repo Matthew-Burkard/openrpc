@@ -87,25 +87,26 @@ The `rpc.discover` method is automatically generated. It relies heavily on type 
 ## Example Using Sanic
 
 A quick example using `OpenRPC` exposing the methods
-using [Sanic](https://sanic.dev/en/).
+using a [Sanic](https://sanic.dev/en/) websocket server.
 
 ```python
-from sanic import HTTPResponse, Request, Sanic, text
-
 from openrpc import RPCServer
+from sanic import Request, Sanic, Websocket
 
 app = Sanic("DemoServer")
 rpc = RPCServer(title="DemoServer", version="1.0.0")
 
 
 @rpc.method
-def add(a: int, b: int) -> int:
+async def add(a: int, b: int) -> int:
     return a + b
 
 
-@app.post("/api/v1/")
-def process_rpc(request: Request) -> HTTPResponse:
-    return text(rpc.process_request(request.body) or "Notify complete.")
+@app.websocket("/api/v1/")
+async def process_websocket(_request: Request, ws: Websocket) -> None:
+    async for msg in ws:
+        json_rpc_response = await rpc.process_request_async(msg)
+        await ws.send(json_rpc_response)
 
 
 if __name__ == "__main__":
@@ -115,47 +116,22 @@ if __name__ == "__main__":
 Example In
 
 ```json
-[
-  {
-    "id": 1,
-    "method": "add",
-    "params": {
-      "a": 1,
-      "b": 3
-    },
-    "jsonrpc": "2.0"
-  },
-  {
-    "id": 2,
-    "method": "add",
-    "params": [
-      11,
-      "thirteen"
-    ],
-    "jsonrpc": "2.0"
-  }
-]
+{
+  "id": 1,
+  "method": "add",
+  "params": {"a": 1, "b": 3},
+  "jsonrpc": "2.0"
+}
 ```
 
 Example Result Out
 
 ```json
-[
-  {
-    "id": 1,
-    "result": 4,
-    "jsonrpc": "2.0"
-  },
-  {
-    "id": 2,
-    "error": {
-      "code": -32603,
-      "message": "Internal error",
-      "data": "Failed to deserialize request param [thirteen] to type [<class 'int'>]"
-    },
-    "jsonrpc": "2.0"
-  }
-]
+{
+  "id": 1,
+  "result": 4,
+  "jsonrpc": "2.0"
+}
 ```
 
 ## Support The Developer
