@@ -33,7 +33,7 @@ class MethodRegistrar:
     def __init__(self) -> None:
         """Initialize a new instance of the MethodRegistrar class."""
         self._rpc_methods: dict[str, RPCMethod] = {}
-        self._method_processor = MethodProcessor()
+        self._method_processor = MethodProcessor(False)
 
     def method(
         self,
