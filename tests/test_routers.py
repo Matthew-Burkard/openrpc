@@ -4,7 +4,6 @@ import json
 from jsonrpcobjects.objects import RequestObject
 
 from openrpc import RPCRouter, RPCServer
-from openrpc import TagObject
 
 rpc = RPCServer(title="RouterTestServer", version="1.0.0")
 auth_router = RPCRouter()
@@ -38,7 +37,7 @@ def test_router_remove() -> None:
 
 
 router_with_tags_no_prefix = RPCRouter()
-rpc.include_router(router_with_tags_no_prefix, tags=[TagObject(name="test_tag")])
+rpc.include_router(router_with_tags_no_prefix, tags=["test_tag"])
 
 
 @router_with_tags_no_prefix.method
@@ -47,7 +46,7 @@ def return_coffee() -> str:
     return "Coffee"
 
 
-@router_with_tags_no_prefix.method(tags=[TagObject(name="does_nothing")])
+@router_with_tags_no_prefix.method(tags=["does_nothing"])
 def do_nothing() -> str:
     """Do nothing."""
 

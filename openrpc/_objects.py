@@ -217,14 +217,14 @@ class ComponentsObject(BaseModel):
     """Holds a set of reusable objects for different aspects of the OpenRPC."""
 
     content_descriptors: Optional[dict[str, ContentDescriptorObject]] = Field(
-        None, alias="contentDescriptors"
+        default=None, alias="contentDescriptors"
     )
     schemas: Optional[dict[str, SchemaType]] = None
     examples: Optional[dict[str, ExampleObject]] = None
     links: Optional[dict[str, LinkObject]] = None
     errors: Optional[dict[str, ErrorObject]] = None
     example_pairing_objects: Optional[dict[str, ExamplePairingObject]] = Field(
-        None, alias="examplePairingObjects"
+        default=None, alias="examplePairingObjects"
     )
     tags: Optional[dict[str, TagObject]] = None
 
@@ -236,7 +236,7 @@ class TagObject(BaseModel):
     summary: Optional[str] = None
     description: Optional[str] = None
     external_docs: Optional[ExternalDocumentationObject] = Field(
-        None, alias="externalDocs"
+        default=None, alias="externalDocs"
     )
 
 
@@ -264,7 +264,7 @@ class OpenRPCObject(BaseModel):
     )
     components: Optional[ComponentsObject] = None
     external_docs: Optional[ExternalDocumentationObject] = Field(
-        None, alias="externalDocs"
+        default=None, alias="externalDocs"
     )
 
 

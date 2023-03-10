@@ -10,13 +10,12 @@ from typing import (
     get_type_hints,
     Iterable,
     Optional,
-    TypeVar,
     Union,
 )
 
 import caseswitcher as cs
 
-from openrpc._method_registrar import RPCMethod
+from openrpc import Depends
 from openrpc._objects import (
     ComponentsObject,
     ContentDescriptorObject,
@@ -26,9 +25,9 @@ from openrpc._objects import (
     SchemaObject,
     SchemaType,
 )
+from openrpc._rpcmethod import RPCMethod
 
 __all__ = ("DiscoverHandler",)
-T = TypeVar("T", bound=Optional[SchemaType])
 NoneType = type(None)
 
 
@@ -43,9 +42,11 @@ class DiscoverHandler:
         """
         self._info = info
         self._methods: list[MethodObject] = []
-        self._components: ComponentsObject = ComponentsObject(schemas={})
+        self._schemas: dict[str, SchemaObject] = {}
+        self._flattened_schemas: dict[str, SchemaType] = {}
         self._collect_schemas(copy.deepcopy(list(functions)))
-        self._consolidate_schemas()
+        for schema in self._schemas.values():
+            self._flatten_schema(schema)
 
     def execute(self) -> OpenRPCObject:
         """Get an OpenRPCObject describing this API."""
@@ -55,7 +56,7 @@ class DiscoverHandler:
             methods=[
                 method for method in self._methods if method.name != "rpc.discover"
             ],
-            components=self._components,
+            components=ComponentsObject(schemas=self._flattened_schemas),
         )
 
     def _collect_schemas(self, functions: list[RPCMethod]) -> None:
@@ -67,34 +68,26 @@ class DiscoverHandler:
             )
             self._methods.append(method)
 
-    def _consolidate_schemas(self) -> None:
-        for method in self._methods:
-            params = []
-            for param in method.params:
-                param.schema_ = self._consolidate_schema(param.schema_)
-                params.append(param)
-            method.params = params
-            method.result.schema_ = self._consolidate_schema(method.result.schema_)
-
-    def _consolidate_schema(self, schema: SchemaType) -> SchemaType:
+    def _flatten_schema(self, schema: SchemaType) -> SchemaType:
         if isinstance(schema, bool) or schema.title is None:
             return schema
         title = schema.title
-        # If this schema exists in components, return a reference to the
-        # existing one.
-        self._components.schemas = self._components.schemas or {}
-        if schema in self._components.schemas.values():
-            for key, val in self._components.schemas.items():
+        # If this schema exists in `flattened_schemas`, return a
+        # reference to the existing one.
+        if schema in self._flattened_schemas.values():
+            for key, val in self._flattened_schemas.items():
                 if val == schema:
-                    return SchemaObject(**{"$ref": f"#/components/schemas/{key}"})
+                    ref_existing_schema = SchemaObject()
+                    ref_existing_schema.ref = f"#/components/schemas/{key}"
+                    return ref_existing_schema
         # Consolidate schema definitions.
-        reference_to_consolidated_schema = {}
+        reference_to_consolidated_schema: dict[str, SchemaType] = {}
         recurred_schema = None
         if schema.definitions:
             # Copy because we pop/re-assign within this loop.
             definitions = schema.definitions.copy()
             for key in definitions:
-                ref_schema = self._consolidate_schema(schema.definitions[key])
+                ref_schema = self._flatten_schema(schema.definitions[key])
                 if ref_schema != schema.definitions[key]:
                     # If this is a recursive ref, use the definition.
                     if schema.ref and schema.ref.removeprefix("#/definitions/") == key:
@@ -106,13 +99,15 @@ class DiscoverHandler:
             schema.definitions = None
         # Update schema and other component references.
         _update_references(schema, reference_to_consolidated_schema)
-        for component_schema in self._components.schemas.values():
+        for component_schema in self._flattened_schemas.values():
             _update_references(component_schema, reference_to_consolidated_schema)
         # Add this new schema to components and return a reference.
         if recurred_schema is not None and not isinstance(recurred_schema, bool):
             schema = recurred_schema
-        self._components.schemas[cs.to_pascal(title)] = schema
-        return SchemaObject(**{"$ref": f"#/components/schemas/{schema.title}"})
+        self._flattened_schemas[cs.to_pascal(title)] = schema
+        ref_schema = SchemaObject()
+        ref_schema.ref = f"#/components/schemas/{schema.title}"
+        return ref_schema
 
     def _get_params(self, fun: Callable) -> list[ContentDescriptorObject]:
         # noinspection PyUnresolvedReferences,PyProtectedMember
@@ -121,6 +116,11 @@ class DiscoverHandler:
             for k, v in inspect.signature(fun).parameters.items()
             if v.default != inspect._empty
         }
+        depends = [
+            k
+            for k, v in inspect.signature(fun).parameters.items()
+            if v.default is Depends
+        ]
         return [
             ContentDescriptorObject(
                 name=name,
@@ -128,7 +128,7 @@ class DiscoverHandler:
                 required=name not in has_default and _is_required(annotation),
             )
             for name, annotation in get_type_hints(fun).items()
-            if name != "return"
+            if name not in depends + ["return"]
         ]
 
     def _get_result(self, fun: Callable) -> ContentDescriptorObject:
@@ -153,8 +153,11 @@ class DiscoverHandler:
         if schema_type == "object":
             if hasattr(annotation, "schema"):
                 schema = SchemaObject(**annotation.schema())  # type: ignore
-                schema.title = schema.title or cs.to_title(annotation.__name__)
-                return schema
+                schema.title = schema.title or cs.to_pascal(annotation.__name__)
+                self._schemas[schema.title] = schema
+                ref_schema = SchemaObject()
+                ref_schema.ref = f"#/components/schemas/{schema.title}"
+                return ref_schema
             if get_origin(annotation) == dict:
                 schema = SchemaObject()
                 schema.type = schema_type
