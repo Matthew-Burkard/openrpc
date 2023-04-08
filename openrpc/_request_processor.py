@@ -17,6 +17,7 @@ from jsonrpcobjects.objects import (
     ErrorObject,
     ErrorObjectData,
     ErrorResponseObject,
+    ErrorType,
     NotificationObject,
     NotificationObjectParams,
     NotificationType,
@@ -147,7 +148,7 @@ class RequestProcessor:
         if isinstance(error, JSONRPCError):
             return ErrorResponseObject(id=self.request.id, error=error.rpc_error).json()
         if self.debug:
-            error_object: Union[ErrorObject, ErrorObjectData] = ErrorObjectData(
+            error_object: ErrorType = ErrorObjectData(
                 code=self.uncaught_error_code,
                 message="Server error",
                 data=f"{type(error).__name__}: {error}",
