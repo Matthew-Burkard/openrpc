@@ -33,8 +33,12 @@ _DEFAULT_ERROR_CODE = -32000
 class MethodProcessor:
     """Class to register and execute methods."""
 
-    def __init__(self) -> None:
-        """Init a MethodProcessor."""
+    def __init__(self, debug: bool) -> None:
+        """Init a MethodProcessor.
+
+        :param debug: Include internal error details in responses.
+        """
+        self.debug = debug
         self.methods: dict[str, RPCMethod] = {}
         self.uncaught_error_code = _DEFAULT_ERROR_CODE
 
@@ -74,7 +78,11 @@ class MethodProcessor:
                     continue
 
                 resp = RequestProcessor(
-                    self.methods[req.method], self.uncaught_error_code, req, depends
+                    self.methods[req.method],
+                    self.uncaught_error_code,
+                    req,
+                    depends,
+                    self.debug,
                 ).execute()
                 # If resp is None, request is a notification.
                 if resp is not None:
@@ -90,7 +98,11 @@ class MethodProcessor:
                 return _get_method_not_found_error(request)
             return None
         result = RequestProcessor(
-            self.methods[request.method], self.uncaught_error_code, request, depends
+            self.methods[request.method],
+            self.uncaught_error_code,
+            request,
+            depends,
+            self.debug,
         ).execute()
         return None if isinstance(request, NotificationTypes) else result
 
@@ -125,11 +137,11 @@ class MethodProcessor:
                 method = self.methods[request.method]
                 if isinstance(request, RequestTypes):
                     return await RequestProcessor(
-                        method, self.uncaught_error_code, request, depends
+                        method, self.uncaught_error_code, request, depends, self.debug
                     ).execute_async()
                 # To get here, request must be a notification.
                 await RequestProcessor(
-                    method, self.uncaught_error_code, request, depends
+                    method, self.uncaught_error_code, request, depends, self.debug
                 ).execute_async()
 
             results = await asyncio.gather(
@@ -146,7 +158,7 @@ class MethodProcessor:
                 return _get_method_not_found_error(req)
             return None
         result = await RequestProcessor(
-            self.methods[req.method], self.uncaught_error_code, req, depends
+            self.methods[req.method], self.uncaught_error_code, req, depends, self.debug
         ).execute_async()
         return None if isinstance(req, NotificationTypes) else result
 

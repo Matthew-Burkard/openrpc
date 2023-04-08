@@ -14,8 +14,10 @@ from typing import (
 
 from jsonrpcobjects.errors import INTERNAL_ERROR, InternalError, JSONRPCError
 from jsonrpcobjects.objects import (
+    ErrorObject,
     ErrorObjectData,
     ErrorResponseObject,
+    ErrorType,
     NotificationObject,
     NotificationObjectParams,
     NotificationType,
@@ -59,6 +61,7 @@ class RequestProcessor:
         uncaught_error_code: int,
         request: Union[RequestType, NotificationType],
         depends_values: Optional[dict[str, Any]],
+        debug: bool,
     ) -> None:
         """Init a request processor.
 
@@ -66,7 +69,9 @@ class RequestProcessor:
         :param uncaught_error_code: Code for errors raised by method.
         :param request: Request to execute.
         :param depends_values: Values passed to functions with dependencies.
+        :param debug: Include internal error details in responses.
         """
+        self.debug = debug
         self.method = method
         self.request = request
         self.uncaught_error_code = uncaught_error_code
@@ -142,14 +147,17 @@ class RequestProcessor:
             return None
         if isinstance(error, JSONRPCError):
             return ErrorResponseObject(id=self.request.id, error=error.rpc_error).json()
-        return ErrorResponseObject(
-            id=self.request.id,
-            error=ErrorObjectData(
+        if self.debug:
+            error_object: ErrorType = ErrorObjectData(
                 code=self.uncaught_error_code,
                 message="Server error",
                 data=f"{type(error).__name__}: {error}",
-            ),
-        ).json()
+            )
+        else:
+            error_object = ErrorObject(
+                code=self.uncaught_error_code, message="Server error"
+            )
+        return ErrorResponseObject(id=self.request.id, error=error_object).json()
 
     def _get_list_params(self, params: list, annotations: dict) -> list:
         try:
