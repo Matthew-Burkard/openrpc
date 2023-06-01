@@ -1,4 +1,7 @@
 """Provides RequestProcessor class for processing a single request."""
+
+__all__ = ("RequestProcessor",)
+
 import inspect
 import logging
 from enum import Enum
@@ -35,7 +38,6 @@ from jsonrpcobjects.objects import (
 from openrpc import ParamStructure
 from openrpc._rpcmethod import RPCMethod
 
-__all__ = ("RequestProcessor",)
 log = logging.getLogger("openrpc")
 by_position_error = ErrorObjectData(
     code=-32602, message="Invalid params", data="Params must be passed by position."

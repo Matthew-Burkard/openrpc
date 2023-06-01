@@ -1,4 +1,7 @@
 """Module providing method registrar interface."""
+
+__all__ = ("MethodRegistrar", "CallableType")
+
 import inspect
 import logging
 from functools import partial
@@ -17,9 +20,6 @@ from openrpc._objects import (
     TagObject,
 )
 from openrpc._rpcmethod import MethodMetaData, RPCMethod
-
-__all__ = ("MethodRegistrar", "CallableType")
-
 
 log = logging.getLogger("openrpc")
 
