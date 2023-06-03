@@ -1,4 +1,7 @@
 """Provides RequestProcessor class for processing a single request."""
+
+__all__ = ("RequestProcessor",)
+
 import inspect
 import logging
 from enum import Enum
@@ -12,7 +15,12 @@ from typing import (
     Union,
 )
 
-from jsonrpcobjects.errors import INTERNAL_ERROR, InternalError, JSONRPCError
+from jsonrpcobjects.errors import (
+    INTERNAL_ERROR,
+    InternalError,
+    InvalidParams,
+    JSONRPCError,
+)
 from jsonrpcobjects.objects import (
     ErrorObject,
     ErrorObjectData,
@@ -27,10 +35,16 @@ from jsonrpcobjects.objects import (
     ResultResponseObject,
 )
 
+from openrpc import ParamStructure
 from openrpc._rpcmethod import RPCMethod
 
-__all__ = ("RequestProcessor",)
 log = logging.getLogger("openrpc")
+by_position_error = ErrorObjectData(
+    code=-32602, message="Invalid params", data="Params must be passed by position."
+)
+by_name_error = ErrorObjectData(
+    code=-32602, message="Invalid params", data="Params must be passed by name."
+)
 
 
 class DeserializationError(InternalError):
@@ -123,10 +137,14 @@ class RequestProcessor:
         if isinstance(self.request, (RequestObject, NotificationObject)):
             result = self.method.function(**dependencies)
         elif isinstance(self.request.params, list):
+            if self.method.metadata.param_structure == ParamStructure.BY_NAME:
+                raise InvalidParams(by_name_error)
             params = self._get_list_params(self.request.params, annotations)
             result = self.method.function(*params, **dependencies)
             params_msg = ", ".join(str(p) for p in params)
         else:
+            if self.method.metadata.param_structure == ParamStructure.BY_POSITION:
+                raise InvalidParams(by_position_error)
             params = self._get_dict_params(self.request.params, annotations)
             result = self.method.function(**params, **dependencies)
             params_msg = ", ".join(f"{k}={v}" for k, v in params.items())

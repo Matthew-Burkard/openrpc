@@ -1,4 +1,7 @@
 """Handle the OpenRPC "rpc.discover" method."""
+
+__all__ = ("DiscoverHandler",)
+
 import copy
 import inspect
 from enum import Enum
@@ -27,7 +30,6 @@ from openrpc._objects import (
 )
 from openrpc._rpcmethod import RPCMethod
 
-__all__ = ("DiscoverHandler",)
 NoneType = type(None)
 
 

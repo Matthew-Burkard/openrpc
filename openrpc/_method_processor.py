@@ -1,4 +1,7 @@
 """Provide JSON-RPC2 server class."""
+
+__all__ = ("MethodProcessor",)
+
 import asyncio
 import json
 import logging
@@ -20,9 +23,6 @@ from pydantic import ValidationError
 
 from openrpc._request_processor import RequestProcessor
 from openrpc._rpcmethod import RPCMethod
-
-__all__ = ("MethodProcessor",)
-
 
 log = logging.getLogger("openrpc")
 NotificationTypes = (NotificationObject, NotificationObjectParams)
