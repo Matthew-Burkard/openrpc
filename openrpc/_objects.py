@@ -1,11 +1,6 @@
 """Python class representations of OpenRPC and JSON Schema objects."""
 from __future__ import annotations
 
-from enum import Enum
-from typing import Any, Optional, Union
-
-from pydantic import BaseModel, Field
-
 __all__ = (
     "ComponentsObject",
     "ContactObject",
@@ -27,6 +22,11 @@ __all__ = (
     "ServerVariableObject",
     "TagObject",
 )
+
+from enum import Enum
+from typing import Any, Optional, Union
+
+from pydantic import BaseModel, Field
 
 SchemaType = Union["SchemaObject", bool]
 

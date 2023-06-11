@@ -1,4 +1,7 @@
 """Module providing method registrar interface."""
+
+__all__ = ("MethodRegistrar", "CallableType")
+
 import inspect
 import logging
 from functools import partial
@@ -18,9 +21,6 @@ from openrpc._objects import (
 )
 from openrpc._rpcmethod import MethodMetaData, RPCMethod
 
-__all__ = ("MethodRegistrar", "CallableType")
-
-
 log = logging.getLogger("openrpc")
 
 CallableType = TypeVar("CallableType", bound=Callable)
@@ -33,7 +33,7 @@ class MethodRegistrar:
     def __init__(self) -> None:
         """Initialize a new instance of the MethodRegistrar class."""
         self._rpc_methods: dict[str, RPCMethod] = {}
-        self._method_processor = MethodProcessor()
+        self._method_processor = MethodProcessor(False)
 
     def method(
         self,

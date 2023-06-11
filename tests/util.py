@@ -3,7 +3,6 @@ import json
 from typing import Union
 
 from jsonrpcobjects.objects import (
-    ErrorObjectData,
     ErrorResponseObject,
     ResponseType,
     ResultResponseObject,
@@ -30,9 +29,6 @@ def parse_response(data: Union[bytes, str]) -> ResponseType:
     """Map a JSON-RPC2 response to the appropriate object."""
     resp = json.loads(data)
     if resp.get("error"):
-        error_resp = ErrorResponseObject(**resp)
-        if resp["error"].get("data"):
-            error_resp.error = ErrorObjectData(**resp["error"])
-        return error_resp
+        return ErrorResponseObject(**resp)
     if "result" in resp.keys():
         return ResultResponseObject(**resp)

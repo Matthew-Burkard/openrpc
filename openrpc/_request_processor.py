@@ -1,4 +1,7 @@
 """Provides RequestProcessor class for processing a single request."""
+
+__all__ = ("RequestProcessor",)
+
 import inspect
 import logging
 from enum import Enum
@@ -12,10 +15,17 @@ from typing import (
     Union,
 )
 
-from jsonrpcobjects.errors import INTERNAL_ERROR, InternalError, JSONRPCError
+from jsonrpcobjects.errors import (
+    INTERNAL_ERROR,
+    InternalError,
+    InvalidParams,
+    JSONRPCError,
+)
 from jsonrpcobjects.objects import (
+    ErrorObject,
     ErrorObjectData,
     ErrorResponseObject,
+    ErrorType,
     NotificationObject,
     NotificationObjectParams,
     NotificationType,
@@ -25,10 +35,16 @@ from jsonrpcobjects.objects import (
     ResultResponseObject,
 )
 
+from openrpc import ParamStructure
 from openrpc._rpcmethod import RPCMethod
 
-__all__ = ("RequestProcessor",)
 log = logging.getLogger("openrpc")
+by_position_error = ErrorObjectData(
+    code=-32602, message="Invalid params", data="Params must be passed by position."
+)
+by_name_error = ErrorObjectData(
+    code=-32602, message="Invalid params", data="Params must be passed by name."
+)
 
 
 class DeserializationError(InternalError):
@@ -59,6 +75,7 @@ class RequestProcessor:
         uncaught_error_code: int,
         request: Union[RequestType, NotificationType],
         depends_values: Optional[dict[str, Any]],
+        debug: bool,
     ) -> None:
         """Init a request processor.
 
@@ -66,7 +83,9 @@ class RequestProcessor:
         :param uncaught_error_code: Code for errors raised by method.
         :param request: Request to execute.
         :param depends_values: Values passed to functions with dependencies.
+        :param debug: Include internal error details in responses.
         """
+        self.debug = debug
         self.method = method
         self.request = request
         self.uncaught_error_code = uncaught_error_code
@@ -118,10 +137,14 @@ class RequestProcessor:
         if isinstance(self.request, (RequestObject, NotificationObject)):
             result = self.method.function(**dependencies)
         elif isinstance(self.request.params, list):
+            if self.method.metadata.param_structure == ParamStructure.BY_NAME:
+                raise InvalidParams(by_name_error)
             params = self._get_list_params(self.request.params, annotations)
             result = self.method.function(*params, **dependencies)
             params_msg = ", ".join(str(p) for p in params)
         else:
+            if self.method.metadata.param_structure == ParamStructure.BY_POSITION:
+                raise InvalidParams(by_position_error)
             params = self._get_dict_params(self.request.params, annotations)
             result = self.method.function(**params, **dependencies)
             params_msg = ", ".join(f"{k}={v}" for k, v in params.items())
@@ -142,14 +165,17 @@ class RequestProcessor:
             return None
         if isinstance(error, JSONRPCError):
             return ErrorResponseObject(id=self.request.id, error=error.rpc_error).json()
-        return ErrorResponseObject(
-            id=self.request.id,
-            error=ErrorObjectData(
+        if self.debug:
+            error_object: ErrorType = ErrorObjectData(
                 code=self.uncaught_error_code,
                 message="Server error",
                 data=f"{type(error).__name__}: {error}",
-            ),
-        ).json()
+            )
+        else:
+            error_object = ErrorObject(
+                code=self.uncaught_error_code, message="Server error"
+            )
+        return ErrorResponseObject(id=self.request.id, error=error_object).json()
 
     def _get_list_params(self, params: list, annotations: dict) -> list:
         try:

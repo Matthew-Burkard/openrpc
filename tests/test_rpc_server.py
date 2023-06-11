@@ -18,7 +18,6 @@ from pydantic import BaseModel
 
 from openrpc import InfoObject, RPCServer
 from tests.util import (
-    INTERNAL_ERROR,
     INVALID_REQUEST,
     METHOD_NOT_FOUND,
     PARSE_ERROR,
@@ -322,14 +321,6 @@ class RPCTest(unittest.TestCase):
         req = RequestObject(id=1, method="return_none")
         resp = json.loads(self.get_sync_and_async_resp(req.json()))
         self.assertIsNone(resp["result"])
-
-    def test_catchall_error(self) -> None:
-        req = RequestObject(id=1, method="return_none")
-        mp = self.server._method_processor
-        self.server._method_processor = None
-        resp = json.loads(self.get_sync_and_async_resp(req.json()))
-        self.assertEqual(INTERNAL_ERROR, resp["code"])
-        self.server._method_processor = mp
 
     def test_no_response_on_method_not_found_notify(self) -> None:
         req = NotificationObject(method="not_a_method")

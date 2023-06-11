@@ -1,27 +1,4 @@
 """Provides OpenRPC objects and the RPCServer class."""
-from openrpc._depends import Depends
-from openrpc._objects import (
-    ComponentsObject,
-    ContactObject,
-    ContentDescriptorObject,
-    ErrorObject,
-    ExampleObject,
-    ExamplePairingObject,
-    ExternalDocumentationObject,
-    InfoObject,
-    LicenseObject,
-    LinkObject,
-    MethodObject,
-    OpenRPCObject,
-    ParamStructure,
-    ReferenceObject,
-    SchemaObject,
-    ServerObject,
-    ServerVariableObject,
-    TagObject,
-)
-from openrpc._router import RPCRouter
-from openrpc._server import RPCServer
 
 __all__ = (
     "ComponentsObject",
@@ -46,3 +23,27 @@ __all__ = (
     "TagObject",
     "Depends",
 )
+
+from openrpc._depends import Depends
+from openrpc._objects import (
+    ComponentsObject,
+    ContactObject,
+    ContentDescriptorObject,
+    ErrorObject,
+    ExampleObject,
+    ExamplePairingObject,
+    ExternalDocumentationObject,
+    InfoObject,
+    LicenseObject,
+    LinkObject,
+    MethodObject,
+    OpenRPCObject,
+    ParamStructure,
+    ReferenceObject,
+    SchemaObject,
+    ServerObject,
+    ServerVariableObject,
+    TagObject,
+)
+from openrpc._router import RPCRouter
+from openrpc._server import RPCServer
