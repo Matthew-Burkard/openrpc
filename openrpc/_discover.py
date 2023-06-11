@@ -2,7 +2,6 @@
 
 __all__ = ("DiscoverHandler",)
 
-import copy
 import inspect
 from enum import Enum
 from typing import (
@@ -46,7 +45,7 @@ class DiscoverHandler:
         self._methods: list[MethodObject] = []
         self._schemas: dict[str, SchemaObject] = {}
         self._flattened_schemas: dict[str, SchemaType] = {}
-        self._collect_schemas(copy.deepcopy(list(functions)))
+        self._collect_schemas(functions)
         for schema in self._schemas.values():
             self._flatten_schema(schema)
 
@@ -61,7 +60,7 @@ class DiscoverHandler:
             components=ComponentsObject(schemas=self._flattened_schemas),
         )
 
-    def _collect_schemas(self, functions: list[RPCMethod]) -> None:
+    def _collect_schemas(self, functions: Iterable[RPCMethod]) -> None:
         for func in functions:
             params = self._get_params(func.function)
             result = self._get_result(func.function)
