@@ -46,10 +46,10 @@ rpc = RPCServer(title="Demo Server", version="1.0.0")
 
 ### Register a function as an RPC Method
 
-To register a method with the RPCServer add the `@rpc.method` decorator to a function.
+To register a method with the RPCServer add the `@rpc.method()` decorator to a function.
 
 ```python
-@rpc.method
+@rpc.method()
 def add(a: int, b: int) -> int:
     return a + b
 ```
@@ -97,7 +97,7 @@ app = Sanic("DemoServer")
 rpc = RPCServer(title="DemoServer", version="1.0.0")
 
 
-@rpc.method
+@rpc.method()
 async def add(a: int, b: int) -> int:
     return a + b
 
@@ -119,7 +119,10 @@ Example In
 {
   "id": 1,
   "method": "add",
-  "params": {"a": 1, "b": 3},
+  "params": {
+    "a": 1,
+    "b": 3
+  },
   "jsonrpc": "2.0"
 }
 ```
