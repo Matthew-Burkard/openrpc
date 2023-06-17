@@ -13,6 +13,8 @@ variables:
 
 .setup_environment: &setup_env
   before_script:
+    - python -m ensurepip --upgrade
+    - python -m pip install --upgrade pip
     - python --version
     - pip install poetry
     - poetry --version
