@@ -106,7 +106,8 @@ async def add(a: int, b: int) -> int:
 async def process_websocket(_request: Request, ws: Websocket) -> None:
     async for msg in ws:
         json_rpc_response = await rpc.process_request_async(msg)
-        await ws.send(json_rpc_response)
+        if json_rpc_response is not None:
+            await ws.send(json_rpc_response)
 
 
 if __name__ == "__main__":
