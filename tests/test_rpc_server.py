@@ -9,10 +9,10 @@ import uuid
 from typing import Any, Callable, Optional, Union
 
 from jsonrpcobjects.objects import (
-    NotificationObject,
-    NotificationObjectParams,
-    RequestObject,
-    RequestObjectParams,
+    Notification,
+    ParamsNotification,
+    ParamsRequest,
+    Request,
 )
 from pydantic import BaseModel
 
@@ -36,14 +36,14 @@ class RecursiveModel(BaseModel):
     another_thing_no_future_annotations: Optional["RecursiveModel"] = None
 
 
-RecursiveModel.update_forward_refs()
+RecursiveModel.model_rebuild()
 
 
 # noinspection PyMissingOrEmptyDocstring
 class RPCTest(unittest.TestCase):
     def __init__(self, *args) -> None:
         self.info = InfoObject(title="Test JSON RPC", version="1.0.0")
-        self.server = RPCServer(**self.info.dict())
+        self.server = RPCServer(**self.info.model_dump())
         self.method(add)
         self.method(subtract)
         self.method(divide)
@@ -52,8 +52,8 @@ class RPCTest(unittest.TestCase):
         super(RPCTest, self).__init__(*args)
 
     def test_array_params(self) -> None:
-        request = RequestObjectParams(id=1, method="add", params=[2, 2])
-        resp = self.get_sync_and_async_resp(request.json())
+        request = ParamsRequest(id=1, method="add", params=[2, 2])
+        resp = self.get_sync_and_async_resp(request.model_dump_json())
         self.assertEqual(4, json.loads(resp)["result"])
 
     def test_no_params(self) -> None:
@@ -61,13 +61,13 @@ class RPCTest(unittest.TestCase):
             return None
 
         self.method(get_none)
-        request = RequestObject(id=1, method="get_none")
-        resp = self.get_sync_and_async_resp(request.json())
+        request = Request(id=1, method="get_none")
+        resp = self.get_sync_and_async_resp(request.model_dump_json())
         self.assertEqual(None, json.loads(resp)["result"])
 
     def test_object_params(self) -> None:
-        request = RequestObjectParams(id=1, method="subtract", params={"x": 2, "y": 2})
-        resp = self.get_sync_and_async_resp(request.json())
+        request = ParamsRequest(id=1, method="subtract", params={"x": 2, "y": 2})
+        resp = self.get_sync_and_async_resp(request.model_dump_json())
         self.assertEqual(0, json.loads(resp)["result"])
 
     def test_vararg_method(self) -> None:
@@ -75,8 +75,8 @@ class RPCTest(unittest.TestCase):
             return sum(args)
 
         self.method(summation)
-        request = RequestObjectParams(id=1, method="summation", params=[1, 3, 5, 7, 11])
-        resp = self.get_sync_and_async_resp(request.json())
+        request = ParamsRequest(id=1, method="summation", params=[1, 3, 5, 7, 11])
+        resp = self.get_sync_and_async_resp(request.model_dump_json())
         self.assertEqual(27, json.loads(resp)["result"])
 
     def test_kwarg_method(self) -> None:
@@ -84,33 +84,33 @@ class RPCTest(unittest.TestCase):
             return (kwargs["a"] ** 2 + kwargs["b"] ** 2) == (kwargs["c"] ** 2)
 
         self.method(pythagorean)
-        request = RequestObjectParams(
+        request = ParamsRequest(
             id=1, method="pythagorean", params={"a": 3, "b": 4, "c": 5}
         )
-        resp = self.get_sync_and_async_resp(request.json())
+        resp = self.get_sync_and_async_resp(request.model_dump_json())
         self.assertEqual(True, json.loads(resp)["result"])
 
     # noinspection DuplicatedCode
     def test_vararg_method_with_no_params(self) -> None:
-        request = RequestObject(id=1, method="args_and_kwargs")
-        resp = self.get_sync_and_async_resp(request.json())
+        request = Request(id=1, method="args_and_kwargs")
+        resp = self.get_sync_and_async_resp(request.model_dump_json())
         self.assertEqual([{}], json.loads(resp)["result"])
 
     # noinspection DuplicatedCode
     def test_kwarg_method_with_no_params(self) -> None:
-        request = RequestObject(id=1, method="args_and_kwargs")
-        resp = self.get_sync_and_async_resp(request.json())
+        request = Request(id=1, method="args_and_kwargs")
+        resp = self.get_sync_and_async_resp(request.model_dump_json())
         self.assertEqual([{}], json.loads(resp)["result"])
 
     def test_no_result(self) -> None:
-        request = RequestObjectParams(id=1, method="divide", params=[0, 0])
-        resp = self.get_sync_and_async_resp(request.json())
+        request = ParamsRequest(id=1, method="divide", params=[0, 0])
+        resp = self.get_sync_and_async_resp(request.model_dump_json())
         self.assertNotIn("result", json.loads(resp).keys())
         self.assertIn("error", json.loads(resp).keys())
 
     def test_no_error(self) -> None:
-        request = RequestObjectParams(id=1, method="add", params=[1, 2])
-        resp = self.get_sync_and_async_resp(request.json())
+        request = ParamsRequest(id=1, method="add", params=[1, 2])
+        resp = self.get_sync_and_async_resp(request.model_dump_json())
         self.assertNotIn("error", json.loads(resp).keys())
         self.assertIn("result", json.loads(resp).keys())
 
@@ -123,29 +123,29 @@ class RPCTest(unittest.TestCase):
         self.assertEqual(INVALID_REQUEST, resp["error"]["code"])
 
     def test_method_not_found(self) -> None:
-        request = RequestObject(id=1, method="does not exist")
-        resp = json.loads(self.get_sync_and_async_resp(request.json()))
+        request = Request(id=1, method="does not exist")
+        resp = json.loads(self.get_sync_and_async_resp(request.model_dump_json()))
         self.assertEqual(METHOD_NOT_FOUND, resp["error"]["code"])
 
     def test_server_error(self) -> None:
-        request = RequestObjectParams(id=1, method="divide", params=[0, 0])
+        request = ParamsRequest(id=1, method="divide", params=[0, 0])
         server = RPCServer(title="Test JSON RPC", version="1.0.0")
         server.default_error_code = SERVER_ERROR
         server.method(divide)
-        resp = json.loads(self.get_sync_and_async_resp(request.json()))
+        resp = json.loads(self.get_sync_and_async_resp(request.model_dump_json()))
         self.assertEqual(server.default_error_code, resp["error"]["code"])
 
     def test_id_matching(self) -> None:
         # Result id.
         req_id = str(uuid.uuid4())
-        request = RequestObjectParams(id=req_id, method="add", params=[2, 2])
-        resp = json.loads(self.get_sync_and_async_resp(request.json()))
+        request = ParamsRequest(id=req_id, method="add", params=[2, 2])
+        resp = json.loads(self.get_sync_and_async_resp(request.model_dump_json()))
         self.assertEqual(4, resp["result"])
         self.assertEqual(req_id, resp["id"])
         # Error id.
         req_id = str(uuid.uuid4())
-        request = RequestObjectParams(id=req_id, method="add", params={"x": 1, "z": 2})
-        resp = json.loads(self.get_sync_and_async_resp(request.json()))
+        request = ParamsRequest(id=req_id, method="add", params={"x": 1, "z": 2})
+        resp = json.loads(self.get_sync_and_async_resp(request.model_dump_json()))
         self.assertEqual(req_id, resp["id"])
 
     # noinspection DuplicatedCode
@@ -156,19 +156,19 @@ class RPCTest(unittest.TestCase):
         none_id = str(uuid.uuid4())
         requests = ",".join(
             [
-                RequestObjectParams(id=add_id, method="add", params=[2, 2]).json(),
-                RequestObjectParams(
+                ParamsRequest(id=add_id, method="add", params=[2, 2]).model_dump_json(),
+                ParamsRequest(
                     id=subtract_id, method="subtract", params=[2, 2]
-                ).json(),
-                RequestObjectParams(
+                ).model_dump_json(),
+                ParamsRequest(
                     id=divide_id, method="divide", params=[0, 0]
-                ).json(),
-                NotificationObjectParams(method="add", params=[1, 3]).json(),
+                ).model_dump_json(),
+                ParamsNotification(method="add", params=[1, 3]).model_dump_json(),
                 "null",
-                NotificationObject(method="does_not_exist").json(),
-                NotificationObjectParams(method="divide", params=[0, 0]).json(),
-                RequestObject(id=1, method="does_not_exist").json(),
-                RequestObject(id=none_id, method="return_none").json(),
+                Notification(method="does_not_exist").model_dump_json(),
+                ParamsNotification(method="divide", params=[0, 0]).model_dump_json(),
+                Request(id=1, method="does_not_exist").model_dump_json(),
+                Request(id=none_id, method="return_none").model_dump_json(),
             ]
         )
         responses = json.loads(self.get_sync_and_async_resp(f"[{requests}]"))
@@ -194,8 +194,8 @@ class RPCTest(unittest.TestCase):
             return [it + 1 for it in numbers]
 
         self.method(increment_list)
-        request = RequestObjectParams(id=1, method="increment_list", params=[[1, 2, 3]])
-        resp = json.loads(self.get_sync_and_async_resp(request.json()))
+        request = ParamsRequest(id=1, method="increment_list", params=[[1, 2, 3]])
+        resp = json.loads(self.get_sync_and_async_resp(request.model_dump_json()))
         self.assertEqual([2, 3, 4], resp["result"])
 
     def test_list_object_list_param(self) -> None:
@@ -207,8 +207,8 @@ class RPCTest(unittest.TestCase):
 
         vectors = [Vector3(x=0, y=0, z=0), Vector3(x=1, y=1, z=1)]
         self.method(get_vectors)
-        request = RequestObjectParams(id=1, method="get_vectors", params=[vectors])
-        resp = json.loads(self.get_sync_and_async_resp(request.json()))
+        request = ParamsRequest(id=1, method="get_vectors", params=[vectors])
+        resp = json.loads(self.get_sync_and_async_resp(request.model_dump_json()))
         self.assertIsNotNone(resp.get("result"))
 
     def test_optional_params(self) -> None:
@@ -220,14 +220,12 @@ class RPCTest(unittest.TestCase):
         self.method(optional_params)
         req_id = str(uuid.uuid4())
         # No params.
-        req = RequestObject(id=req_id, method="optional_params")
-        resp = json.loads(self.get_sync_and_async_resp(req.json()))
+        req = Request(id=req_id, method="optional_params")
+        resp = json.loads(self.get_sync_and_async_resp(req.model_dump_json()))
         self.assertEqual([None, None], resp["result"])
         # With params.
-        req = RequestObjectParams(
-            id=req_id, method="optional_params", params=["three", 3]
-        )
-        resp = json.loads(self.get_sync_and_async_resp(req.json()))
+        req = ParamsRequest(id=req_id, method="optional_params", params=["three", 3])
+        resp = json.loads(self.get_sync_and_async_resp(req.model_dump_json()))
         self.assertEqual(["three", 3], resp["result"])
 
     def test_optional_object_param(self) -> None:
@@ -240,8 +238,8 @@ class RPCTest(unittest.TestCase):
             return v
 
         self.method(optional_param)
-        request = RequestObjectParams(id=1, method="optional_param", params=[vector])
-        resp = json.loads(self.get_sync_and_async_resp(request.json()))
+        request = ParamsRequest(id=1, method="optional_param", params=[vector])
+        resp = json.loads(self.get_sync_and_async_resp(request.model_dump_json()))
         self.assertIsNotNone(resp.get("result"))
 
     def test_including_method_name(self) -> None:
@@ -249,8 +247,8 @@ class RPCTest(unittest.TestCase):
             return a * b
 
         self.method(multiply, name="math.multiply")
-        req = RequestObjectParams(id=1, method="math.multiply", params=[2, 4])
-        resp = json.loads(self.get_sync_and_async_resp(req.json()))
+        req = ParamsRequest(id=1, method="math.multiply", params=[2, 4])
+        resp = json.loads(self.get_sync_and_async_resp(req.model_dump_json()))
         self.assertEqual(8, resp["result"])
 
     def test_default_values(self) -> None:
@@ -259,31 +257,31 @@ class RPCTest(unittest.TestCase):
 
         self.method(default_values)
         # No params.
-        req = RequestObject(id=1, method="default_values")
-        resp = json.loads(self.get_sync_and_async_resp(req.json()))
+        req = Request(id=1, method="default_values")
+        resp = json.loads(self.get_sync_and_async_resp(req.model_dump_json()))
         self.assertEqual(2, resp["result"])
         # First param.
-        req = RequestObjectParams(id=1, method="default_values", params=[2])
-        resp = json.loads(self.get_sync_and_async_resp(req.json()))
+        req = ParamsRequest(id=1, method="default_values", params=[2])
+        resp = json.loads(self.get_sync_and_async_resp(req.model_dump_json()))
         # Both params.
         self.assertEqual(3, resp["result"])
-        req = RequestObjectParams(id=1, method="default_values", params=[2, 2])
-        resp = json.loads(self.get_sync_and_async_resp(req.json()))
+        req = ParamsRequest(id=1, method="default_values", params=[2, 2])
+        resp = json.loads(self.get_sync_and_async_resp(req.model_dump_json()))
         self.assertEqual(4, resp["result"])
 
     def test_json_rpc(self) -> None:
         # Result object.
-        request = RequestObjectParams(id=1, method="add", params=[1, 2])
-        resp = json.loads(self.get_sync_and_async_resp(request.json()))
+        request = ParamsRequest(id=1, method="add", params=[1, 2])
+        resp = json.loads(self.get_sync_and_async_resp(request.model_dump_json()))
         self.assertEqual("2.0", resp["jsonrpc"])
         # Error object.
-        request = RequestObjectParams(id=1, method="divide", params=[0, 0])
-        resp = json.loads(self.get_sync_and_async_resp(request.json()))
+        request = ParamsRequest(id=1, method="divide", params=[0, 0])
+        resp = json.loads(self.get_sync_and_async_resp(request.model_dump_json()))
         self.assertEqual("2.0", resp["jsonrpc"])
 
     def test_notifications(self) -> None:
-        request = NotificationObjectParams(method="add", params=[1, 2])
-        resp = self.get_sync_and_async_resp(request.json())
+        request = ParamsNotification(method="add", params=[1, 2])
+        resp = self.get_sync_and_async_resp(request.model_dump_json())
         self.assertEqual(None, resp)
 
     def test_deserialize_nested_objects(self) -> None:
@@ -298,7 +296,7 @@ class RPCTest(unittest.TestCase):
 
         # noinspection DuplicatedCode
         self.method(take_thing)
-        req = RequestObjectParams(
+        req = ParamsRequest(
             id=1,
             method="take_thing",
             params=[
@@ -314,17 +312,17 @@ class RPCTest(unittest.TestCase):
                 )
             ],
         )
-        resp = json.loads(self.get_sync_and_async_resp(req.json()))
+        resp = json.loads(self.get_sync_and_async_resp(req.model_dump_json()))
         self.assertTrue(resp["result"])
 
     def test_return_none(self) -> None:
-        req = RequestObject(id=1, method="return_none")
-        resp = json.loads(self.get_sync_and_async_resp(req.json()))
+        req = Request(id=1, method="return_none")
+        resp = json.loads(self.get_sync_and_async_resp(req.model_dump_json()))
         self.assertIsNone(resp["result"])
 
     def test_no_response_on_method_not_found_notify(self) -> None:
-        req = NotificationObject(method="not_a_method")
-        resp = self.get_sync_and_async_resp(req.json())
+        req = Notification(method="not_a_method")
+        resp = self.get_sync_and_async_resp(req.model_dump_json())
         self.assertIsNone(resp)
 
     def get_sync_and_async_resp(self, request: Union[str, bytes]) -> str:

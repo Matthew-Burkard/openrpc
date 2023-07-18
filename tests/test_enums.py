@@ -3,15 +3,7 @@ import json
 import unittest
 from enum import Enum
 
-from pydantic import BaseModel
-
 from openrpc import RPCServer
-
-
-class Model(BaseModel):
-    """Example type for the enum."""
-
-    int_field: int
 
 
 class EnumExample(Enum):
@@ -19,12 +11,6 @@ class EnumExample(Enum):
 
     INT_OPTION = 3
     STR_OPTION = 'A string with a "'
-
-
-class EnumClassFieldExample(Enum):
-    """Enum with a field of a custom class type."""
-
-    CLASS_OPTION = Model(int_field=1)
 
 
 class EnumExampleWithNull(Enum):
@@ -35,9 +21,8 @@ class EnumExampleWithNull(Enum):
 
 
 # noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
-def enum_test_func(ee: EnumExample, ecf: EnumClassFieldExample) -> EnumExampleWithNull:
+def enum_test_func(ee: EnumExample) -> EnumExampleWithNull:
     assert isinstance(ee, EnumExample)
-    assert isinstance(ecf, EnumClassFieldExample)
     return EnumExampleWithNull.STR_OPTION
 
 
@@ -53,8 +38,7 @@ class EnumTest(unittest.TestCase):
                 "name": "ee",
                 "schema": {"enum": [3, 'A string with a "']},
                 "required": True,
-            },
-            {"name": "ecf", "schema": {"enum": [{"int_field": 1}]}, "required": True},
+            }
         ]
         result = {
             "name": "result",
@@ -70,7 +54,7 @@ class EnumTest(unittest.TestCase):
         req = {
             "id": 0,
             "method": "enum_test_func",
-            "params": [3, {"int_field": 1}],
+            "params": [3],
             "jsonrpc": "2.0",
         }
         res = json.loads(self.rpc.process_request(json.dumps(req)))
@@ -81,7 +65,7 @@ class EnumTest(unittest.TestCase):
         req = {
             "id": 0,
             "method": "enum_test_func",
-            "params": [5, {"int_field": 1}],
+            "params": [5],
             "jsonrpc": "2.0",
         }
         res = json.loads(self.rpc.process_request(json.dumps(req)))

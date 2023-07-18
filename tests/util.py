@@ -1,13 +1,12 @@
 """Functions shared by tests."""
-import json
-from typing import Union
+from __future__ import annotations
 
-from jsonrpcobjects.objects import (
-    ErrorResponseObject,
-    ResponseType,
-    ResultResponseObject,
-)
+import json
+
+from jsonrpcobjects.objects import ErrorResponse, ResponseType, ResultResponse
 from pydantic import BaseModel
+
+from openrpc import RPCServer
 
 INTERNAL_ERROR = -32603
 INVALID_PARAMS = -32602
@@ -25,10 +24,21 @@ class Vector3(BaseModel):
     z: float
 
 
-def parse_response(data: Union[bytes, str]) -> ResponseType:
+def parse_response(data: bytes | str) -> ResponseType:
     """Map a JSON-RPC2 response to the appropriate object."""
     resp = json.loads(data)
     if resp.get("error"):
-        return ErrorResponseObject(**resp)
+        return ErrorResponse(**resp)
     if "result" in resp.keys():
-        return ResultResponseObject(**resp)
+        return ResultResponse(**resp)
+
+
+def call(rpc_server: RPCServer, method: str, params: list | dict) -> ResponseType:
+    """Call an RPC method."""
+    req = {
+        "id": 1,
+        "method": method,
+        "params": params,
+        "jsonrpc": "2.0",
+    }
+    return parse_response(rpc_server.process_request(json.dumps(req)))

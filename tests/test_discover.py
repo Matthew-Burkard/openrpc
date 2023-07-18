@@ -3,18 +3,11 @@ import json
 import unittest
 from typing import Any, List, Optional, Union
 
-from jsonrpcobjects.objects import RequestObject
+from jsonrpcobjects.objects import Request
 from pydantic import BaseModel, Field
 
 # noinspection PyProtectedMember
-from openrpc import (
-    _discover,
-    ContactObject,
-    Depends,
-    LicenseObject,
-    RPCServer,
-    SchemaObject,
-)
+from openrpc import ContactObject, Depends, LicenseObject, RPCServer
 from tests.util import Vector3
 
 
@@ -62,19 +55,13 @@ class DiscoverTest(unittest.TestCase):
         self.rpc.terms_of_service = self.rpc.terms_of_service or "Coffee"
         self.rpc.contact = self.rpc.contact or ContactObject(name="mocha")
         self.rpc.license_ = self.rpc.license_ or LicenseObject(name="AGPLv3")
-        request = RequestObject(id=1, method="rpc.discover")
-        resp = json.loads(self.rpc.process_request(request.json()))
+        request = Request(id=1, method="rpc.discover")
+        resp = json.loads(self.rpc.process_request(request.model_dump_json()))
         self.discover_result = resp["result"]
         super(DiscoverTest, self).__init__(*args)
 
-    def test_bool_schemas(self) -> None:
-        _discover._update_references(True, {})
-        _discover._update_references(SchemaObject(**Vector2.schema()), {"test": True})
-        _discover.DiscoverHandler(self.rpc._info, [])._flatten_schema(True)
-        self.assertTrue(True)
-
     def test_open_rpc_info(self) -> None:
-        self.assertEqual("1.2.6", self.discover_result["openrpc"])
+        self.assertEqual("1.3.1", self.discover_result["openrpc"])
         self.assertEqual(
             {
                 "title": "Test OpenRPC",

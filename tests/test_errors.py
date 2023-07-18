@@ -42,7 +42,7 @@ def test_method_errors() -> None:
     }
     rpc.debug = False
     result = json.loads(rpc.process_request(json.dumps(req)))
-    assert result["error"]["data"] is None
+    assert "data" not in result["error"]
     assert rpc.debug is False
 
 
@@ -67,7 +67,7 @@ def test_catchall_error() -> None:
     }
     rpc_catch_all.debug = False
     result = json.loads(rpc_catch_all.process_request(json.dumps(req)))
-    assert result["error"]["data"] is None
+    assert "data" not in result["error"]
 
 
 @pytest.mark.asyncio
