@@ -17,9 +17,9 @@ def method_with_error(*_args) -> None:
 
 
 # noinspection PyProtectedMember
-rpc_catch_all._method_processor.process = method_with_error
+rpc_catch_all._request_processor.process = method_with_error
 # noinspection PyProtectedMember
-rpc_catch_all._method_processor.process_async = method_with_error
+rpc_catch_all._request_processor.process_async = method_with_error
 
 
 def test_method_errors_debug() -> None:

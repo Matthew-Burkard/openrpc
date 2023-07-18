@@ -50,7 +50,7 @@ class RPCServer(MethodRegistrar):
         :param debug: Include internal error details in responses.
         """
         super().__init__()
-        self._method_processor.debug = debug
+        self._request_processor.debug = debug
         # Set OpenRPC server info.
         self._debug = debug
         self._info = InfoObject(
@@ -127,11 +127,11 @@ class RPCServer(MethodRegistrar):
     @property
     def default_error_code(self) -> int:
         """JSON-RPC error code used when a method raises an error."""
-        return self._method_processor.uncaught_error_code
+        return self._request_processor.uncaught_error_code
 
     @default_error_code.setter
     def default_error_code(self, default_error_code: int) -> None:
-        self._method_processor.uncaught_error_code = default_error_code
+        self._request_processor.uncaught_error_code = default_error_code
 
     @property
     def methods(self) -> list[MethodObject]:
@@ -145,7 +145,7 @@ class RPCServer(MethodRegistrar):
 
     @debug.setter
     def debug(self, debug: bool) -> None:
-        self._method_processor.debug = debug
+        self._request_processor.debug = debug
         self._debug = debug
 
     def include_router(
@@ -190,7 +190,7 @@ class RPCServer(MethodRegistrar):
         def _router_remove_partial(method: str) -> None:
             self.remove(f"{prefix}{method}") if prefix else self.remove(method)
             router._rpc_methods.pop(method)
-            router._method_processor.methods.pop(method)
+            router._request_processor.methods.pop(method)
 
         for rpc_method in router._rpc_methods.values():
             _add_router_method(rpc_method.function, rpc_method.metadata)
@@ -210,7 +210,7 @@ class RPCServer(MethodRegistrar):
         """
         try:
             log.debug("Processing request: %s", data)
-            resp = self._method_processor.process(data, depends)
+            resp = self._request_processor.process(data, depends)
             if resp:
                 log.debug("Responding: %s", resp)
             return resp
@@ -232,7 +232,7 @@ class RPCServer(MethodRegistrar):
         """
         try:
             log.debug("Processing request: %s", data)
-            resp = await self._method_processor.process_async(data, depends)
+            resp = await self._request_processor.process_async(data, depends)
             if resp:
                 log.debug("Responding: %s", resp)
             return resp

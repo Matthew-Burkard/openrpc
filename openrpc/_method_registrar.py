@@ -7,8 +7,8 @@ import logging
 from functools import partial
 from typing import Callable, Optional, TypeVar, Union
 
+from _request_processor import RequestProcessor
 from openrpc import Depends
-from openrpc._method_processor import MethodProcessor
 from openrpc._objects import (
     ContentDescriptorObject,
     ErrorObject,
@@ -33,7 +33,7 @@ class MethodRegistrar:
     def __init__(self) -> None:
         """Initialize a new instance of the MethodRegistrar class."""
         self._rpc_methods: dict[str, RPCMethod] = {}
-        self._method_processor = MethodProcessor(False)
+        self._request_processor = RequestProcessor(False)
 
     def method(
         self,
@@ -140,7 +140,7 @@ class MethodRegistrar:
         :return: None.
         """
         self._rpc_methods.pop(method)
-        self._method_processor.methods.pop(method)
+        self._request_processor.methods.pop(method)
 
     def _method(self, func: CallableType, metadata: MethodMetaData) -> CallableType:
         dependencies = [
@@ -155,5 +155,5 @@ class MethodRegistrar:
         log.debug(
             "Registering function [%s] as method [%s]", func.__name__, metadata.name
         )
-        self._method_processor.method(rpc_method, metadata.name)
+        self._request_processor.method(rpc_method, metadata.name)
         return func
