@@ -1,12 +1,15 @@
 """Module providing RPCServer class."""
+
+__all__ = ("RPCServer",)
+
 import logging
 from typing import Any, Callable, Optional, Union
 
 from jsonrpcobjects.errors import INTERNAL_ERROR
-from jsonrpcobjects.objects import ErrorObject, ErrorObjectData, ErrorResponseObject
+from jsonrpcobjects.objects import DataError, Error, ErrorResponse
 
+from _discover import get_openrpc_doc
 from openrpc import RPCRouter
-from openrpc._discover import DiscoverHandler
 from openrpc._method_registrar import CallableType, MethodRegistrar
 from openrpc._objects import (
     ContactObject,
@@ -19,7 +22,6 @@ from openrpc._objects import (
 )
 from openrpc._rpcmethod import MethodMetaData
 
-__all__ = ("RPCServer",)
 log = logging.getLogger("openrpc")
 _META_REF = "https://raw.githubusercontent.com/open-rpc/meta-schema/master/schema.json"
 
@@ -134,7 +136,7 @@ class RPCServer(MethodRegistrar):
     @property
     def methods(self) -> list[MethodObject]:
         """Get all methods of this server."""
-        return DiscoverHandler(self._info, self._rpc_methods.values()).execute().methods
+        return get_openrpc_doc(self._info, self._rpc_methods.values()).methods
 
     @property
     def debug(self) -> bool:
@@ -163,7 +165,7 @@ class RPCServer(MethodRegistrar):
         def _add_router_method(
             func: CallableType, metadata: MethodMetaData
         ) -> CallableType:
-            new_data = metadata.copy()
+            new_data = metadata.model_copy()
             if prefix:
                 new_data.name = f"{prefix}{metadata.name}"
             if tags:
@@ -213,7 +215,7 @@ class RPCServer(MethodRegistrar):
                 log.debug("Responding: %s", resp)
             return resp
         except Exception as error:
-            return self._get_error_response(error).json()
+            return self._get_error_response(error).model_dump_json()
 
     async def process_request_async(
         self, data: Union[bytes, str], depends: Optional[dict[str, Any]] = None
@@ -235,25 +237,23 @@ class RPCServer(MethodRegistrar):
                 log.debug("Responding: %s", resp)
             return resp
         except Exception as error:
-            return self._get_error_response(error).json()
+            return self._get_error_response(error).model_dump_json()
 
     def discover(self) -> dict[str, Any]:
         """Execute "rpc.discover" method defined in OpenRPC spec."""
-        return (
-            DiscoverHandler(self._info, self._rpc_methods.values())
-            .execute()
-            .dict(by_alias=True, exclude_unset=True, exclude_none=True)
+        return get_openrpc_doc(self._info, self._rpc_methods.values()).model_dump(
+            by_alias=True, exclude_unset=True, exclude_none=True
         )
 
-    def _get_error_response(self, error: Exception) -> ErrorResponseObject:
+    def _get_error_response(self, error: Exception) -> ErrorResponse:
         log.exception("%s:", type(error).__name__)
         if self._debug:
-            error_object: Union[ErrorObject, ErrorObjectData] = ErrorObjectData(
+            error_object: Union[Error, DataError] = DataError(
                 **{
                     **INTERNAL_ERROR.dict(),
                     **{"data": f"{type(error).__name__}: {error}"},
                 }
             )
         else:
-            error_object = ErrorObject(**INTERNAL_ERROR.dict())
-        return ErrorResponseObject(id=None, error=error_object)
+            error_object = Error(**INTERNAL_ERROR.dict())
+        return ErrorResponse(id=None, error=error_object)

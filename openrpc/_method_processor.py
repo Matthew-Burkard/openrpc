@@ -10,13 +10,13 @@ from typing import Any, Optional, Union
 
 from jsonrpcobjects.errors import INVALID_REQUEST, METHOD_NOT_FOUND, PARSE_ERROR
 from jsonrpcobjects.objects import (
-    ErrorObjectData,
-    ErrorResponseObject,
-    NotificationObject,
-    NotificationObjectParams,
+    DataError,
+    ErrorResponse,
+    Notification,
     NotificationType,
-    RequestObject,
-    RequestObjectParams,
+    ParamsNotification,
+    ParamsRequest,
+    Request,
     RequestType,
 )
 from pydantic import ValidationError
@@ -25,8 +25,8 @@ from openrpc._request_processor import RequestProcessor
 from openrpc._rpcmethod import RPCMethod
 
 log = logging.getLogger("openrpc")
-NotificationTypes = (NotificationObject, NotificationObjectParams)
-RequestTypes = (RequestObject, RequestObjectParams)
+NotificationTypes = (Notification, ParamsNotification)
+RequestTypes = (Request, ParamsRequest)
 _DEFAULT_ERROR_CODE = -32000
 
 
@@ -61,19 +61,19 @@ class MethodProcessor:
         :return: A valid JSON-RPC2 response.
         """
         parsed_json = _get_parsed_json(data)
-        if isinstance(parsed_json, ErrorResponseObject):
-            return parsed_json.json()
+        if isinstance(parsed_json, ErrorResponse):
+            return parsed_json.model_dump_json()
 
         # Batch
         if isinstance(parsed_json, list):
             requests = [_get_request_object(it) for it in parsed_json]
             results: list[str] = []
             for req in requests:
-                if isinstance(req, ErrorResponseObject):
-                    results.append(req.json())
+                if isinstance(req, ErrorResponse):
+                    results.append(req.model_dump_json())
                     continue
                 if req.method not in self.methods:
-                    if isinstance(req, (RequestObject, RequestObjectParams)):
+                    if isinstance(req, (Request, ParamsRequest)):
                         results.append(_get_method_not_found_error(req))
                     continue
 
@@ -91,10 +91,10 @@ class MethodProcessor:
 
         # Single Request
         request = _get_request_object(parsed_json)
-        if isinstance(request, ErrorResponseObject):
-            return request.json()
+        if isinstance(request, ErrorResponse):
+            return request.model_dump_json()
         if request.method not in self.methods:
-            if isinstance(request, (RequestObject, RequestObjectParams)):
+            if isinstance(request, (Request, ParamsRequest)):
                 return _get_method_not_found_error(request)
             return None
         result = RequestProcessor(
@@ -118,19 +118,19 @@ class MethodProcessor:
         :return: A valid JSON-RPC2 response.
         """
         parsed_json = _get_parsed_json(data)
-        if isinstance(parsed_json, ErrorResponseObject):
-            return parsed_json.json()
+        if isinstance(parsed_json, ErrorResponse):
+            return parsed_json.model_dump_json()
 
         # Batch
         if isinstance(parsed_json, list):
 
             async def _process_request(
-                request: Union[ErrorResponseObject, NotificationType, RequestType]
+                request: Union[ErrorResponse, NotificationType, RequestType]
             ) -> Any:
-                if isinstance(request, ErrorResponseObject):
-                    return request.json()
+                if isinstance(request, ErrorResponse):
+                    return request.model_dump_json()
                 if request.method not in self.methods:
-                    if isinstance(request, (RequestObject, RequestObjectParams)):
+                    if isinstance(request, (Request, ParamsRequest)):
                         return _get_method_not_found_error(request)
                     return None
 
@@ -151,55 +151,52 @@ class MethodProcessor:
 
         # Single Request
         req = _get_request_object(parsed_json)
-        if isinstance(req, ErrorResponseObject):
-            return req.json()
+        if isinstance(req, ErrorResponse):
+            return req.model_dump_json()
         if req.method not in self.methods:
-            if isinstance(req, (RequestObject, RequestObjectParams)):
+            if isinstance(req, (Request, ParamsRequest)):
                 return _get_method_not_found_error(req)
             return None
         result = await RequestProcessor(
             self.methods[req.method], self.uncaught_error_code, req, depends, self.debug
         ).execute_async()
+
         return None if isinstance(req, NotificationTypes) else result
 
 
 def _get_method_not_found_error(req: Union[NotificationType, RequestType]) -> str:
-    return ErrorResponseObject(
+    return ErrorResponse(
         id=None if isinstance(req, NotificationTypes) else req.id,
-        error=ErrorObjectData(**{**METHOD_NOT_FOUND.dict(), **{"data": req.method}}),
-    ).json()
+        error=DataError(**{**METHOD_NOT_FOUND.dict(), **{"data": req.method}}),
+    ).model_dump_json()
 
 
-def _get_parsed_json(data: Union[bytes, str]) -> Union[ErrorResponseObject, dict, list]:
+def _get_parsed_json(data: Union[bytes, str]) -> Union[ErrorResponse, dict, list]:
     try:
         parsed_json = json.loads(data)
     except (TypeError, JSONDecodeError) as error:
         log.exception("%s:", type(error).__name__)
-        return ErrorResponseObject(id=None, error=PARSE_ERROR)
+        return ErrorResponse(id=None, error=PARSE_ERROR)
     return parsed_json
 
 
 def _get_request_object(
     data: Any,
-) -> Union[ErrorResponseObject, NotificationType, RequestType]:
+) -> Union[ErrorResponse, NotificationType, RequestType]:
     try:
         is_request = data.get("id") is not None
         has_params = data.get("params") is not None
         if is_request:
-            return RequestObjectParams(**data) if has_params else RequestObject(**data)
-        return (
-            NotificationObjectParams(**data)
-            if has_params
-            else NotificationObject(**data)
-        )
+            return ParamsRequest(**data) if has_params else Request(**data)
+        return ParamsNotification(**data) if has_params else Notification(**data)
     except (TypeError, ValidationError) as error:
         log.exception("%s:", type(error).__name__)
-        return ErrorResponseObject(
+        return ErrorResponse(
             id=data.get("id"),
-            error=ErrorObjectData(**{**INVALID_REQUEST.dict(), **{"data": data}}),
+            error=DataError(**{**INVALID_REQUEST.dict(), **{"data": data}}),
         )
     except AttributeError:
-        return ErrorResponseObject(
+        return ErrorResponse(
             id=None,
-            error=ErrorObjectData(**{**INVALID_REQUEST.dict(), **{"data": data}}),
+            error=DataError(**{**INVALID_REQUEST.dict(), **{"data": data}}),
         )

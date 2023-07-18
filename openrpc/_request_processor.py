@@ -22,27 +22,27 @@ from jsonrpcobjects.errors import (
     JSONRPCError,
 )
 from jsonrpcobjects.objects import (
-    ErrorObject,
-    ErrorObjectData,
-    ErrorResponseObject,
+    DataError,
+    Error,
+    ErrorResponse,
     ErrorType,
-    NotificationObject,
-    NotificationObjectParams,
+    Notification,
     NotificationType,
-    RequestObject,
-    RequestObjectParams,
+    ParamsNotification,
+    ParamsRequest,
+    Request,
     RequestType,
-    ResultResponseObject,
+    ResultResponse,
 )
 
 from openrpc import ParamStructure
 from openrpc._rpcmethod import RPCMethod
 
 log = logging.getLogger("openrpc")
-by_position_error = ErrorObjectData(
+by_position_error = DataError(
     code=-32602, message="Invalid params", data="Params must be passed by position."
 )
-by_name_error = ErrorObjectData(
+by_name_error = DataError(
     code=-32602, message="Invalid params", data="Params must be passed by name."
 )
 
@@ -52,7 +52,7 @@ class DeserializationError(InternalError):
 
     def __init__(self, param: Any, p_type: Any) -> None:
         msg = f"Failed to deserialize request param [{param}] to type [{p_type}]"
-        super().__init__(ErrorObjectData(**{**INTERNAL_ERROR.dict(), **{"data": msg}}))
+        super().__init__(DataError(**{**INTERNAL_ERROR.dict(), **{"data": msg}}))
 
 
 class NotDeserializedType:
@@ -95,10 +95,10 @@ class RequestProcessor:
         """Execute the method and get the JSON-RPC2 response."""
         try:
             result = self._execute()
-            if isinstance(self.request, (NotificationObject, NotificationObjectParams)):
+            if isinstance(self.request, (Notification, ParamsNotification)):
                 # If request was notification, return nothing.
                 return None
-            return ResultResponseObject(id=self.request.id, result=result).json()
+            return ResultResponse(id=self.request.id, result=result).model_dump_json()
 
         except Exception as error:
             return self._get_error_response(error)
@@ -112,10 +112,10 @@ class RequestProcessor:
             result = self._execute()
             if inspect.isawaitable(result):
                 result = await result
-            if isinstance(self.request, (NotificationObject, NotificationObjectParams)):
+            if isinstance(self.request, (Notification, ParamsNotification)):
                 # If request was notification, return nothing.
                 return None
-            return ResultResponseObject(id=self.request.id, result=result).json()
+            return ResultResponse(id=self.request.id, result=result).model_dump_json()
 
         except Exception as error:
             return self._get_error_response(error)
@@ -134,7 +134,7 @@ class RequestProcessor:
             )
         dependencies = {k: self.depends.get(k) for k in self.method.depends_params}
         # Call method.
-        if isinstance(self.request, (RequestObject, NotificationObject)):
+        if isinstance(self.request, (Request, Notification)):
             result = self.method.function(**dependencies)
         elif isinstance(self.request.params, list):
             if self.method.metadata.param_structure == ParamStructure.BY_NAME:
@@ -151,7 +151,7 @@ class RequestProcessor:
 
         # Logging
         id_msg = "None"
-        if isinstance(self.request, (RequestObject, RequestObjectParams)):
+        if isinstance(self.request, (Request, ParamsRequest)):
             if isinstance(self.request.id, str):
                 id_msg = f'"{self.request.id}"'
             else:
@@ -161,21 +161,25 @@ class RequestProcessor:
 
     def _get_error_response(self, error: Exception) -> Optional[str]:
         log.exception("%s:", type(error).__name__)
-        if not isinstance(self.request, (RequestObjectParams, RequestObject)):
+
+        if not isinstance(self.request, (ParamsRequest, Request)):
             return None
+
         if isinstance(error, JSONRPCError):
-            return ErrorResponseObject(id=self.request.id, error=error.rpc_error).json()
+            return ErrorResponse(
+                id=self.request.id, error=error.rpc_error
+            ).model_dump_json()
+
         if self.debug:
-            error_object: ErrorType = ErrorObjectData(
+            error_object: ErrorType = DataError(
                 code=self.uncaught_error_code,
                 message="Server error",
                 data=f"{type(error).__name__}: {error}",
             )
         else:
-            error_object = ErrorObject(
-                code=self.uncaught_error_code, message="Server error"
-            )
-        return ErrorResponseObject(id=self.request.id, error=error_object).json()
+            error_object = Error(code=self.uncaught_error_code, message="Server error")
+
+        return ErrorResponse(id=self.request.id, error=error_object).model_dump_json()
 
     def _get_list_params(self, params: list, annotations: dict) -> list:
         try:
