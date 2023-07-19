@@ -3,6 +3,8 @@
 __all__ = ("get_openrpc_doc",)
 
 import inspect
+import json
+from enum import Enum
 from typing import (
     Any,
     Callable,
@@ -41,7 +43,15 @@ def get_openrpc_doc(
     """
     type_schema_map = _get_type_to_schema_map(rpc_methods)
     components = ComponentsObject(
-        schemas={v.title: v for v in type_schema_map.values()}  # type: ignore
+        schemas={v.title or "": v for v in type_schema_map.values()}
+    )
+    # Hacky workaround to Open RPC playground bug resolving definitions.
+    components = ComponentsObject(
+        **json.loads(
+            components.model_dump_json(by_alias=True, exclude_unset=True).replace(
+                "#/$defs/", "#/components/schemas/"
+            )
+        )
     )
     return OpenRPCObject(
         openrpc="1.2.6",
@@ -60,7 +70,7 @@ def _get_type_to_schema_map(
         for model_type in _get_models_from_function(method.function):
             schemas, _ = _get_schemas(model_type, type_to_schema_map)
             type_to_schema_map = {**type_to_schema_map, **schemas}
-    return type_to_schema_map
+    return _get_flattened_schemas(type_to_schema_map)
 
 
 def _get_methods(
@@ -85,7 +95,7 @@ def _get_models_from_function(function: Callable) -> list[ModelType]:
 def _get_schemas(
     type_: ModelType,
     type_to_schema_map: dict[ModelType, SchemaObject],
-    processed_types: Optional[list[Type]] = None,
+    processed_types: Optional[list[ModelType]] = None,
 ) -> tuple[dict[ModelType, SchemaObject], list[ModelType]]:
     # `processed_types` prevents recursive schema infinite loops.
     processed_types = processed_types or []
@@ -106,16 +116,12 @@ def _get_schemas(
                     )
                     types += child_types
                     schemas = {**schemas, **child_schemas}
-            continue
 
         # If field is a model get schemas from that model.
-        if _is_model(field.annotation):
-            if (
-                not (
-                    field.annotation in type_to_schema_map
-                    or field.annotation in processed_types
-                )
-                and field.annotation is not None
+        elif _is_model(field.annotation) and field.annotation is not None:
+            if not (
+                field.annotation in type_to_schema_map
+                or field.annotation in processed_types
             ):
                 # Both linters get this wrong, mypy gets it right.
                 # noinspection PyTypeChecker,PydanticTypeChecker
@@ -125,8 +131,61 @@ def _get_schemas(
                 types += child_types
                 schemas = {**schemas, **child_schemas}
 
+        # If field is an enum get enum schema.
+        elif issubclass(field.annotation, Enum):
+            enum_schema = schemas[type_]
+            assert isinstance(enum_schema.defs, dict)  # For type checkers.
+            for name, definition in enum_schema.defs.items():
+                if name == field.annotation.__name__ and isinstance(
+                    definition, SchemaObject
+                ):
+                    schemas[field.annotation] = definition
+            types += field.annotation
+
     return schemas, types
 
 
 def _is_model(type_: Any) -> bool:
-    return isinstance(type_, type) and issubclass(type_, BaseModel)
+    # Type checkers are wrong about use of `Type` here.
+    # noinspection PydanticTypeChecker
+    return isinstance(type_, Type) and issubclass(type_, BaseModel)  # type: ignore
+
+
+def _get_flattened_schemas(
+    type_to_schema_map: dict[ModelType, SchemaObject]
+) -> dict[ModelType, SchemaObject]:
+    # Pydantic uses $defs which do not work in Open RPC playground,
+    # a number of alterations to Pydantic generated schemas need to be
+    # made.
+    schemas = {}
+    for type_, schema in type_to_schema_map.items():
+
+        # Move allOf item to top-level.
+        if (
+            not schema.title
+            and schema.defs is not None
+            and isinstance(schema.all_of, list)
+        ):
+            all_of = schema.all_of[0]
+            if not (isinstance(all_of, SchemaObject) and isinstance(all_of.ref, str)):
+                continue
+            title = all_of.ref.removeprefix("#/$defs/")
+            definitions = {
+                name: definition
+                for name, definition in schema.defs.items()
+                if name != title
+            }
+            schema = [
+                definition
+                for name, definition in schema.defs.items()
+                if name == title and isinstance(definition, SchemaObject)
+            ][0]
+            schema.defs = definitions
+
+        # Remove now redundant definitions.
+        schema.defs = None
+
+        # Add flattened schema to new map.
+        schemas[type_] = schema
+
+    return schemas
