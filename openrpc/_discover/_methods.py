@@ -44,6 +44,7 @@ def get_methods(
             examples=rpc.metadata.examples,
         )
         for rpc in rpc_methods
+        if rpc.metadata.name != "rpc.discover"
     ]
 
 

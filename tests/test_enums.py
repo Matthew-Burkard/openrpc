@@ -63,8 +63,8 @@ class EnumTest(unittest.TestCase):
 
         self.assertEqual(param_schema, components["EnumExample"])
         self.assertEqual(result_schema, components["EnumExampleWithNull"])
-        self.assertEqual(params, rpc_doc["methods"][1]["params"])
-        self.assertEqual(result, rpc_doc["methods"][1]["result"])
+        self.assertEqual(params, rpc_doc["methods"][0]["params"])
+        self.assertEqual(result, rpc_doc["methods"][0]["result"])
 
     def test_calling_enums_method(self) -> None:
         self.rpc.method(enum_test_func)
