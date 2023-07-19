@@ -1,82 +1,30 @@
-"""Module for `rpc.discover` related functions."""
-
-__all__ = ("get_openrpc_doc",)
+"""Module for generating Open-RPC document model and enum schemas."""
 
 import inspect
-import json
 from enum import Enum
-from typing import (
-    Any,
-    Callable,
-    get_args,
-    get_type_hints,
-    Iterable,
-    Optional,
-    Type,
-    TypeVar,
-)
+from typing import Any, Callable, get_args, get_type_hints, Iterable, Optional, Type
 
 from pydantic import BaseModel
 
-from _rpcmethod import RPCMethod
-from openrpc import (
-    ComponentsObject,
-    Depends,
-    InfoObject,
-    MethodObject,
-    OpenRPCObject,
-    SchemaObject,
-)
-
-Model = TypeVar("Model", bound=BaseModel)
-ModelType = Type[Model]
+from _discover._common import ModelType
+from openrpc import Depends, SchemaObject
 
 
-def get_openrpc_doc(
-    info: InfoObject, rpc_methods: Iterable[RPCMethod]
-) -> OpenRPCObject:
-    """Get an Open RPC document describing the RPC server.
-
-    :param info: RPC server info.
-    :param rpc_methods: RPC server methods.
-    :return: The Open-RPC doc for the given server.
-    """
-    type_schema_map = _get_type_to_schema_map(rpc_methods)
-    components = ComponentsObject(
-        schemas={v.title or "": v for v in type_schema_map.values()}
-    )
-    # Hacky workaround to Open RPC playground bug resolving definitions.
-    components = ComponentsObject(
-        **json.loads(
-            components.model_dump_json(by_alias=True, exclude_unset=True).replace(
-                "#/$defs/", "#/components/schemas/"
-            )
-        )
-    )
-    return OpenRPCObject(
-        openrpc="1.2.6",
-        info=info,
-        methods=_get_methods(rpc_methods, type_schema_map),
-        components=components,
-    )
-
-
-def _get_type_to_schema_map(
-    methods: Iterable[RPCMethod],
+def get_type_to_schema_map(
+    functions: Iterable[Callable],
 ) -> dict[ModelType, SchemaObject]:
+    """Get a map of class type to JSON Schema.
+
+    :param functions: All `method` decorated functions.
+    :return: A map of class type to JSON Schema.
+    """
     type_to_schema_map: dict[ModelType, SchemaObject] = {}
-    for method in methods:
+    for function in functions:
         # Get all schemas used in methods including child schemas.
-        for model_type in _get_models_from_function(method.function):
+        for model_type in _get_models_from_function(function):
             schemas, _ = _get_schemas(model_type, type_to_schema_map)
             type_to_schema_map = {**type_to_schema_map, **schemas}
     return _get_flattened_schemas(type_to_schema_map)
-
-
-def _get_methods(
-    rpc_methods: Iterable[RPCMethod], type_schema_map: dict[Type, SchemaObject]
-) -> list[MethodObject]:
-    return []
 
 
 def _get_models_from_function(function: Callable) -> list[ModelType]:
@@ -154,7 +102,7 @@ def _is_model(type_: Any) -> bool:
 def _get_flattened_schemas(
     type_to_schema_map: dict[ModelType, SchemaObject]
 ) -> dict[ModelType, SchemaObject]:
-    # Pydantic uses $defs which do not work in Open RPC playground,
+    # Pydantic uses $defs which do not work in Open-RPC playground,
     # a number of alterations to Pydantic generated schemas need to be
     # made.
     schemas = {}

@@ -61,7 +61,7 @@ class DiscoverTest(unittest.TestCase):
         super(DiscoverTest, self).__init__(*args)
 
     def test_open_rpc_info(self) -> None:
-        self.assertEqual("1.3.1", self.discover_result["openrpc"])
+        self.assertEqual("1.2.6", self.discover_result["openrpc"])
         self.assertEqual(
             {
                 "title": "Test OpenRPC",

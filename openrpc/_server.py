@@ -8,7 +8,7 @@ from typing import Any, Callable, Optional, Union
 from jsonrpcobjects.errors import INTERNAL_ERROR
 from jsonrpcobjects.objects import DataError, Error, ErrorResponse
 
-from _discover import get_openrpc_doc
+from _discover.discover import get_openrpc_doc
 from openrpc import RPCRouter
 from openrpc._method_registrar import CallableType, MethodRegistrar
 from openrpc._objects import (
