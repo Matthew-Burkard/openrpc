@@ -33,21 +33,38 @@ class EnumTest(unittest.TestCase):
 
     def test_register_enum_using_method(self) -> None:
         self.rpc.method(enum_test_func)
+        rpc_doc = self.rpc.discover()
+        components = rpc_doc["components"]["schemas"]
+
+        # Param expectations.
+        param_schema = {
+            "description": "Each type for options should get a JSON Schema type.",
+            "enum": [3, 'A string with a "'],
+            "title": "EnumExample",
+        }
         params = [
             {
                 "name": "ee",
-                "schema": {"enum": [3, 'A string with a "']},
+                "schema": {"$ref": "#/components/schemas/EnumExample"},
                 "required": True,
             }
         ]
+        # Result expectations.
+        result_schema = {
+            "description": 'If any field is None, "null" should be a valid type.',
+            "enum": ['\\"\\\\"', None],
+            "title": "EnumExampleWithNull",
+        }
         result = {
             "name": "result",
-            "schema": {"enum": ['\\"\\\\"', None]},
+            "schema": {"$ref": "#/components/schemas/EnumExampleWithNull"},
             "required": True,
         }
-        res = self.rpc.discover()
-        self.assertEqual(params, res["methods"][0]["params"])
-        self.assertEqual(result, res["methods"][0]["result"])
+
+        self.assertEqual(param_schema, components["EnumExample"])
+        self.assertEqual(result_schema, components["EnumExampleWithNull"])
+        self.assertEqual(params, rpc_doc["methods"][1]["params"])
+        self.assertEqual(result, rpc_doc["methods"][1]["result"])
 
     def test_calling_enums_method(self) -> None:
         self.rpc.method(enum_test_func)

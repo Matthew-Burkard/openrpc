@@ -1,9 +1,17 @@
 """Module for generating Open-RPC document methods."""
 
 import inspect
-from typing import Any, Callable, get_args, get_origin, get_type_hints, Iterable, Union
+from typing import (
+    Any,
+    Callable,
+    get_args,
+    get_origin,
+    get_type_hints,
+    Iterable,
+    Type,
+    Union,
+)
 
-from _discover._common import ModelType
 from _rpcmethod import RPCMethod
 from openrpc import ContentDescriptorObject, Depends, MethodObject, SchemaObject
 
@@ -11,7 +19,7 @@ NoneType = type(None)
 
 
 def get_methods(
-    rpc_methods: Iterable[RPCMethod], type_schema_map: dict[ModelType, SchemaObject]
+    rpc_methods: Iterable[RPCMethod], type_schema_map: dict[Type, SchemaObject]
 ) -> list[MethodObject]:
     """Get Open-RPC method objects.
 
@@ -40,7 +48,7 @@ def get_methods(
 
 
 def _get_result(
-    function: Callable, type_schema_map: dict[ModelType, SchemaObject]
+    function: Callable, type_schema_map: dict[Type, SchemaObject]
 ) -> ContentDescriptorObject:
     return ContentDescriptorObject(
         name="result",
@@ -50,7 +58,7 @@ def _get_result(
 
 
 def _get_params(
-    function: Callable, type_schema_map: dict[ModelType, SchemaObject]
+    function: Callable, type_schema_map: dict[Type, SchemaObject]
 ) -> list[ContentDescriptorObject]:
     # noinspection PyUnresolvedReferences,PyProtectedMember
     has_default = {
@@ -85,10 +93,12 @@ def _is_required(annotation: Any) -> bool:
 
 
 def _get_schema(
-    annotation: Any, type_schema_map: dict[ModelType, SchemaObject]
+    annotation: Any, type_schema_map: dict[Type, SchemaObject]
 ) -> SchemaObject:
     if schema := type_schema_map.get(annotation):
-        return SchemaObject(**{"$ref": f"#/components/schemas/{schema.title}"})
+        ref_schema = SchemaObject()
+        ref_schema.ref = f"#/components/schemas/{schema.title}"
+        return ref_schema
 
     if annotation == Any:
         return SchemaObject()
