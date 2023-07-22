@@ -39,7 +39,7 @@ python-versions = ">=3.9,<4.0"
 
 [[package]]
 name = "click"
-version = "8.1.5"
+version = "8.1.6"
 description = "Composable command line interface toolkit"
 category = "dev"
 optional = false

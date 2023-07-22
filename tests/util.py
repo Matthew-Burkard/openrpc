@@ -1,7 +1,6 @@
 """Functions shared by tests."""
-from __future__ import annotations
-
 import json
+from typing import Union
 
 from jsonrpcobjects.objects import ErrorResponse, ResponseType, ResultResponse
 from pydantic import BaseModel
@@ -33,7 +32,7 @@ def parse_response(data: bytes | str) -> ResponseType:
         return ResultResponse(**resp)
 
 
-def call(rpc_server: RPCServer, method: str, params: list | dict) -> ResponseType:
+def call(rpc_server: RPCServer, method: str, params: Union[list, dict]) -> ResponseType:
     """Call an RPC method."""
     req = {
         "id": 1,

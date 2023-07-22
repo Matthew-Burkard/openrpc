@@ -23,9 +23,7 @@ EnumType = TypeVar("EnumType", bound=BaseModel)
 TypeOfEnumType = Type[EnumType]
 
 
-def get_type_to_schema_map(
-    functions: Iterable[Callable],
-) -> dict[Type, SchemaObject]:
+def get_type_to_schema_map(functions: Iterable[Callable]) -> dict[Type, SchemaObject]:
     """Get a map of class type to JSON Schema.
 
     :param functions: All `method` decorated functions.
@@ -151,20 +149,19 @@ def _get_flattened_schemas(
             and isinstance(schema.all_of, list)
         ):
             all_of = schema.all_of[0]
-            if not (isinstance(all_of, SchemaObject) and isinstance(all_of.ref, str)):
-                continue
-            title = all_of.ref.removeprefix("#/$defs/")
-            definitions = {
-                name: definition
-                for name, definition in schema.defs.items()
-                if name != title
-            }
-            schema = [
-                definition
-                for name, definition in schema.defs.items()
-                if name == title and isinstance(definition, SchemaObject)
-            ][0]
-            schema.defs = definitions
+            if isinstance(all_of, SchemaObject) and isinstance(all_of.ref, str):
+                title = all_of.ref.removeprefix("#/$defs/")
+                definitions = {
+                    name: definition
+                    for name, definition in schema.defs.items()
+                    if name != title
+                }
+                schema = [
+                    definition
+                    for name, definition in schema.defs.items()
+                    if name == title and isinstance(definition, SchemaObject)
+                ][0]
+                schema.defs = definitions
 
         # Remove now redundant definitions.
         schema.defs = None

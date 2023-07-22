@@ -90,7 +90,7 @@ def _is_required(annotation: Any) -> bool:
         except AttributeError:
             return ""
 
-    return "NoneType" not in [_get_name(a) for a in get_args(annotation)]
+    return "NoneType" not in [a.__name__ for a in get_args(annotation)]
 
 
 def _get_schema(

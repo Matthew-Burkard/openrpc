@@ -1,6 +1,7 @@
 """Test the generated "rpc.discover" method."""
 import json
 import unittest
+from enum import Enum
 from typing import Any, List, Optional, Union
 
 from jsonrpcobjects.objects import Request
@@ -11,12 +12,20 @@ from openrpc import ContactObject, Depends, LicenseObject, RPCServer
 from tests.util import Vector3
 
 
+class EnumAsModelField(Enum):
+    """Enum only used as a field of a model."""
+
+    A = "A"
+    B = "B"
+
+
 class Vector2(BaseModel):
     """x and y values."""
 
     x: float
     y: float
     vanilla_model: Vector3
+    enum_field: EnumAsModelField
 
 
 class NestedModels(BaseModel):
