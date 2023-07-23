@@ -86,7 +86,6 @@ def _get_model_schemas(
 
     # Get all child schemas from fields.
     for field in type_.model_fields.values():
-
         # If an arg may be a model get schemas from that model.
         if args := get_args(field.annotation):
             for arg in args:
@@ -141,7 +140,6 @@ def _get_flattened_schemas(
     # made.
     schemas = {}
     for type_, schema in type_to_schema_map.items():
-
         # Move allOf item to top-level.
         if (
             not schema.title
