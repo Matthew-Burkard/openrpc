@@ -250,10 +250,10 @@ class RPCServer(MethodRegistrar):
         if self._debug:
             error_object: Union[Error, DataError] = DataError(
                 **{
-                    **INTERNAL_ERROR.dict(),
+                    **INTERNAL_ERROR.model_dump(),
                     **{"data": f"{type(error).__name__}: {error}"},
                 }
             )
         else:
-            error_object = Error(**INTERNAL_ERROR.dict())
+            error_object = Error(**INTERNAL_ERROR.model_dump())
         return ErrorResponse(id=None, error=error_object)

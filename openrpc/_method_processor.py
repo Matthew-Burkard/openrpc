@@ -52,7 +52,7 @@ class DeserializationError(InternalError):
 
     def __init__(self, param: Any, p_type: Any) -> None:
         msg = f"Failed to deserialize request param [{param}] to type [{p_type}]"
-        super().__init__(DataError(**{**INTERNAL_ERROR.dict(), **{"data": msg}}))
+        super().__init__(DataError(**{**INTERNAL_ERROR.model_dump(), **{"data": msg}}))
 
 
 class NotDeserializedType:
