@@ -8,7 +8,6 @@ from typing import Any, Callable, Optional, Union
 from jsonrpcobjects.errors import INTERNAL_ERROR
 from jsonrpcobjects.objects import DataError, Error, ErrorResponse
 
-from _discover.discover import get_openrpc_doc
 from openrpc import RPCRouter
 from openrpc._method_registrar import CallableType, MethodRegistrar
 from openrpc._objects import (
@@ -21,6 +20,7 @@ from openrpc._objects import (
     TagObject,
 )
 from openrpc._rpcmethod import MethodMetaData
+from ._discover.discover import get_openrpc_doc
 
 log = logging.getLogger("openrpc")
 _META_REF = "https://raw.githubusercontent.com/open-rpc/meta-schema/master/schema.json"

@@ -5,10 +5,10 @@ __all__ = ("get_openrpc_doc",)
 import json
 from typing import Iterable
 
-from _discover._methods import get_methods
-from _discover._schemas import get_type_to_schema_map
-from _rpcmethod import RPCMethod
 from openrpc import ComponentsObject, InfoObject, OpenRPCObject
+from openrpc._discover._methods import get_methods
+from openrpc._discover._schemas import get_type_to_schema_map
+from openrpc._rpcmethod import RPCMethod
 
 
 def get_openrpc_doc(

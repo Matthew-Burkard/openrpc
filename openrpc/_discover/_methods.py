@@ -12,7 +12,7 @@ from typing import (
     Union,
 )
 
-from _rpcmethod import RPCMethod
+from openrpc._rpcmethod import RPCMethod
 from openrpc import ContentDescriptorObject, Depends, MethodObject, SchemaObject
 
 NoneType = type(None)
