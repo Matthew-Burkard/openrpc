@@ -7,7 +7,7 @@ import logging
 from functools import partial
 from typing import Callable, Optional, TypeVar, Union
 
-from _request_processor import RequestProcessor
+from openrpc._request_processor import RequestProcessor
 from openrpc import Depends
 from openrpc._objects import (
     ContentDescriptorObject,
