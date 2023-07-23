@@ -167,7 +167,7 @@ class RequestProcessor:
 def _get_method_not_found_error(req: Union[NotificationType, RequestType]) -> str:
     return ErrorResponse(
         id=None if isinstance(req, NotificationTypes) else req.id,
-        error=DataError(**{**METHOD_NOT_FOUND.dict(), **{"data": req.method}}),
+        error=DataError(**{**METHOD_NOT_FOUND.model_dump(), **{"data": req.method}}),
     ).model_dump_json()
 
 
@@ -193,10 +193,10 @@ def _get_request_object(
         log.exception("%s:", type(error).__name__)
         return ErrorResponse(
             id=data.get("id"),
-            error=DataError(**{**INVALID_REQUEST.dict(), **{"data": data}}),
+            error=DataError(**{**INVALID_REQUEST.model_dump(), **{"data": data}}),
         )
     except AttributeError:
         return ErrorResponse(
             id=None,
-            error=DataError(**{**INVALID_REQUEST.dict(), **{"data": data}}),
+            error=DataError(**{**INVALID_REQUEST.model_dump(), **{"data": data}}),
         )
