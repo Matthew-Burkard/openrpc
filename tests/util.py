@@ -23,7 +23,7 @@ class Vector3(BaseModel):
     z: float
 
 
-def parse_response(data: bytes | str) -> ResponseType:
+def parse_response(data: Union[bytes, str]) -> ResponseType:
     """Map a JSON-RPC2 response to the appropriate object."""
     resp = json.loads(data)
     if resp.get("error"):
