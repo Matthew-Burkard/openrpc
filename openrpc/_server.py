@@ -50,6 +50,7 @@ class RPCServer(MethodRegistrar):
         :param debug: Include internal error details in responses.
         """
         super().__init__()
+        self._routers: list[MethodRegistrar] = []
         self._request_processor.debug = debug
         # Set OpenRPC server info.
         self._debug = debug
@@ -147,6 +148,8 @@ class RPCServer(MethodRegistrar):
     def debug(self, debug: bool) -> None:
         self._request_processor.debug = debug
         self._debug = debug
+        for router in self._routers:
+            router.debug = debug
 
     def include_router(
         self,
@@ -196,6 +199,8 @@ class RPCServer(MethodRegistrar):
             _add_router_method(rpc_method.function, rpc_method.metadata)
         router._method = _router_method_decorator(router._method)  # type: ignore
         router.remove = _router_remove_partial  # type: ignore
+        router.debug = self.debug
+        self._routers.append(router)
 
     def process_request(
         self, data: Union[bytes, str], depends: Optional[dict[str, Any]] = None

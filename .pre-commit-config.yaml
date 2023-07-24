@@ -23,3 +23,4 @@ repos:
     rev: v0.0.280
     hooks:
       - id: ruff
+        exclude: tests

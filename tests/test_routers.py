@@ -67,3 +67,13 @@ def test_tags_no_prefix_router_remove() -> None:
     req = Request(id=1, method="return_coffee")
     resp = json.loads(rpc.process_request(req.model_dump_json()))
     assert resp["error"]["code"] == -32601  # Method not found code.
+
+
+def test_debug() -> None:
+    rpc.include_router(auth_router, prefix="auth.")
+    rpc.debug = True
+    for router in rpc._routers:
+        assert router.debug is True
+    rpc.debug = False
+    for router in rpc._routers:
+        assert router.debug is False

@@ -7,7 +7,6 @@ import logging
 from functools import partial
 from typing import Callable, Optional, TypeVar, Union
 
-from openrpc._request_processor import RequestProcessor
 from openrpc import Depends
 from openrpc._objects import (
     ContentDescriptorObject,
@@ -19,6 +18,7 @@ from openrpc._objects import (
     ServerObject,
     TagObject,
 )
+from openrpc._request_processor import RequestProcessor
 from openrpc._rpcmethod import MethodMetaData, RPCMethod
 
 log = logging.getLogger("openrpc")
@@ -34,6 +34,15 @@ class MethodRegistrar:
         """Initialize a new instance of the MethodRegistrar class."""
         self._rpc_methods: dict[str, RPCMethod] = {}
         self._request_processor = RequestProcessor(debug=False)
+
+    @property
+    def debug(self) -> bool:
+        """Debug logging status."""
+        return self._request_processor.debug
+
+    @debug.setter
+    def debug(self, debug: bool) -> None:
+        self._request_processor.debug = debug
 
     def method(  # noqa: PLR0913
         self,
@@ -142,18 +151,18 @@ class MethodRegistrar:
         self._rpc_methods.pop(method)
         self._request_processor.methods.pop(method)
 
-    def _method(self, func: CallableType, metadata: MethodMetaData) -> CallableType:
+    def _method(self, function: CallableType, metadata: MethodMetaData) -> CallableType:
         dependencies = [
             k
-            for k, v in inspect.signature(func).parameters.items()
+            for k, v in inspect.signature(function).parameters.items()
             if v.default is Depends
         ]
         rpc_method = RPCMethod(
-            function=func, metadata=metadata, depends_params=dependencies
+            function=function, metadata=metadata, depends_params=dependencies
         )
         self._rpc_methods[metadata.name] = rpc_method
         log.debug(
-            "Registering function [%s] as method [%s]", func.__name__, metadata.name
+            "Registering function [%s] as method [%s]", function.__name__, metadata.name
         )
         self._request_processor.method(rpc_method, metadata.name)
-        return func
+        return function

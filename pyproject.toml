@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openrpc"
-version = "6.4.14"
+version = "6.4.15"
 description = "OpenRPC provides classes to rapidly develop an OpenRPC server."
 readme = "README.md"
 repository = "https://gitlab.com/mburkard/openrpc"
@@ -26,7 +26,6 @@ jsonrpc2-objects = "^3.0.0"
 
 [tool.poetry.dev-dependencies]
 coverage = "^7.1.0"
-flake8 = "^6.0.0"
 mypy = "^1.0.0"
 black = "^23.1.0"
 pytest = "^7.2.1"
