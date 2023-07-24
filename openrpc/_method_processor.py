@@ -69,15 +69,16 @@ NotDeserialized = NotDeserializedType()
 class MethodProcessor:
     """Execute a method passing it a parsed JSON RPC 2.0 request."""
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         method: RPCMethod,
         uncaught_error_code: int,
         request: Union[RequestType, NotificationType],
         depends_values: Optional[dict[str, Any]],
+        *,
         debug: bool,
     ) -> None:
-        """Init a request processor.
+        """Init a MethodProcessor.
 
         :param method: The Python callable.
         :param uncaught_error_code: Code for errors raised by method.
@@ -129,8 +130,8 @@ class MethodProcessor:
         ]
         if missing_dependencies:
             raise AttributeError(
-                f"Missing dependent values {missing_dependencies}"
-                f" for method [{self.method.metadata.name}]"
+                "Missing dependent values %s  for method [%s]"
+                % (missing_dependencies, self.method.metadata.name)
             )
         dependencies = {k: self.depends.get(k) for k in self.method.depends_params}
         # Call method.

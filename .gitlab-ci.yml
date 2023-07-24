@@ -42,11 +42,11 @@ flake8:
   script:
     - flake8 --max-line-length=88 $PROJECT_SRC_DIR
 
-mypy:
+ruff:
   stage: analysis
   <<: *setup_env
   script:
-    - mypy $PROJECT_SRC_DIR
+    - ruff check $PROJECT_SRC_DIR
 
 pytest:
   stage: test

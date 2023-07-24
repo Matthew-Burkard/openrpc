@@ -29,7 +29,7 @@ _META_REF = "https://raw.githubusercontent.com/open-rpc/meta-schema/master/schem
 class RPCServer(MethodRegistrar):
     """OpenRPC server to register methods with."""
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         title: Optional[str] = None,
         version: Optional[str] = None,
@@ -37,11 +37,11 @@ class RPCServer(MethodRegistrar):
         terms_of_service: Optional[str] = None,
         contact: Optional[ContactObject] = None,
         license_: Optional[LicenseObject] = None,
-        debug: bool = False,
+        debug: bool = False,  # noqa: FBT001,FBT002
     ) -> None:
-        """Init an OpenRPC server.
+        """Init an Open-RPC server.
 
-        :param title: OpenRPC title.
+        :param title: Open-RPC title.
         :param version: API version.
         :param description: Description of the app.
         :param terms_of_service: App terms of service.
@@ -213,7 +213,7 @@ class RPCServer(MethodRegistrar):
             resp = self._request_processor.process(data, depends)
             if resp:
                 log.debug("Responding: %s", resp)
-            return resp
+            return resp  # noqa: TRY300
         except Exception as error:
             return self._get_error_response(error).model_dump_json()
 
@@ -235,7 +235,7 @@ class RPCServer(MethodRegistrar):
             resp = await self._request_processor.process_async(data, depends)
             if resp:
                 log.debug("Responding: %s", resp)
-            return resp
+            return resp  # noqa: TRY300
         except Exception as error:
             return self._get_error_response(error).model_dump_json()
 

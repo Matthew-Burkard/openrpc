@@ -33,9 +33,9 @@ class MethodRegistrar:
     def __init__(self) -> None:
         """Initialize a new instance of the MethodRegistrar class."""
         self._rpc_methods: dict[str, RPCMethod] = {}
-        self._request_processor = RequestProcessor(False)
+        self._request_processor = RequestProcessor(debug=False)
 
-    def method(
+    def method(  # noqa: PLR0913
         self,
         *args: CallableType,
         name: Optional[str] = None,

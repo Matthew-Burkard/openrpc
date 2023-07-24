@@ -254,7 +254,7 @@ class ReferenceObject(BaseModel):
 
 
 class OpenRPCObject(BaseModel):
-    """This is the root object of the OpenRPC document."""
+    """Root object of the OpenRPC document."""
 
     openrpc: str
     info: InfoObject

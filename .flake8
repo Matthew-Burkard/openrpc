@@ -1,4 +1,0 @@
-[flake8]
-max-line-length = 88
-ignore = Q000,W503
-per-file-ignores = test*:D

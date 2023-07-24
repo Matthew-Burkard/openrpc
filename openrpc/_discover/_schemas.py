@@ -115,13 +115,13 @@ def _get_model_schemas(
         # If field is an enum get enum schema.
         elif issubclass(field.annotation, Enum):
             enum_schema = schemas[type_]
-            assert isinstance(enum_schema.defs, dict)  # For type checkers.
-            for name, definition in enum_schema.defs.items():
-                if name == field.annotation.__name__ and isinstance(
-                    definition, SchemaObject
-                ):
-                    schemas[field.annotation] = definition
-            types += field.annotation
+            if isinstance(enum_schema.defs, dict):
+                for name, definition in enum_schema.defs.items():
+                    if name == field.annotation.__name__ and isinstance(
+                        definition, SchemaObject
+                    ):
+                        schemas[field.annotation] = definition
+                types += field.annotation
 
     return schemas, types
 
@@ -140,6 +140,8 @@ def _get_flattened_schemas(
     # made.
     schemas = {}
     for type_, schema in type_to_schema_map.items():
+        flat_schema = schema
+
         # Move allOf item to top-level.
         if (
             not schema.title
@@ -154,17 +156,17 @@ def _get_flattened_schemas(
                     for name, definition in schema.defs.items()
                     if name != title
                 }
-                schema = [
+                flat_schema = [
                     definition
                     for name, definition in schema.defs.items()
                     if name == title and isinstance(definition, SchemaObject)
                 ][0]
-                schema.defs = definitions
+                flat_schema.defs = definitions
 
         # Remove now redundant definitions.
-        schema.defs = None
+        flat_schema.defs = None
 
         # Add flattened schema to new map.
-        schemas[type_] = schema
+        schemas[type_] = flat_schema
 
     return schemas

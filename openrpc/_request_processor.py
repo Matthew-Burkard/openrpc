@@ -33,8 +33,8 @@ _DEFAULT_ERROR_CODE = -32000
 class RequestProcessor:
     """Class to parse requests and pass results to MethodProcessor."""
 
-    def __init__(self, debug: bool) -> None:
-        """Init a MethodProcessor.
+    def __init__(self, *, debug: bool) -> None:
+        """Init a RequestProcessor.
 
         :param debug: Include internal error details in responses.
         """
@@ -42,19 +42,19 @@ class RequestProcessor:
         self.methods: dict[str, RPCMethod] = {}
         self.uncaught_error_code = _DEFAULT_ERROR_CODE
 
-    def method(self, func: RPCMethod, method_name: str) -> None:
+    def method(self, function: RPCMethod, method_name: str) -> None:
         """Register a method with this server for later calls.
 
-        :param func: Function to call for this method.
+        :param function: Function to call for this method.
         :param method_name: Name of the RPC method.
         :return: None.
         """
-        self.methods[method_name] = func
+        self.methods[method_name] = function
 
     def process(
         self, data: Union[bytes, str], depends: Optional[dict[str, Any]]
     ) -> Optional[str]:
-        """Process a JSON-RPC2 request and get the response.
+        """Parse a JSON-RPC2 request and get the response.
 
         :param data: A JSON-RPC2 request.
         :param depends: Values passed to functions with dependencies.
@@ -82,7 +82,7 @@ class RequestProcessor:
                     self.uncaught_error_code,
                     req,
                     depends,
-                    self.debug,
+                    debug=self.debug,
                 ).execute()
                 # If resp is None, request is a notification.
                 if resp is not None:
@@ -102,7 +102,7 @@ class RequestProcessor:
             self.uncaught_error_code,
             request,
             depends,
-            self.debug,
+            debug=self.debug,
         ).execute()
         return None if isinstance(request, NotificationTypes) else result
 
@@ -137,12 +137,17 @@ class RequestProcessor:
                 method = self.methods[request.method]
                 if isinstance(request, RequestTypes):
                     return await MethodProcessor(
-                        method, self.uncaught_error_code, request, depends, self.debug
+                        method,
+                        self.uncaught_error_code,
+                        request,
+                        depends,
+                        debug=self.debug,
                     ).execute_async()
                 # To get here, request must be a notification.
                 await MethodProcessor(
-                    method, self.uncaught_error_code, request, depends, self.debug
+                    method, self.uncaught_error_code, request, depends, debug=self.debug
                 ).execute_async()
+                return None
 
             results = await asyncio.gather(
                 *[_process_request(_get_request_object(it)) for it in parsed_json]
@@ -158,7 +163,11 @@ class RequestProcessor:
                 return _get_method_not_found_error(req)
             return None
         result = await MethodProcessor(
-            self.methods[req.method], self.uncaught_error_code, req, depends, self.debug
+            self.methods[req.method],
+            self.uncaught_error_code,
+            req,
+            depends,
+            debug=self.debug,
         ).execute_async()
 
         return None if isinstance(req, NotificationTypes) else result
