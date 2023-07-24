@@ -36,17 +36,17 @@ black:
   script:
     - black --check $PROJECT_SRC_DIR
 
-flake8:
-  stage: analysis
-  <<: *setup_env
-  script:
-    - flake8 --max-line-length=88 $PROJECT_SRC_DIR
-
 ruff:
   stage: analysis
   <<: *setup_env
   script:
     - ruff check $PROJECT_SRC_DIR
+
+mypy:
+  stage: analysis
+  <<: *setup_env
+  script:
+    - mypy $PROJECT_SRC_DIR
 
 pytest:
   stage: test
