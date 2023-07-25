@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openrpc"
-version = "6.4.16"
+version = "6.4.17"
 description = "OpenRPC provides classes to rapidly develop an OpenRPC server."
 readme = "README.md"
 repository = "https://gitlab.com/mburkard/openrpc"
@@ -36,6 +36,10 @@ ruff = "^0.0.280"
 
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.mypy]
+disallow_untyped_defs = true
+ignore_missing_imports = true
 
 [tool.ruff]
 select = [
