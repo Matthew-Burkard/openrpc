@@ -4,6 +4,7 @@ __all__ = ("MethodRegistrar", "CallableType")
 
 import inspect
 import logging
+import warnings
 from functools import partial
 from typing import Callable, Optional, TypeVar, Union
 
@@ -105,6 +106,12 @@ class MethodRegistrar:
             else None
         )
         if not args:
+            warnings.warn(
+                "RPCServer `method` decorator must be called in future releases, use"
+                "`method()` instead.",
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
             return partial(  # type: ignore
                 self.method,
                 name=name,
