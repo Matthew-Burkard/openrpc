@@ -4,12 +4,12 @@ import unittest
 from typing import Any
 
 from jsonrpcobjects.errors import JSONRPCError
-from jsonrpcobjects.objects import ErrorObjectData, RequestObjectParams
+from jsonrpcobjects.objects import DataError, ParamsRequest
 
 from openrpc import RPCServer
 
-rpc = RPCServer(title="Test Errors", version="1.0.0")
-custom_error_object = ErrorObjectData(code=-32001, message="Cannot divide by zero")
+rpc = RPCServer(title="Test Errors", version="1.0.0", debug=True)
+custom_error_object = DataError(code=-32001, message="Cannot divide by zero", data={})
 
 
 class DivideByZeroRPCError(JSONRPCError):
@@ -24,14 +24,13 @@ class DivideByZeroRPCError(JSONRPCError):
 @rpc.method
 def divide(a: float, b: float) -> None:
     """Test custom server error."""
-    if a == 0 or b == 0:
-        raise DivideByZeroRPCError({"a": a, "b": b})
+    raise DivideByZeroRPCError({"a": a, "b": b})
 
 
 class DecoratorTest(unittest.TestCase):
     def test_custom_error(self) -> None:
         params = {"a": 0, "b": 0}
-        req = RequestObjectParams(id=1, method="divide", params=params).json()
+        req = ParamsRequest(id=1, method="divide", params=params).model_dump_json()
         error = json.loads(rpc.process_request(req))["error"]
         self.assertEqual(custom_error_object.message, error["message"])
         self.assertEqual(custom_error_object.code, error["code"])

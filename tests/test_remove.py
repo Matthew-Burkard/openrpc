@@ -12,7 +12,7 @@ def add(a: int, b: int) -> int:
 class TestRemove(unittest.TestCase):
     def __init__(self, *args) -> None:
         self.info = InfoObject(title="Test JSON RPC", version="1.0.0")
-        self.server = RPCServer(**self.info.dict())
+        self.server = RPCServer(**self.info.model_dump())
         self.server.method(add)
         super(TestRemove, self).__init__(*args)
 

@@ -2,11 +2,7 @@
 import json
 from typing import Union
 
-from jsonrpcobjects.objects import (
-    ErrorResponseObject,
-    ResponseType,
-    ResultResponseObject,
-)
+from jsonrpcobjects.objects import ErrorResponse, ResponseType, ResultResponse
 from pydantic import BaseModel
 
 INTERNAL_ERROR = -32603
@@ -29,6 +25,5 @@ def parse_response(data: Union[bytes, str]) -> ResponseType:
     """Map a JSON-RPC2 response to the appropriate object."""
     resp = json.loads(data)
     if resp.get("error"):
-        return ErrorResponseObject(**resp)
-    if "result" in resp.keys():
-        return ResultResponseObject(**resp)
+        return ErrorResponse(**resp)
+    return ResultResponse(**resp)
