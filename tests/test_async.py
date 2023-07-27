@@ -4,7 +4,7 @@ import json
 import unittest
 from typing import Optional, Union
 
-from jsonrpcobjects.objects import RequestObject
+from jsonrpcobjects.objects import Request
 
 from openrpc import InfoObject, RPCServer
 
@@ -13,7 +13,7 @@ from openrpc import InfoObject, RPCServer
 class RPCTest(unittest.TestCase):
     def __init__(self, *args) -> None:
         self.info = InfoObject(title="Test JSON RPC", version="1.0.0")
-        self.server = RPCServer(**self.info.dict())
+        self.server = RPCServer(**self.info.model_dump())
         super(RPCTest, self).__init__(*args)
 
     def get_result_async(self, request: Union[str, bytes]) -> Optional[str]:
@@ -41,8 +41,8 @@ class RPCTest(unittest.TestCase):
         self.server.method(wait_short)
         requests = ",".join(
             [
-                RequestObject(id=1, method="wait_long").json(),
-                RequestObject(id=2, method="wait_short").json(),
+                Request(id=1, method="wait_long").model_dump_json(),
+                Request(id=2, method="wait_short").model_dump_json(),
             ]
         )
         json.loads(self.get_result_async(f"[{requests}]"))
@@ -53,8 +53,8 @@ class RPCTest(unittest.TestCase):
         wait_long_finished_second = False
         requests = ",".join(
             [
-                RequestObject(id=2, method="wait_short").json(),
-                RequestObject(id=1, method="wait_long").json(),
+                Request(id=2, method="wait_short").model_dump_json(),
+                Request(id=1, method="wait_long").model_dump_json(),
             ]
         )
         json.loads(self.get_result_async(f"[{requests}]"))

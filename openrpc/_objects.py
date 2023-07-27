@@ -145,7 +145,7 @@ class SchemaObject(BaseModel):
     min_properties: Optional[int] = Field(alias="minProperties", default=None)
     max_properties: Optional[int] = Field(alias="maxProperties", default=None)
     required: Optional[list[str]] = None
-    definitions: Optional[dict[str, SchemaType]] = None
+    defs: Optional[dict[str, SchemaType]] = Field(alias="$defs", default=None)
     items: Optional[Union[SchemaType, bool]] = None
     prefix_items: Optional[list[SchemaType]] = Field(alias="prefixItems", default=None)
     contains: Optional[SchemaType] = None
@@ -190,7 +190,7 @@ class ExampleObject(BaseModel):
     name: Optional[str] = None
     summary: Optional[str] = None
     description: Optional[str] = None
-    value: Any = None
+    value: Optional[Any] = None
     external_value: Optional[str] = Field(None, alias="externalValue")
 
 
@@ -210,7 +210,7 @@ class ErrorObject(BaseModel):
 
     code: int
     message: str
-    data: Any = None
+    data: Optional[Any] = None
 
 
 class ComponentsObject(BaseModel):
@@ -254,7 +254,7 @@ class ReferenceObject(BaseModel):
 
 
 class OpenRPCObject(BaseModel):
-    """This is the root object of the OpenRPC document."""
+    """Root object of the OpenRPC document."""
 
     openrpc: str
     info: InfoObject
@@ -268,20 +268,20 @@ class OpenRPCObject(BaseModel):
     )
 
 
-InfoObject.update_forward_refs()
-ContactObject.update_forward_refs()
-LicenseObject.update_forward_refs()
-ServerObject.update_forward_refs()
-ServerVariableObject.update_forward_refs()
-MethodObject.update_forward_refs()
-ContentDescriptorObject.update_forward_refs()
-SchemaObject.update_forward_refs()
-ExamplePairingObject.update_forward_refs()
-ExampleObject.update_forward_refs()
-LinkObject.update_forward_refs()
-ErrorObject.update_forward_refs()
-ComponentsObject.update_forward_refs()
-TagObject.update_forward_refs()
-ExternalDocumentationObject.update_forward_refs()
-OpenRPCObject.update_forward_refs()
-ReferenceObject.update_forward_refs()
+InfoObject.model_rebuild()
+ContactObject.model_rebuild()
+LicenseObject.model_rebuild()
+ServerObject.model_rebuild()
+ServerVariableObject.model_rebuild()
+MethodObject.model_rebuild()
+ContentDescriptorObject.model_rebuild()
+SchemaObject.model_rebuild()
+ExamplePairingObject.model_rebuild()
+ExampleObject.model_rebuild()
+LinkObject.model_rebuild()
+ErrorObject.model_rebuild()
+ComponentsObject.model_rebuild()
+TagObject.model_rebuild()
+ExternalDocumentationObject.model_rebuild()
+OpenRPCObject.model_rebuild()
+ReferenceObject.model_rebuild()
