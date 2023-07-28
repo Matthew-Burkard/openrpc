@@ -35,6 +35,7 @@ class MethodRegistrar:
         """Initialize a new instance of the MethodRegistrar class."""
         self._rpc_methods: dict[str, RPCMethod] = {}
         self._request_processor = RequestProcessor(debug=False)
+        self._warn = True
 
     @property
     def debug(self) -> bool:
@@ -106,6 +107,7 @@ class MethodRegistrar:
             else None
         )
         if not args:
+            self._warn = False
             return partial(  # type: ignore
                 self.method,
                 name=name,
@@ -122,12 +124,14 @@ class MethodRegistrar:
                 param_structure=param_structure,
                 examples=examples,
             )
-        warnings.warn(
-            "RPCServer `method` decorator must be called in future releases, use"
-            " `method()` instead.",
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
+        if self._warn:
+            warnings.warn(
+                "RPCServer `method` decorator must be called in future releases, use"
+                " `method()` instead.",
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+        self._warn = True
         func = args[0]
         name = name or func.__name__
         return self._method(
