@@ -1,7 +1,7 @@
 <div align=center>
   <h1>OpenRPC</h1>
-  <h3>OpenRPC provides classes to rapidly develop an
-  <a href="https://open-rpc.org">OpenRPC</a> server.</h3>
+  <h3>Transport agnostic framework for developing
+  <a href="https://open-rpc.org">OpenRPC</a> servers.</h3>
   <img src="https://img.shields.io/badge/License-MIT-blue.svg"
    height="20"
    alt="License: MIT">
