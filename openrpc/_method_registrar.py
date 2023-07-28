@@ -106,12 +106,6 @@ class MethodRegistrar:
             else None
         )
         if not args:
-            warnings.warn(
-                "RPCServer `method` decorator must be called in future releases, use"
-                "`method()` instead.",
-                category=DeprecationWarning,
-                stacklevel=2,
-            )
             return partial(  # type: ignore
                 self.method,
                 name=name,
@@ -128,6 +122,12 @@ class MethodRegistrar:
                 param_structure=param_structure,
                 examples=examples,
             )
+        warnings.warn(
+            "RPCServer `method` decorator must be called in future releases, use"
+            " `method()` instead.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
         func = args[0]
         name = name or func.__name__
         return self._method(
