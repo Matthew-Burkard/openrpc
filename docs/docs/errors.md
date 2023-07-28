@@ -1,0 +1,6 @@
+---
+slug: /errors
+sidebar_position: 4
+---
+
+# Errors

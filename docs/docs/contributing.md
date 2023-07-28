@@ -1,3 +1,8 @@
+---
+slug: /contributing
+sidebar_position: 5
+---
+
 # Contributing
 
 OpenRPC is open source and open to feedback and contributions from the
@@ -33,3 +38,4 @@ Start hacking!
 - Commit messages should follow the
   [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
   specification.
+- Use type annotations.
