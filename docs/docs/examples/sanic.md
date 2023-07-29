@@ -10,6 +10,7 @@ The following is an example of a [Sanic](https://sanic.dev/en/) server exposing 
 OpenRPC server over HTTP and Websocket.
 
 ```python
+"""Sanic example."""
 import json
 
 import sanic
@@ -27,15 +28,17 @@ async def add(a: int, b: int) -> int:
 
 
 @app.websocket("/api/v1/")
-async def process_websocket(_request: Request, ws: Websocket) -> None:
+async def ws_process_rpc(_request: Request, ws: Websocket) -> None:
+    """Process RPC requests through websocket."""
     async for msg in ws:
         json_rpc_response = await rpc.process_request_async(msg)
         if json_rpc_response is not None:
             await ws.send(json_rpc_response)
 
 
-@app.post("/api/v1/", name="HTTP API")
-async def process_websocket(request: Request) -> JSONResponse:
+@app.post("/api/v1/")
+async def http_process_rpc(request: Request) -> JSONResponse:
+    """Process RPC request through HTTP server."""
     json_rpc_response = await rpc.process_request_async(request.body)
     return sanic.json(json.loads(json_rpc_response))
 
