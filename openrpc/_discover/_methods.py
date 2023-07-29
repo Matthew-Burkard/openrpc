@@ -1,4 +1,4 @@
-"""Module for generating Open-RPC document methods."""
+"""Module for generating OpenRPC document methods."""
 
 import inspect
 from typing import (
@@ -21,11 +21,11 @@ NoneType = type(None)
 def get_methods(
     rpc_methods: Iterable[RPCMethod], type_schema_map: dict[Type, SchemaObject]
 ) -> list[MethodObject]:
-    """Get Open-RPC method objects.
+    """Get OpenRPC method objects.
 
     :param rpc_methods: Decorated functions data.
     :param type_schema_map: Type to Schema map.
-    :return: Open-RPC method objects.
+    :return: OpenRPC method objects.
     """
     return [
         MethodObject(

@@ -1,4 +1,4 @@
-"""Module for generating Open-RPC document model and enum schemas."""
+"""Module for generating OpenRPC document model and enum schemas."""
 
 import inspect
 from enum import Enum
@@ -135,7 +135,7 @@ def _is_model(type_: Any) -> bool:
 def _get_flattened_schemas(
     type_to_schema_map: dict[Type, SchemaObject]
 ) -> dict[Type, SchemaObject]:
-    # Pydantic uses $defs which do not work in Open-RPC playground,
+    # Pydantic uses $defs which do not work in OpenRPC playground,
     # a number of alterations to Pydantic generated schemas need to be
     # made.
     schemas = {}

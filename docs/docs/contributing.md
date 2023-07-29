@@ -1,6 +1,6 @@
 ---
 slug: /contributing
-sidebar_position: 5
+sidebar_position: 7
 ---
 
 # Contributing
@@ -14,6 +14,7 @@ This is on GitHub as a read-only mirror, the main repository is hosted
 ## Requirements
 
 - [Poetry](https://python-poetry.org/docs/)
+- [Black](https://github.com/psf/black/)
 - [pre-commit](https://pre-commit.com/)
 
 ## Getting Started
@@ -39,3 +40,4 @@ Start hacking!
   [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
   specification.
 - Use type annotations.
+- Code style [Black](https://github.com/psf/black/).

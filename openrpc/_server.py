@@ -39,9 +39,9 @@ class RPCServer(MethodRegistrar):
         license_: Optional[LicenseObject] = None,
         debug: bool = False,  # noqa: FBT001,FBT002
     ) -> None:
-        """Init an Open-RPC server.
+        """Init an OpenRPC server.
 
-        :param title: Open-RPC title.
+        :param title: OpenRPC title.
         :param version: API version.
         :param description: Description of the app.
         :param terms_of_service: App terms of service.

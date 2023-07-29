@@ -4,6 +4,18 @@ slug: /
 sidebar_position: 1
 ---
 
+**Documentation**: https://python-openrpc.burkard.cloud
+
+**Source Code**: https://gitlab.com/mburkard/openrpc
+
+Python OpenRPC is a transport agnostic framework for quickly and easily
+developing [OpenRPC](https://open-rpc.org/) servers in Python.
+
+## Requirements
+
+- Python 3.9+
+- [Pydantic](https://docs.pydantic.dev/latest/) for data models.
+
 ## Installation
 
 OpenRPC is on PyPI and can be installed with:
@@ -12,65 +24,16 @@ OpenRPC is on PyPI and can be installed with:
 pip install openrpc
 ```
 
+Or with [Poetry](https://python-poetry.org/)
+
 ```shell
 poetry add openrpc
 ```
 
-## Usage
+## Example
 
-This library provides an `RPCServer` class that can be used to quickly create an OpenRPC
-Server.
-
-```python
-from openrpc import RPCServer
-
-rpc = RPCServer(title="Demo Server", version="1.0.0")
-```
-
-### Register a function as an RPC Method
-
-To register a method with the RPCServer add the `@rpc.method()` decorator to a function.
-
-```python
-@rpc.method()
-def add(a: int, b: int) -> int:
-    return a + b
-```
-
-### Process JSON RPC Request
-
-OpenRPC is transport agnostic. To use it, pass JSON RPC requests as strings or byte
-strings to the `process_request` or `process_request_async` method.
-
-The `process_request` will return a JSON RPC response as a string.
-
-```python
-req = """
-{
-  "id": 1,
-  "method": "add",
-  "params": {"a": 2, "b": 2},
-  "jsonrpc": "2.0"
-}
-"""
-await rpc.process_request_async(req)
-# returns -> '{"id": 1, "result": 4, "jsonrpc": "2.0"}'
-```
-
-### Pydantic Support
-
-For data classes to work properly use Pydantic. RPCServer will use Pydantic for JSON
-serialization/deserialization when calling methods and when generating schemas
-with `rpc.discover`.
-
-### RPC Discover
-
-The `rpc.discover` method is automatically generated. It relies heavily on type hints.
-
-## Example Using Sanic
-
-A quick example using `OpenRPC` exposing the methods
-using a [Sanic](https://sanic.dev/en/) websocket server.
+This is a minimal OpenRPC server using a [Sanic](https://sanic.dev/en/) websocket server
+as the transport method.
 
 ```python
 from openrpc import RPCServer
