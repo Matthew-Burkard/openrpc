@@ -1,13 +1,13 @@
 ---
 id: Paho
-slug: /examples/sanic
+slug: /examples/paho
 sidebar_position: 4
 ---
 
 # Paho
 
-The following is an example of a [Paho](https://eclipse.dev/paho/) server exposing an
-OpenRPC server over MQTT.
+The following is an example of [Paho](https://eclipse.dev/paho/) exposing an OpenRPC
+server over MQTT.
 
 ```python
 import json
