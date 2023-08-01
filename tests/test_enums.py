@@ -32,7 +32,7 @@ class EnumTest(unittest.TestCase):
         super(EnumTest, self).__init__(*args)
 
     def test_register_enum_using_method(self) -> None:
-        self.rpc.method(enum_test_func)
+        self.rpc.method()(enum_test_func)
         rpc_doc = self.rpc.discover()
         components = rpc_doc["components"]["schemas"]
 
@@ -67,7 +67,7 @@ class EnumTest(unittest.TestCase):
         self.assertEqual(result, rpc_doc["methods"][0]["result"])
 
     def test_calling_enums_method(self) -> None:
-        self.rpc.method(enum_test_func)
+        self.rpc.method()(enum_test_func)
         req = {
             "id": 0,
             "method": "enum_test_func",
@@ -78,7 +78,7 @@ class EnumTest(unittest.TestCase):
         self.assertEqual(EnumExampleWithNull.STR_OPTION.value, res["result"])
 
     def test_calling_enums_method_with_bar_param(self) -> None:
-        self.rpc.method(enum_test_func)
+        self.rpc.method()(enum_test_func)
         req = {
             "id": 0,
             "method": "enum_test_func",

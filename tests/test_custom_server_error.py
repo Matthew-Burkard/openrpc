@@ -21,7 +21,7 @@ class DivideByZeroRPCError(JSONRPCError):
         super(DivideByZeroRPCError, self).__init__(error)
 
 
-@rpc.method
+@rpc.method()
 def divide(a: float, b: float) -> None:
     """Test custom server error."""
     raise DivideByZeroRPCError({"a": a, "b": b})

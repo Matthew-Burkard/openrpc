@@ -29,7 +29,7 @@ class UnionsTest(unittest.TestCase):
         super(UnionsTest, self).__init__(*args)
 
     def test_union_casting(self) -> None:
-        self.rpc.method(func)
+        self.rpc.method()(func)
         req1 = {
             "id": 0,
             "method": "func",

@@ -7,7 +7,7 @@ from openrpc import RPCServer
 rpc = RPCServer(title="Test Decorators", version="1.0.0")
 
 
-@rpc.method
+@rpc.method()
 def add(a: int, b: int) -> int:
     """Test plain decorator."""
     return a + b

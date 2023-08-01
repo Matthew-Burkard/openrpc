@@ -49,15 +49,15 @@ class ListResultModel(BaseModel):
 class DiscoverTest(unittest.TestCase):
     def __init__(self, *args) -> None:
         self.rpc = RPCServer(title="Test OpenRPC", version="1.0.0")
-        self.rpc.method(increment)
-        self.rpc.method(get_distance)
-        self.rpc.method(return_none)
-        self.rpc.method(default_value)
-        self.rpc.method(take_any_get_any)
-        self.rpc.method(dict_and_list)
-        self.rpc.method(nested_model)
-        self.rpc.method(typed_dict_and_list)
-        self.rpc.method(list_model_result)
+        self.rpc.method()(increment)
+        self.rpc.method()(get_distance)
+        self.rpc.method()(return_none)
+        self.rpc.method()(default_value)
+        self.rpc.method()(take_any_get_any)
+        self.rpc.method()(dict_and_list)
+        self.rpc.method()(nested_model)
+        self.rpc.method()(typed_dict_and_list)
+        self.rpc.method()(list_model_result)
         self.rpc.title = self.rpc.title or "Test OpenRPC"
         self.rpc.version = self.rpc.version or "1.0.0"
         self.rpc.description = self.rpc.description or "Testing rpc.discover"

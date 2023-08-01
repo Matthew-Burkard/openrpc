@@ -10,7 +10,7 @@ rpc_catch_all = RPCServer(title="Test Depends", version="0.1.0")
 error_message = "Custom error message"
 
 
-@rpc.method
+@rpc.method()
 def method_with_error(*_args) -> None:
     """That raises an error."""
     raise ValueError(error_message)
@@ -82,3 +82,9 @@ async def test_catchall_error_debug_async() -> None:
     rpc_catch_all.debug = True
     result = json.loads(await rpc_catch_all.process_request_async(json.dumps(req)))
     assert result["error"]["data"] == f"ValueError: {error_message}"
+
+
+def test_deprecation_warning(caplog: pytest.LogCaptureFixture) -> None:
+    warning_msg = "RPCServer `method` decorator must be called"
+    with pytest.warns(DeprecationWarning, match=warning_msg):
+        rpc.method(lambda: print())
