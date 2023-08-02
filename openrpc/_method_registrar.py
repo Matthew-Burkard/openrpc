@@ -65,20 +65,6 @@ class MethodRegistrar:
     ) -> Union[CallableType, Callable[[DecoratedCallableType], DecoratedCallableType]]:
         """Register a method with this OpenRPC server.
 
-        Can be used as a plain decorator, eg:
-
-        .. code-block:: python
-
-            @method
-            def my_func()
-
-        Or additional method info can be provided with a MethodObject:
-
-        .. code-block:: python
-
-            @method(name="dot.case.method", deprecated=True)
-            def my_func()
-
         :param args: The method if this is used as a plain decorator.
         :param name: The canonical name for the method.
         :param params: A list of parameters that are applicable for this
