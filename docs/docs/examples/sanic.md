@@ -6,8 +6,8 @@ sidebar_position: 2
 
 # Sanic
 
-The following is an example of a [Sanic](https://sanic.dev/en/) server exposing an
-OpenRPC server over HTTP and Websocket.
+[Sanic](https://sanic.dev/en/) server exposing an OpenRPC server over HTTP and
+Websocket.
 
 ```python
 """Sanic example."""

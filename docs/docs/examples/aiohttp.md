@@ -5,8 +5,8 @@ sidebar_position: 1
 
 # Aiohttp
 
-The following is an example of an [aiohttp](https://github.com/aio-libs/aiohttp) server
-exposing an OpenRPC server over HTTP and Websocket.
+[Aiohttp](https://github.com/aio-libs/aiohttp) server exposing an OpenRPC server over
+HTTP and Websocket.
 
 ```python
 from aiohttp import web, WSMessage

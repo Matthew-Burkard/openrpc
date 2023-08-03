@@ -6,8 +6,8 @@ sidebar_position: 3
 
 # FastAPI
 
-The following is an example of a [FastAPI](https://fastapi.tiangolo.com/) server
-exposing an OpenRPC server over HTTP and Websocket.
+[FastAPI](https://fastapi.tiangolo.com/) server exposing an OpenRPC server over HTTP and
+Websocket.
 
 ```python
 from typing import Union

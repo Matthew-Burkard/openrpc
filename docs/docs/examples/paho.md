@@ -6,8 +6,7 @@ sidebar_position: 4
 
 # Paho
 
-The following is an example of [Paho](https://eclipse.dev/paho/) exposing an OpenRPC
-server over MQTT.
+[Paho](https://eclipse.dev/paho/) exposing an OpenRPC server over MQTT.
 
 ```python
 import json
