@@ -1,6 +1,6 @@
 ---
 slug: /interactive_docs
-sidebar_position: 5
+sidebar_position: 6
 ---
 
 # Discover and Docs
