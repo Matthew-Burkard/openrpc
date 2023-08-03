@@ -260,7 +260,7 @@ if __name__ == "__main__":
 It's worth noting, since the user data accessed from request headers, to call methods
 after sign in from a websocket you must either establish a new connection with the auth
 header or add means for the app to associate a websocket connection id with a user when
-`sign-in` is called.
+`sign_in` is called.
 
 ### Testing the Example
 
