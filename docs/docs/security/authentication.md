@@ -5,11 +5,6 @@ sidebar_position: 1
 
 # Authentication
 
-We are going to write two functions to handle user authentication:
-
-- `sign_up` create a user, hash and salt the password, store user data.
-- `sign_in` verify a username and password, return an access token.
-
 ## Requirements
 
 - [passlib](https://pypi.org/project/passlib/)
@@ -17,6 +12,11 @@ We are going to write two functions to handle user authentication:
 - [Pydantic](https://pypi.org/project/pydantic/)
 
 ## Authentication Tutorial
+
+We are going to write two functions to handle user authentication:
+
+- `sign_up` create a user, hash and salt the password, store user data.
+- `sign_in` verify a username and password, return an access token.
 
 ### User
 

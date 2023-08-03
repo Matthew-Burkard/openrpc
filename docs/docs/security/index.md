@@ -18,7 +18,7 @@ This guide requires [passlib](https://pypi.org/project/passlib/),
 ### Pre-Made App Template
 
 A pre-made Python OpenRPC template app doing all of this can be found
-[here](https://gitlab.com/mburkard/python-openrpc-app-template).
+[here](https://gitlab.com/mburkard/openrpc-app-template).
 
 ## Authentication Overview
 
