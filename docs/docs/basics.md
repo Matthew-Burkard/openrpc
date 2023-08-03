@@ -57,7 +57,7 @@ req = """
   "jsonrpc": "2.0"
 }
 """
-rpc.process_request(req)  # '{"id": 1, "result": 4, "jsonrpc": "2.0"}'
+rpc.process_request(req)  # '{"id":1,"result":4,"jsonrpc":"2.0"}'
 ```
 
 ## Pydantic For Data Models
@@ -65,3 +65,34 @@ rpc.process_request(req)  # '{"id": 1, "result": 4, "jsonrpc": "2.0"}'
 For data classes to work properly use [Pydantic](https://docs.pydantic.dev/latest/).
 RPCServer will use Pydantic for JSON serialization/deserialization when calling methods
 and when generating docs with `rpc.discover`.
+
+### Pydantic Example
+
+```python
+from openrpc import RPCServer
+from pydantic import BaseModel
+
+rpc = RPCServer(title="Demo Server", version="1.0.0")
+
+
+class Vector3(BaseModel):
+    x: float = 1.0
+    y: float = 1.0
+    z: float = 1.0
+
+
+@rpc.method()
+def get_distance(a: Vector3, b: Vector3) -> Vector3:
+    return Vector3(x=a.x - b.x, y=a.y - b.y, z=a.z - b.z)
+
+
+req = """
+{
+  "id": 1,
+  "method": "get_distance",
+  "params": [{"x": 3.0, "y": 5.0, "z": 7.0}, {"x": 1.0, "y": 1.0, "z": 1.0}],
+  "jsonrpc": "2.0"
+}
+"""
+rpc.process_request(req)  # '{"id":1,"result":{"x":2.0,"y":4.0,"z":6.0},"jsonrpc":"2.0"}'
+```

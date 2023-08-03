@@ -4,6 +4,11 @@ slug: /
 sidebar_position: 1
 ---
 
+![](https://img.shields.io/badge/License-MIT-blue.svg)
+![](https://img.shields.io/badge/code%20style-black-000000.svg)
+![](https://img.shields.io/pypi/v/openrpc.svg)
+![](https://img.shields.io/badge/coverage-100%25-success)
+
 **Documentation**: https://python-openrpc.burkard.cloud
 
 **Source Code**: https://gitlab.com/mburkard/openrpc
@@ -83,3 +88,9 @@ Example Result Out
   "jsonrpc": "2.0"
 }
 ```
+
+<a href="https://www.buymeacoffee.com/mburkard" target="_blank">
+  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-blue.png" alt="Buy Me a Coffee"
+       width="217"
+       height="60"/>
+</a>
