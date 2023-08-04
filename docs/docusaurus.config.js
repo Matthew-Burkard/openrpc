@@ -58,26 +58,6 @@ const config = {
       },
       footer: {
         style: 'dark',
-        links: [
-          {
-            title: 'Docs',
-            items: [
-              {
-                label: 'Intro',
-                to: '/',
-              },
-            ],
-          },
-          {
-            title: 'More',
-            items: [
-              {
-                label: 'GitLab',
-                href: 'https://gitlab.com/mburkard/openrpc',
-              },
-            ],
-          },
-        ],
         copyright: `Copyright © ${new Date().getFullYear()} Matthew Burkard. Built with Docusaurus.`,
       },
       prism: {
