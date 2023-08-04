@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openrpc"
-version = "7.0.2"
+version = "7.1.0"
 description = "Transport agnostic framework for developing OpenRPC servers."
 readme = "README.md"
 repository = "https://gitlab.com/mburkard/openrpc"
@@ -30,7 +30,7 @@ mypy = "^1.0.0"
 black = "^23.1.0"
 pytest = "^7.2.1"
 pytest-asyncio = "^0.21.0"
-ruff = "^0.0.280"
+ruff = "^0.0.282"
 
 [build-system]
 
