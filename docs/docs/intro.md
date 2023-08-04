@@ -89,6 +89,13 @@ Example Result Out
 }
 ```
 
+## Template App
+
+You can bootstrap your OpenRPC server by cloning the
+[template app](https://gitlab.com/mburkard/openrpc-app-template).
+
+## Support the Developer
+
 <a href="https://www.buymeacoffee.com/mburkard" target="_blank">
   <img src="https://cdn.buymeacoffee.com/buttons/v2/default-blue.png" alt="Buy Me a Coffee"
        width="217"
