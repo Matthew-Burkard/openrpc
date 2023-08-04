@@ -10,7 +10,6 @@ sidebar_position: 2
 Websocket.
 
 ```python
-"""Sanic example."""
 import json
 
 import sanic
