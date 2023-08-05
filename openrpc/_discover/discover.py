@@ -18,7 +18,7 @@ def get_openrpc_doc(
 
     :param info: RPC server info.
     :param rpc_methods: RPC server methods.
-    :return: The Open-RPC doc for the given server.
+    :return: The OpenRPC doc for the given server.
     """
     type_schema_map = get_type_to_schema_map([rpc.function for rpc in rpc_methods])
     components = ComponentsObject(
@@ -33,7 +33,7 @@ def get_openrpc_doc(
                 methods=get_methods(rpc_methods, type_schema_map),
                 components=components,
             ).model_dump_json(by_alias=True, exclude_unset=True)
-            # Workaround to Open-RPC playground bug resolving definitions.
+            # Workaround to OpenRPC playground bug resolving definitions.
             .replace("#/$defs/", "#/components/schemas/")
         )
     )

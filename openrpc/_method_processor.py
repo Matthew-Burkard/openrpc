@@ -4,7 +4,9 @@ __all__ = ("MethodProcessor",)
 
 import inspect
 import logging
+import traceback
 from enum import Enum
+from pathlib import Path
 from typing import (
     Any,
     get_args,
@@ -130,7 +132,7 @@ class MethodProcessor:
         ]
         if missing_dependencies:
             raise AttributeError(
-                "Missing dependent values %s  for method [%s]"
+                "Missing dependent values %s for method [%s]"
                 % (missing_dependencies, self.method.metadata.name)
             )
         dependencies = {k: self.depends.get(k) for k in self.method.depends_params}
@@ -172,10 +174,11 @@ class MethodProcessor:
             ).model_dump_json()
 
         if self.debug:
+            traceback_str = _get_trimmed_traceback(error)
             error_object: ErrorType = DataError(
                 code=self.uncaught_error_code,
                 message="Server error",
-                data=f"{type(error).__name__}: {error}",
+                data=f"{type(error).__name__}: {error}\n{traceback_str}",
             )
         else:
             error_object = Error(code=self.uncaught_error_code, message="Server error")
@@ -222,3 +225,15 @@ class MethodProcessor:
                 return p_type(param)
         except (TypeError, AttributeError, KeyError, ValueError):
             return NotDeserialized
+
+
+def _get_trimmed_traceback(error: Exception) -> str:
+    tb = traceback.extract_tb(error.__traceback__)
+    # Remove framework inner workings from traceback.
+    file_path = Path(__file__).resolve()
+    external_tb = [frame for frame in tb if Path(frame.filename).resolve() != file_path]
+
+    # Format the external traceback into a string
+    external_traceback_string = "".join(traceback.format_list(external_tb))
+    exception_message = "".join(traceback.format_exception_only(type(error), error))
+    return f"{external_traceback_string}{exception_message}"

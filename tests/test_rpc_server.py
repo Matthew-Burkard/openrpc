@@ -131,7 +131,7 @@ class RPCTest(unittest.TestCase):
         request = ParamsRequest(id=1, method="divide", params=[0, 0])
         server = RPCServer(title="Test JSON RPC", version="1.0.0")
         server.default_error_code = SERVER_ERROR
-        server.method(divide)
+        server.method()(divide)
         resp = json.loads(self.get_sync_and_async_resp(request.model_dump_json()))
         self.assertEqual(server.default_error_code, resp["error"]["code"])
 
@@ -338,10 +338,10 @@ class RPCTest(unittest.TestCase):
         return sync_resp
 
     def method(self, func: Callable, name: Optional[str] = None) -> None:
-        self.server.method(func, name=name)
+        self.server.method(name=name)(func)
         if name is not None:
             name = f"async_{name}"
-        self.server.method(get_as_async(func), name=name)
+        self.server.method(name=name)(get_as_async(func))
 
 
 # noinspection PyUnresolvedReferences

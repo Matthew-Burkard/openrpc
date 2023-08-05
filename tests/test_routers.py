@@ -9,7 +9,7 @@ rpc = RPCServer(title="RouterTestServer", version="1.0.0")
 auth_router = RPCRouter()
 
 
-@auth_router.method
+@auth_router.method()
 def method_added_before_router_included() -> None:
     """Do nothing."""
 
@@ -17,7 +17,7 @@ def method_added_before_router_included() -> None:
 rpc.include_router(auth_router, prefix="auth.")
 
 
-@auth_router.method
+@auth_router.method()
 def login() -> str:
     """Test auth method signature."""
     return "AUTH_TOKEN_HERE"
@@ -40,7 +40,7 @@ router_with_tags_no_prefix = RPCRouter()
 rpc.include_router(router_with_tags_no_prefix, tags=["test_tag"])
 
 
-@router_with_tags_no_prefix.method
+@router_with_tags_no_prefix.method()
 def return_coffee() -> str:
     """Return "Coffee"."""
     return "Coffee"

@@ -37,8 +37,8 @@ class RPCTest(unittest.TestCase):
             wait_short_started_second = True
             wait_long_finished_second = False
 
-        self.server.method(wait_long)
-        self.server.method(wait_short)
+        self.server.method()(wait_long)
+        self.server.method()(wait_short)
         requests = ",".join(
             [
                 Request(id=1, method="wait_long").model_dump_json(),
