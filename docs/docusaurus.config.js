@@ -7,7 +7,7 @@ const config = {
   tagline: 'Develop quick and easy OpenRPC APIs in Python.',
   favicon: 'img/logo.svg',
 
-  url: 'https://python-openrpc.burkard.cloud',
+  url: 'https://openrpc.vercel.app/',
   baseUrl: '/',
 
   projectName: 'python-openrpc',
