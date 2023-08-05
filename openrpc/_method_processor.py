@@ -132,7 +132,7 @@ class MethodProcessor:
         ]
         if missing_dependencies:
             raise AttributeError(
-                "Missing dependent values %s  for method [%s]"
+                "Missing dependent values %s for method [%s]"
                 % (missing_dependencies, self.method.metadata.name)
             )
         dependencies = {k: self.depends.get(k) for k in self.method.depends_params}

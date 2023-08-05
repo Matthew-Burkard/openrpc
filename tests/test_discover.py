@@ -89,6 +89,7 @@ class DiscoverTest(unittest.TestCase):
         ][0]
         self.assertEqual(
             {
+                "description": "pass",
                 "name": "increment",
                 "params": [
                     {
@@ -120,6 +121,7 @@ class DiscoverTest(unittest.TestCase):
         ][0]
         self.assertEqual(
             {
+                "description": "pass",
                 "name": "get_distance",
                 "params": [
                     {
@@ -148,6 +150,7 @@ class DiscoverTest(unittest.TestCase):
         ][0]
         self.assertEqual(
             {
+                "description": "pass",
                 "name": "default_value",
                 "params": [
                     {
@@ -181,6 +184,7 @@ class DiscoverTest(unittest.TestCase):
         ][0]
         self.assertEqual(
             {
+                "description": "pass",
                 "name": "return_none",
                 "params": [
                     {
@@ -206,6 +210,7 @@ class DiscoverTest(unittest.TestCase):
         ][0]
         self.assertEqual(
             {
+                "description": "pass",
                 "name": "take_any_get_any",
                 "params": [{"name": "any_param", "required": True, "schema": {}}],
                 "result": {"name": "result", "schema": {}, "required": True},

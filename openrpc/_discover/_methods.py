@@ -8,12 +8,13 @@ from typing import (
     get_origin,
     get_type_hints,
     Iterable,
+    Optional,
     Type,
     Union,
 )
 
-from openrpc._rpcmethod import RPCMethod
 from openrpc import ContentDescriptorObject, Depends, MethodObject, SchemaObject
+from openrpc._rpcmethod import RPCMethod
 
 NoneType = type(None)
 
@@ -34,7 +35,7 @@ def get_methods(
             result=rpc.metadata.result or _get_result(rpc.function, type_schema_map),
             tags=rpc.metadata.tags,
             summary=rpc.metadata.summary,
-            description=rpc.metadata.description,
+            description=_get_description(rpc),
             externalDocs=rpc.metadata.external_docs,
             deprecated=rpc.metadata.deprecated,
             servers=rpc.metadata.servers,
@@ -140,3 +141,13 @@ def _py_to_schema_type(annotation: Any) -> str:
     if NoneType is annotation:
         return "null"
     return py_to_schema.get(annotation) or "object"
+
+
+def _get_description(rpc_method: RPCMethod) -> Optional[str]:
+    description = rpc_method.metadata.description
+    if not description:
+        description = rpc_method.function.__doc__
+        # If using function doc as description only take intro line.
+        if description:
+            description = description.split("\n")[0]
+    return description
