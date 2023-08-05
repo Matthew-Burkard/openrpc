@@ -8,19 +8,19 @@ from openrpc import Depends, RPCServer
 rpc = RPCServer(title="Test Depends", version="0.1.0")
 
 
-@rpc.method
+@rpc.method()
 def method_with_dep(arg: int, dep: str = Depends) -> str:
     """Method with dependency to test."""
     return f"{arg}-{dep}"
 
 
-@rpc.method
+@rpc.method()
 def method_without_dep(dep: int) -> int:
     """Method without dep and param shadowing other method dep name."""
     return dep
 
 
-@rpc.method
+@rpc.method()
 async def async_method_with_dep(arg: int, dep: str = Depends) -> str:
     """Method with dependency to test."""
     return f"{arg}-{dep}"

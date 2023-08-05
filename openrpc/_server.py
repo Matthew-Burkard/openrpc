@@ -39,9 +39,9 @@ class RPCServer(MethodRegistrar):
         license_: Optional[LicenseObject] = None,
         debug: bool = False,  # noqa: FBT001,FBT002
     ) -> None:
-        """Init an Open-RPC server.
+        """Init an OpenRPC server.
 
-        :param title: Open-RPC title.
+        :param title: OpenRPC title.
         :param version: API version.
         :param description: Description of the app.
         :param terms_of_service: App terms of service.
@@ -211,7 +211,8 @@ class RPCServer(MethodRegistrar):
         :param depends: Values passed to functions with dependencies.
             Values will be passed if the keyname matches the arg name
             that is a dependency.
-        :return: A valid JSON-RPC2 response.
+        :return: A JSON-RPC2 response or None if the request was a
+            notification.
         """
         try:
             log.debug("Processing request: %s", data)
@@ -233,7 +234,8 @@ class RPCServer(MethodRegistrar):
         :param depends: Values passed to functions with dependencies.
             Values will be passed if the keyname matches the arg name
             that is a dependency.
-        :return: A valid JSON-RPC2 response.
+        :return: A JSON-RPC2 response or None if the request was a
+            notification.
         """
         try:
             log.debug("Processing request: %s", data)

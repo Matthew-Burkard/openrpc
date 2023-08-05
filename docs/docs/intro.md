@@ -1,4 +1,8 @@
-# Python OpenRPC
+---
+id: Python OpenRPC
+slug: /
+sidebar_position: 1
+---
 
 ![](https://img.shields.io/badge/License-MIT-blue.svg)
 ![](https://img.shields.io/badge/code%20style-black-000000.svg)
