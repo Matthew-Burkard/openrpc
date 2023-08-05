@@ -6,9 +6,9 @@ sidebar_position: 3
 # Method Routers
 
 For larger APIs you may want to organize your methods into different categories with
-a common prefix. There's a tool for this in the form of the `RPCRouter` class. This
-class can be used to register functions as RPC methods, then the router can be included
-in an `RPCServer` with an optional method name prefix for methods of that router.
+a common prefix. There's a tool for this in the form of the `RPCRouter`. This can be
+used to register functions as RPC methods, then the router can be included in an
+`RPCServer` with an optional method name prefix for methods of that router.
 
 ```python
 from openrpc import RPCRouter, RPCServer

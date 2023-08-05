@@ -296,8 +296,8 @@ if __name__ == "__main__":
 
 ## Abstracting the Permission Check
 
-If your authorization process is like the one in this example it can be made simpler
-to require permissions for a given method using the custom `RPCRouter` used here in the
+If your authorization process is like the one in this example it can be made simpler.
+For clean and easy permission checking as seen here in the
+[Python OpenRPC App Template](https://gitlab.com/mburkard/openrpc-app-template/-/blob/main/openrpc_app_template/api/math.py?ref_type=heads),
+the following custom `RPCRouter` can be used.
 [Python OpenRPC App Template](https://gitlab.com/mburkard/openrpc-app-template/-/blob/main/openrpc_app_template/common.py?ref_type=heads).
-Examples of this custom router in use can be seen
-[here](https://gitlab.com/mburkard/openrpc-app-template/-/blob/main/openrpc_app_template/api/math.py?ref_type=heads).

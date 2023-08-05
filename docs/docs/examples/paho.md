@@ -11,6 +11,7 @@ sidebar_position: 4
 ```python
 import json
 import time
+from typing import Any
 
 import paho.mqtt.client as mqtt
 from openrpc import RPCServer
@@ -25,9 +26,9 @@ async def add(a: int, b: int) -> int:
     return a + b
 
 
-def on_message(_client: mqtt.Client, _userdata, message: mqtt.MQTTMessage) -> None:
+def on_message(_client: mqtt.Client, _userdata: Any, message: mqtt.MQTTMessage) -> None:
     """Process RPC requests and reply."""
-    json_rpc_response = rpc.process_request(message.payload.decode('utf-8'))
+    json_rpc_response = rpc.process_request(message.payload.decode("utf-8"))
     id_ = json.loads(message.payload).get("id")
     if id_ is not None:
         client.publish(f"{topic}/responses/{id_}", json_rpc_response)

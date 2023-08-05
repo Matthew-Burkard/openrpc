@@ -4,7 +4,7 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'Python OpenRPC',
-  tagline: 'Develop quick and easy OpenRPC API in Python.',
+  tagline: 'Develop quick and easy OpenRPC APIs in Python.',
   favicon: 'img/logo.svg',
 
   url: 'https://python-openrpc.burkard.cloud',

@@ -10,12 +10,8 @@ sidebar_position: 2
 Websocket.
 
 ```python
-import json
-
-import sanic
 from openrpc import RPCServer
-from sanic import Request, Sanic, Websocket
-from sanic.response import JSONResponse
+from sanic import HTTPResponse, Request, Sanic, text, Websocket
 
 app = Sanic("DemoServer")
 rpc = RPCServer(title="DemoServer", version="1.0.0")
@@ -36,10 +32,10 @@ async def ws_process_rpc(_request: Request, ws: Websocket) -> None:
 
 
 @app.post("/api/v1/")
-async def http_process_rpc(request: Request) -> JSONResponse:
+async def http_process_rpc(request: Request) -> HTTPResponse:
     """Process RPC request through HTTP server."""
     json_rpc_response = await rpc.process_request_async(request.body)
-    return sanic.json(json.loads(json_rpc_response))
+    return text(json_rpc_response, headers={"Content-Type": "application/json"})
 
 
 if __name__ == "__main__":

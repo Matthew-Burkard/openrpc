@@ -73,7 +73,7 @@ rpc.process_request(req)  # '{"id":1,"result":4,"jsonrpc":"2.0"}'
 
 For data classes to work properly use [Pydantic](https://docs.pydantic.dev/latest/).
 RPCServer will use Pydantic for JSON serialization/deserialization when calling methods
-and when generating docs with `rpc.discover`.
+and for schema generation when getting docs with `rpc.discover`.
 
 ### Pydantic Example
 

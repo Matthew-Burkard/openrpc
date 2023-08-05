@@ -15,6 +15,9 @@ This guide requires [passlib](https://pypi.org/project/passlib/),
 [Sanic](https://pypi.org/project/sanic/), and
 [Pydantic](https://pypi.org/project/pydantic/)
 
+We will use Pydantic to define data models, passlib to hash and salt passwords,
+python-jose to encode/decode user data in JWTs, and Sanic for networking.
+
 ### Pre-Made App Template
 
 A pre-made Python OpenRPC template app doing all of this can be found
@@ -22,12 +25,11 @@ A pre-made Python OpenRPC template app doing all of this can be found
 
 ## Authentication Overview
 
-We're going to create a user, store user info in a [JWT](https://jwt.io/), store that
-token in a request header, decode the token. This will use passlib to hash and salt
-passwords, and python-jose to encode user info in a JWT.
+We're going to create a user and store user data. Then, a sign-in process, will verify
+user credentials and return a [JWT](https://jwt.io/) with encoded user data.
 
 ## Authorization Overview
 
-Once we have an authenticated user we will create a system of permissions for users
-with authorization to determine whether a user may call a given method. We will pull
-the JWT from request headers and use it to get the user for to check permissions.
+Then we will write a server that pulls JWTs from request headers, decodes the token,
+and uses that data to check if the user has the proper permissions before calling a
+method.
