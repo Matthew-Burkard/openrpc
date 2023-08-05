@@ -9,7 +9,7 @@ sidebar_position: 1
 ![](https://img.shields.io/pypi/v/openrpc.svg)
 ![](https://img.shields.io/badge/coverage-100%25-success)
 
-**Documentation**: https://python-openrpc.burkard.cloud
+**Documentation**: https://openrpc.vercel.app/
 
 **Source Code**: https://gitlab.com/mburkard/openrpc
 
