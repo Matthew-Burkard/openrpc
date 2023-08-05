@@ -3,7 +3,7 @@ slug: /interactive_docs
 sidebar_position: 6
 ---
 
-# Discover and Docs
+# RPC Discover and Docs
 
 The [OpenRPC spec](https://spec.open-rpc.org/) defines a method called `rpc.discover`
 which returns an [OpenRPC Document](https://spec.open-rpc.org/#openrpc-document)

@@ -11,18 +11,27 @@ Python OpenRPC is built on a couple of specifications.
 
 ### JSON-RPC 2.0
 
-The [JSON-RPC 2.0 Spec](https://www.jsonrpc.org/specification) defines the format of
-requests and responses of a JSON-RPC server.
+The [JSON-RPC 2.0 Spec](https://www.jsonrpc.org/specification) is a transport agnostic
+spec which defines the properties of a JSON-RPC server. A JSON-RPC server will have
+methods that can be called remotely. The spec defines the format of requests expected by
+a JSON-RPC server to call a method and the format that the server responses must match.
 
 ### OpenRPC
 
 The [OpenRPC spec](https://open-rpc.org/) defines a document for describing the methods
-and schemas used in a JSON-RPC server.
+and schemas used in a JSON-RPC server. It's like [OpenAPI](https://www.openapis.org/)
+for JSON-RPC APIs. The OpenRPC document will list each method in the server along with
+the parameters expected by those method and the result it will produce. Like OpenAPI, it
+leverages [JSON Schemas](https://json-schema.org/) to describe types.
 
-### This Framework
+## What Does This Framework Do?
 
-This framework provides a class `RPCServer` that is used to register python functions
-as methods in an OpenRPC server.
+This framework provides a class, `RPCServer`, that is used to register python functions
+as methods in an OpenRPC server. Once methods are registered the framework can parse
+JSON-RPC requests, call the appropriate function, wrap the function's return value in
+a JSON-RPC response and return it.
+
+### Usage
 
 To register a method with the RPCServer use the `@rpc.method()` decorator on a function.
 
