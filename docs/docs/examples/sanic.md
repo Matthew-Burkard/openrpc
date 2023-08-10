@@ -10,6 +10,8 @@ sidebar_position: 2
 Websocket.
 
 ```python
+import asyncio
+
 from openrpc import RPCServer
 from sanic import HTTPResponse, Request, Sanic, text, Websocket
 
@@ -25,10 +27,13 @@ async def add(a: int, b: int) -> int:
 @app.websocket("/api/v1/")
 async def ws_process_rpc(_request: Request, ws: Websocket) -> None:
     """Process RPC requests through websocket."""
-    async for msg in ws:
-        json_rpc_response = await rpc.process_request_async(msg)
+    async def _process_rpc(request: str) -> None:
+        json_rpc_response = await rpc.process_request_async(request)
         if json_rpc_response is not None:
             await ws.send(json_rpc_response)
+
+    async for msg in ws:
+        asyncio.create_task(_process_rpc(msg))
 
 
 @app.post("/api/v1/")

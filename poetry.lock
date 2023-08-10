@@ -91,11 +91,11 @@ pydantic = ">=2.0,<3.0"
 
 [[package]]
 name = "mypy"
-version = "1.4.1"
+version = "1.5.0"
 description = "Optional static typing for Python"
 category = "dev"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 
 [package.dependencies]
 mypy-extensions = ">=1.0.0"
@@ -105,7 +105,6 @@ typing-extensions = ">=4.1.0"
 [package.extras]
 dmypy = ["psutil (>=4.0)"]
 install-types = ["pip"]
-python2 = ["typed-ast (>=1.4.0,<2)"]
 reports = ["lxml"]
 
 [[package]]
@@ -219,7 +218,7 @@ testing = ["coverage (>=6.2)", "hypothesis (>=5.7.1)", "flaky (>=3.5.0)", "mypy 
 
 [[package]]
 name = "ruff"
-version = "0.0.282"
+version = "0.0.284"
 description = "An extremely fast Python linter, written in Rust."
 category = "dev"
 optional = false
@@ -244,7 +243,7 @@ python-versions = ">=3.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "72ac17a8ed37485df77025d12ec7e3d90e8aba26a5b0c5f3dc1ea5b02914b2d9"
+content-hash = "fd1283a1b2c8773143c43b0a251cd2aa5774b505cb17f1a87613ec93789bf27b"
 
 [metadata.files]
 annotated-types = []

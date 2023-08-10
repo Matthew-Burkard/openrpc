@@ -37,6 +37,8 @@ This is a minimal OpenRPC server using a [Sanic](https://sanic.dev/en/) websocke
 as the transport method.
 
 ```python
+import asyncio
+
 from openrpc import RPCServer
 from sanic import Request, Sanic, Websocket
 
@@ -50,11 +52,14 @@ async def add(a: int, b: int) -> int:
 
 
 @app.websocket("/api/v1/")
-async def process_websocket(_request: Request, ws: Websocket) -> None:
-    async for msg in ws:
-        json_rpc_response = await rpc.process_request_async(msg)
+async def ws_process_rpc(_request: Request, ws: Websocket) -> None:
+    async def _process_rpc(request: str) -> None:
+        json_rpc_response = await rpc.process_request_async(request)
         if json_rpc_response is not None:
             await ws.send(json_rpc_response)
+
+    async for msg in ws:
+        asyncio.create_task(_process_rpc(msg))
 
 
 if __name__ == "__main__":

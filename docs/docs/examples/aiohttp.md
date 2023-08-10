@@ -9,6 +9,8 @@ sidebar_position: 1
 HTTP and Websocket.
 
 ```python
+import asyncio
+
 from aiohttp import web, WSMessage
 from openrpc import RPCServer
 
@@ -25,11 +27,14 @@ async def ws_process_rpc(request: web.BaseRequest) -> web.WebSocketResponse:
     ws = web.WebSocketResponse()
     await ws.prepare(request)
 
+    async def _process_rpc(rpc_request: str) -> None:
+        json_rpc_response = await rpc.process_request_async(rpc_request)
+        if json_rpc_response is not None:
+            await ws.send_str(json_rpc_response)
+
     async for msg in ws:
         msg: WSMessage = msg  # type: ignore
-        response = await rpc.process_request_async(msg.data)
-        if response is not None:
-            await ws.send_str(response)
+        asyncio.create_task(_process_rpc(msg.data))
 
     return ws
 
