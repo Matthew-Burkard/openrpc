@@ -180,7 +180,7 @@ class ExamplePairingObject(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     summary: Optional[str] = None
-    params: Optional[ExampleObject] = None
+    params: Optional[list[ExampleObject]] = None
     result: Optional[ExampleObject] = None
 
 

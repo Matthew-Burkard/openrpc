@@ -31,7 +31,7 @@ uvloop = ["uvloop (>=0.15.2)"]
 
 [[package]]
 name = "click"
-version = "8.1.6"
+version = "8.1.7"
 description = "Composable command line interface toolkit"
 category = "dev"
 optional = false
@@ -90,8 +90,19 @@ python-versions = ">=3.9,<4.0"
 pydantic = ">=2.0,<3.0"
 
 [[package]]
+name = "lorem-pysum"
+version = "0.14.3"
+description = "Library to generate instances of Pydantic models."
+category = "main"
+optional = false
+python-versions = ">=3.9,<4.0"
+
+[package.dependencies]
+pydantic = ">=2.2.0,<3.0.0"
+
+[[package]]
 name = "mypy"
-version = "1.5.0"
+version = "1.5.1"
 description = "Optional static typing for Python"
 category = "dev"
 optional = false
@@ -157,7 +168,7 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "pydantic"
-version = "2.1.1"
+version = "2.2.1"
 description = "Data validation using Python type hints"
 category = "main"
 optional = false
@@ -165,7 +176,7 @@ python-versions = ">=3.7"
 
 [package.dependencies]
 annotated-types = ">=0.4.0"
-pydantic-core = "2.4.0"
+pydantic-core = "2.6.1"
 typing-extensions = ">=4.6.1"
 
 [package.extras]
@@ -173,7 +184,7 @@ email = ["email-validator (>=2.0.0)"]
 
 [[package]]
 name = "pydantic-core"
-version = "2.4.0"
+version = "2.6.1"
 description = ""
 category = "main"
 optional = false
@@ -218,7 +229,7 @@ testing = ["coverage (>=6.2)", "hypothesis (>=5.7.1)", "flaky (>=3.5.0)", "mypy 
 
 [[package]]
 name = "ruff"
-version = "0.0.284"
+version = "0.0.285"
 description = "An extremely fast Python linter, written in Rust."
 category = "dev"
 optional = false
@@ -243,7 +254,7 @@ python-versions = ">=3.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "fd1283a1b2c8773143c43b0a251cd2aa5774b505cb17f1a87613ec93789bf27b"
+content-hash = "6251527b97148e738eea523670742cb010c2db13bfee519ae1614daee7055bf2"
 
 [metadata.files]
 annotated-types = []
@@ -254,6 +265,7 @@ coverage = []
 exceptiongroup = []
 iniconfig = []
 jsonrpc2-objects = []
+lorem-pysum = []
 mypy = []
 mypy-extensions = []
 packaging = []
