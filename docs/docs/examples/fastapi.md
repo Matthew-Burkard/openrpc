@@ -10,6 +10,7 @@ sidebar_position: 3
 Websocket.
 
 ```python
+import asyncio
 from typing import Union
 
 import uvicorn
@@ -39,11 +40,15 @@ async def ws_process_rpc(websocket: WebSocket) -> None:
     """Process RPC requests through websocket."""
     await websocket.accept()
     try:
-        while True:
-            data = await websocket.receive_text()
-            json_rpc_response = await rpc.process_request_async(data)
+
+        async def _process_rpc(request: str) -> None:
+            json_rpc_response = await rpc.process_request_async(request)
             if json_rpc_response is not None:
                 await websocket.send_text(json_rpc_response)
+
+        while True:
+            data = await websocket.receive_text()
+            asyncio.create_task(_process_rpc(data))
     except WebSocketDisconnect:
         await websocket.close()
 

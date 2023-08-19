@@ -130,17 +130,23 @@ def _get_user(auth: str | None) -> User | None:
 Then we use that to get user data from request `Authorization` headers.
 
 ```python
+import asyncio
+
 from sanic import HTTPResponse, Request, Sanic, text, Websocket
 
 
 @app.websocket("/api/v1/")
 async def ws_process_rpc(request: Request, ws: Websocket) -> None:
     """Process RPC requests through websocket."""
-    user = _get_user(request.headers.get("Authorization"))
-    async for msg in ws:
-        json_rpc_response = await rpc.process_request_async(msg, {"user": user})
+    user = get_user(request.headers.get("Authorization"))
+
+    async def _process_rpc(rpc_req: str) -> None:
+        json_rpc_response = await rpc.process_request_async(rpc_req, {"user": user})
         if json_rpc_response is not None:
             await ws.send(json_rpc_response)
+
+    async for msg in ws:
+        asyncio.create_task(_process_rpc(msg))
     await ws.close()
 
 
@@ -162,6 +168,7 @@ Putting this all together we have a complete app that can create users, authenti
 user, and authorize use of a method based on user permissions.
 
 ```python
+import asyncio
 from datetime import datetime, timedelta
 
 from jose import jwt
@@ -238,10 +245,14 @@ def get_user(auth: str | None) -> User | None:
 async def ws_process_rpc(request: Request, ws: Websocket) -> None:
     """Process RPC requests through websocket."""
     user = get_user(request.headers.get("Authorization"))
-    async for msg in ws:
-        json_rpc_response = await rpc.process_request_async(msg, {"user": user})
+
+    async def _process_rpc(rpc_req: str) -> None:
+        json_rpc_response = await rpc.process_request_async(rpc_req, {"user": user})
         if json_rpc_response is not None:
             await ws.send(json_rpc_response)
+
+    async for msg in ws:
+        asyncio.create_task(_process_rpc(msg))
     await ws.close()
 
 
@@ -299,5 +310,6 @@ if __name__ == "__main__":
 If your authorization process is like the one in this example it can be made simpler.
 For clean and easy permission checking as seen here in the
 [Python OpenRPC App Template](https://gitlab.com/mburkard/openrpc-app-template/-/blob/main/openrpc_app_template/api/math.py?ref_type=heads),
-the following custom `RPCRouter` can be used.
-[Python OpenRPC App Template](https://gitlab.com/mburkard/openrpc-app-template/-/blob/main/openrpc_app_template/common.py?ref_type=heads).
+the following
+[custom RPCRouter](https://gitlab.com/mburkard/openrpc-app-template/-/blob/main/openrpc_app_template/common.py?ref_type=heads)
+can be used.

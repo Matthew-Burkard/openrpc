@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openrpc"
-version = "7.2.1"
+version = "7.3.1"
 description = "Transport agnostic framework for developing OpenRPC servers."
 readme = "README.md"
 repository = "https://gitlab.com/mburkard/openrpc"
@@ -23,6 +23,7 @@ classifiers = [
 python = "^3.9"
 pydantic = "^2.0.3"
 jsonrpc2-objects = "^3.0.0"
+lorem-pysum = "^0.14.9"
 
 [tool.poetry.dev-dependencies]
 coverage = "^7.1.0"
@@ -30,7 +31,7 @@ mypy = "^1.0.0"
 black = "^23.1.0"
 pytest = "^7.2.1"
 pytest-asyncio = "^0.21.0"
-ruff = "^0.0.282"
+ruff = "^0.0.285"
 
 [build-system]
 
@@ -71,4 +72,4 @@ select = [
     "TD",
     "TRY",
 ]
-ignore = ["D203", "D213"]
+ignore = ["D203", "D213", "FA102", "FA100"]

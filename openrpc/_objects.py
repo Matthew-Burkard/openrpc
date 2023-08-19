@@ -134,7 +134,7 @@ class SchemaObject(BaseModel):
     multiple_of: Optional[float] = Field(alias="multipleOf", default=None)
     min_length: Optional[int] = Field(alias="minLength", default=None)
     max_length: Optional[int] = Field(alias="maxLength", default=None)
-    properties: Optional[dict[str, Union[SchemaType]]] = None
+    properties: Optional[dict[str, SchemaType]] = None
     pattern_properties: Optional[dict[str, SchemaType]] = Field(
         alias="patternProperties", default=None
     )
@@ -146,7 +146,7 @@ class SchemaObject(BaseModel):
     max_properties: Optional[int] = Field(alias="maxProperties", default=None)
     required: Optional[list[str]] = None
     defs: Optional[dict[str, SchemaType]] = Field(alias="$defs", default=None)
-    items: Optional[Union[SchemaType, bool]] = None
+    items: Optional[SchemaType] = None
     prefix_items: Optional[list[SchemaType]] = Field(alias="prefixItems", default=None)
     contains: Optional[SchemaType] = None
     min_contains: Optional[int] = Field(alias="minContains", default=None)
@@ -180,7 +180,7 @@ class ExamplePairingObject(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     summary: Optional[str] = None
-    params: Optional[ExampleObject] = None
+    params: Optional[list[ExampleObject]] = None
     result: Optional[ExampleObject] = None
 
 
@@ -191,7 +191,7 @@ class ExampleObject(BaseModel):
     summary: Optional[str] = None
     description: Optional[str] = None
     value: Optional[Any] = None
-    external_value: Optional[str] = Field(None, alias="externalValue")
+    external_value: Optional[str] = Field(default=None, alias="externalValue")
 
 
 class LinkObject(BaseModel):
