@@ -58,6 +58,7 @@ class DiscoverTest(unittest.TestCase):
         self.rpc.method()(nested_model)
         self.rpc.method()(typed_dict_and_list)
         self.rpc.method()(list_model_result)
+        self.rpc.method()(no_annotations)
         self.rpc.title = self.rpc.title or "Test OpenRPC"
         self.rpc.version = self.rpc.version or "1.0.0"
         self.rpc.description = self.rpc.description or "Testing rpc.discover"
@@ -335,6 +336,36 @@ class DiscoverTest(unittest.TestCase):
             self.discover_result["components"]["schemas"]["NestedModels"],
         )
 
+    def test_no_annotations(self) -> None:
+        method = [
+            m for m in self.discover_result["methods"] if m["name"] == "no_annotations"
+        ][0]
+        self.assertEqual(
+            {
+                "description": "pass",
+                "examples": [{"params": [{}, {}], "result": {}}],
+                "name": "no_annotations",
+                "params": [
+                    {
+                        "name": "a",
+                        "schema": {},
+                        "required": True,
+                    },
+                    {
+                        "name": "b",
+                        "schema": {},
+                        "required": True,
+                    },
+                ],
+                "result": {
+                    "name": "result",
+                    "required": True,
+                    "schema": {"type": "null"},
+                },
+            },
+            method,
+        )
+
     def test_multiple_discover(self) -> None:
         # Once had problem where state was wrongfully mutated causing
         # discover to only work right the first timme.
@@ -385,4 +416,9 @@ def typed_dict_and_list(
 
 # noinspection PyUnusedLocal
 def list_model_result() -> list[ListResultModel]:
+    """pass"""
+
+
+# noinspection PyUnusedLocal
+def no_annotations(a, b):
     """pass"""
