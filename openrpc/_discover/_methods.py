@@ -1,4 +1,5 @@
 """Module for generating OpenRPC document methods."""
+__all__ = ("get_methods",)
 
 import inspect
 from typing import (
@@ -27,6 +28,8 @@ from openrpc import (
 from openrpc._rpcmethod import RPCMethod
 
 NoneType = type(None)
+# noinspection PyUnresolvedReferences,PyProtectedMember
+InspectEmpty = inspect._empty
 
 
 def get_methods(
@@ -64,8 +67,8 @@ def _get_result(
 ) -> ContentDescriptorObject:
     return ContentDescriptorObject(
         name="result",
-        schema=_get_schema(get_type_hints(function)["return"], type_schema_map),
-        required=_is_required(get_type_hints(function)["return"]),
+        schema=_get_schema(get_type_hints(function).get("return"), type_schema_map),
+        required=_is_required(get_type_hints(function).get("return")),
     )
 
 
@@ -73,18 +76,18 @@ def _get_params(
     function: Callable, type_schema_map: dict[Type, SchemaObject]
 ) -> list[ContentDescriptorObject]:
     signature = inspect.signature(function)
-    # noinspection PyUnresolvedReferences,PyProtectedMember
     has_default = {
-        k for k, v in signature.parameters.items() if v.default != inspect._empty
+        k for k, v in signature.parameters.items() if v.default != InspectEmpty
     }
     depends = [k for k, v in signature.parameters.items() if v.default is Depends]
     return [
         ContentDescriptorObject(
             name=name,
-            schema=_get_schema(annotation, type_schema_map),
-            required=name not in has_default and _is_required(annotation),
+            schema=_get_schema(param.annotation, type_schema_map),
+            required=name not in has_default
+            and _is_required(_annotation(param.annotation)),
         )
-        for name, annotation in get_type_hints(function).items()
+        for name, param in signature.parameters.items()
         if name not in depends + ["return"]
     ]
 
@@ -96,19 +99,19 @@ def _is_required(annotation: Any) -> bool:
         except AttributeError:
             return ""
 
-    return "NoneType" not in [_get_name(a) for a in get_args(annotation)]
+    return "NoneType" not in (_get_name(a) for a in get_args(annotation))
 
 
 def _get_schema(
     annotation: Any, type_schema_map: dict[Type, SchemaObject]
 ) -> SchemaObject:
+    if annotation in (InspectEmpty, Any):
+        return SchemaObject()
+
     if schema := type_schema_map.get(annotation):
         ref_schema = SchemaObject()
         ref_schema.ref = f"#/components/schemas/{schema.title}"
         return ref_schema
-
-    if annotation == Any:
-        return SchemaObject()
 
     if get_origin(annotation) == Union:
         return SchemaObject(
@@ -137,7 +140,7 @@ def _get_example(function: Callable) -> ExamplePairingObject:
     param_example_type = create_model(  # type: ignore
         "ExampleParams",
         **{
-            k: (v.annotation, ...)
+            k: (_annotation(v.annotation), ...)
             for k, v in signature.parameters.items()
             if k not in depends
         },
@@ -150,7 +153,7 @@ def _get_example(function: Callable) -> ExamplePairingObject:
 
     # Create model with result as fields to generate example value.
     result_example_type = create_model(
-        "ExampleResult", result=(signature.return_annotation or type(None), ...)
+        "ExampleResult", result=(_annotation(signature.return_annotation), ...)
     )
     result_value = lorem_pysum.generate(result_example_type)
     result = ExampleObject(value=result_value.result)  # type: ignore
@@ -170,7 +173,7 @@ def _py_to_schema_type(annotation: Any) -> str:
     flat_collections = [list, set, tuple]
     if origin in flat_collections or annotation in flat_collections:
         return "array"
-    if dict in [origin, annotation]:
+    if dict in (origin, annotation):
         return "object"
     if NoneType is annotation:
         return "null"
@@ -185,3 +188,7 @@ def _get_description(rpc_method: RPCMethod) -> Optional[str]:
         if description:
             description = description.split("\n")[0]
     return description
+
+
+def _annotation(annotation: Any) -> Any:
+    return type(None) if annotation in [None, InspectEmpty] else annotation
