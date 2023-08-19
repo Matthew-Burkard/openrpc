@@ -23,7 +23,7 @@ classifiers = [
 python = "^3.9"
 pydantic = "^2.0.3"
 jsonrpc2-objects = "^3.0.0"
-lorem-pysum = "^0.14.3"
+lorem-pysum = "^0.14.9"
 
 [tool.poetry.dev-dependencies]
 coverage = "^7.1.0"
