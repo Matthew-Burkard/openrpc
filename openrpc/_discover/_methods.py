@@ -134,7 +134,7 @@ def _get_example(function: Callable) -> ExamplePairingObject:
     depends = [k for k, v in signature.parameters.items() if v.default is Depends]
 
     # Create model with params as fields to generate example values.
-    param_example_type = create_model(
+    param_example_type = create_model(  # type: ignore
         "ExampleParams",
         **{
             k: (v.annotation, ...)
@@ -153,7 +153,7 @@ def _get_example(function: Callable) -> ExamplePairingObject:
         "ExampleResult", result=(signature.return_annotation or type(None), ...)
     )
     result_value = lorem_pysum.generate(result_example_type)
-    result = ExampleObject(value=result_value.result)
+    result = ExampleObject(value=result_value.result)  # type: ignore
 
     return ExamplePairingObject(params=params, result=result)
 
