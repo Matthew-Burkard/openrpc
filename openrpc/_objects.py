@@ -180,7 +180,7 @@ class ExamplePairingObject(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     summary: Optional[str] = None
-    params: Optional[ExampleObject] = None
+    params: Optional[list[ExampleObject]] = None
     result: Optional[ExampleObject] = None
 
 
@@ -191,7 +191,7 @@ class ExampleObject(BaseModel):
     summary: Optional[str] = None
     description: Optional[str] = None
     value: Optional[Any] = None
-    external_value: Optional[str] = Field(None, alias="externalValue")
+    external_value: Optional[str] = Field(default=None, alias="externalValue")
 
 
 class LinkObject(BaseModel):

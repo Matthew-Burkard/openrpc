@@ -13,7 +13,17 @@ from typing import (
     Union,
 )
 
-from openrpc import ContentDescriptorObject, Depends, MethodObject, SchemaObject
+import lorem_pysum
+from pydantic import create_model
+
+from openrpc import (
+    ContentDescriptorObject,
+    Depends,
+    ExampleObject,
+    ExamplePairingObject,
+    MethodObject,
+    SchemaObject,
+)
 from openrpc._rpcmethod import RPCMethod
 
 NoneType = type(None)
@@ -30,22 +40,22 @@ def get_methods(
     """
     return [
         MethodObject(
-            name=rpc.metadata.name or rpc.function.__name__,
-            params=rpc.metadata.params or _get_params(rpc.function, type_schema_map),
-            result=rpc.metadata.result or _get_result(rpc.function, type_schema_map),
-            tags=rpc.metadata.tags,
-            summary=rpc.metadata.summary,
-            description=_get_description(rpc),
-            externalDocs=rpc.metadata.external_docs,
-            deprecated=rpc.metadata.deprecated,
-            servers=rpc.metadata.servers,
-            errors=rpc.metadata.errors,
-            links=rpc.metadata.links,
-            paramStructure=rpc.metadata.param_structure,
-            examples=rpc.metadata.examples,
+            name=m.metadata.name or m.function.__name__,
+            params=m.metadata.params or _get_params(m.function, type_schema_map),
+            result=m.metadata.result or _get_result(m.function, type_schema_map),
+            tags=m.metadata.tags,
+            summary=m.metadata.summary,
+            description=_get_description(m),
+            externalDocs=m.metadata.external_docs,
+            deprecated=m.metadata.deprecated,
+            servers=m.metadata.servers,
+            errors=m.metadata.errors,
+            links=m.metadata.links,
+            paramStructure=m.metadata.param_structure,
+            examples=m.metadata.examples or [_get_example(m.function)],
         )
-        for rpc in rpc_methods
-        if rpc.metadata.name != "rpc.discover"
+        for m in rpc_methods
+        if m.metadata.name != "rpc.discover"
     ]
 
 
@@ -62,17 +72,12 @@ def _get_result(
 def _get_params(
     function: Callable, type_schema_map: dict[Type, SchemaObject]
 ) -> list[ContentDescriptorObject]:
+    signature = inspect.signature(function)
     # noinspection PyUnresolvedReferences,PyProtectedMember
     has_default = {
-        k
-        for k, v in inspect.signature(function).parameters.items()
-        if v.default != inspect._empty
+        k for k, v in signature.parameters.items() if v.default != inspect._empty
     }
-    depends = [
-        k
-        for k, v in inspect.signature(function).parameters.items()
-        if v.default is Depends
-    ]
+    depends = [k for k, v in signature.parameters.items() if v.default is Depends]
     return [
         ContentDescriptorObject(
             name=name,
@@ -122,6 +127,35 @@ def _get_schema(
         return schema
 
     return SchemaObject(type=schema_type)
+
+
+def _get_example(function: Callable) -> ExamplePairingObject:
+    signature = inspect.signature(function)
+    depends = [k for k, v in signature.parameters.items() if v.default is Depends]
+
+    # Create model with params as fields to generate example values.
+    param_example_type = create_model(  # type: ignore
+        "ExampleParams",
+        **{
+            k: (v.annotation, ...)
+            for k, v in signature.parameters.items()
+            if k not in depends
+        },
+    )
+    param_values = lorem_pysum.generate(param_example_type)
+    params = [
+        ExampleObject(value=getattr(param_values, name))
+        for name in param_values.model_fields
+    ]
+
+    # Create model with result as fields to generate example value.
+    result_example_type = create_model(
+        "ExampleResult", result=(signature.return_annotation or type(None), ...)
+    )
+    result_value = lorem_pysum.generate(result_example_type)
+    result = ExampleObject(value=result_value.result)  # type: ignore
+
+    return ExamplePairingObject(params=params, result=result)
 
 
 def _py_to_schema_type(annotation: Any) -> str:

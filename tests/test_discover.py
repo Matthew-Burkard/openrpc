@@ -34,8 +34,8 @@ class NestedModels(BaseModel):
     name: str
     position: Vector3
     path: list[Vector3]
-    recursion: "NestedModels"
-    list_recursion: List["NestedModels"]
+    recursion: Optional["NestedModels"]
+    list_recursion: List[Optional["NestedModels"]]
     any_of: Union[Vector3, "NestedModels"]
     dict_model_values: dict[int, Vector2] = Field(default_factory=dict)
 
@@ -48,7 +48,7 @@ class ListResultModel(BaseModel):
 
 class DiscoverTest(unittest.TestCase):
     def __init__(self, *args) -> None:
-        self.rpc = RPCServer(title="Test OpenRPC", version="1.0.0")
+        self.rpc = RPCServer(title="Test OpenRPC", version="1.0.0", debug=True)
         self.rpc.method()(increment)
         self.rpc.method()(get_distance)
         self.rpc.method()(return_none)
@@ -90,6 +90,12 @@ class DiscoverTest(unittest.TestCase):
         self.assertEqual(
             {
                 "description": "pass",
+                "examples": [
+                    {
+                        "params": [{"value": [0.0, 0.0, 0.0]}],
+                        "result": {"value": [0, 0, 0]},
+                    }
+                ],
                 "name": "increment",
                 "params": [
                     {
@@ -122,6 +128,36 @@ class DiscoverTest(unittest.TestCase):
         self.assertEqual(
             {
                 "description": "pass",
+                "examples": [
+                    {
+                        "params": [
+                            {
+                                "value": {
+                                    "enum_field": "A",
+                                    "vanilla_model": {"x": 0.0, "y": 0.0, "z": 0.0},
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                }
+                            },
+                            {
+                                "value": {
+                                    "enum_field": "A",
+                                    "vanilla_model": {"x": 0.0, "y": 0.0, "z": 0.0},
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                }
+                            },
+                        ],
+                        "result": {
+                            "value": {
+                                "enum_field": "A",
+                                "vanilla_model": {"x": 0.0, "y": 0.0, "z": 0.0},
+                                "x": 0.0,
+                                "y": 0.0,
+                            }
+                        },
+                    }
+                ],
                 "name": "get_distance",
                 "params": [
                     {
@@ -151,6 +187,12 @@ class DiscoverTest(unittest.TestCase):
         self.assertEqual(
             {
                 "description": "pass",
+                "examples": [
+                    {
+                        "params": [{"value": 0}, {"value": 0.0}, {"value": "string"}],
+                        "result": {"value": "string"},
+                    }
+                ],
                 "name": "default_value",
                 "params": [
                     {
@@ -185,6 +227,7 @@ class DiscoverTest(unittest.TestCase):
         self.assertEqual(
             {
                 "description": "pass",
+                "examples": [{"params": [{"value": "string"}], "result": {}}],
                 "name": "return_none",
                 "params": [
                     {
@@ -211,6 +254,7 @@ class DiscoverTest(unittest.TestCase):
         self.assertEqual(
             {
                 "description": "pass",
+                "examples": [{"params": [{}], "result": {}}],
                 "name": "take_any_get_any",
                 "params": [{"name": "any_param", "required": True, "schema": {}}],
                 "result": {"name": "result", "schema": {}, "required": True},
@@ -254,7 +298,12 @@ class DiscoverTest(unittest.TestCase):
                         "type": "object",
                     },
                     "list_recursion": {
-                        "items": {"$ref": "#/components/schemas/NestedModels"},
+                        "items": {
+                            "anyOf": [
+                                {"$ref": "#/components/schemas/NestedModels"},
+                                {"type": "null"},
+                            ]
+                        },
                         "title": "List Recursion",
                         "type": "array",
                     },
@@ -265,7 +314,12 @@ class DiscoverTest(unittest.TestCase):
                         "type": "array",
                     },
                     "position": {"$ref": "#/components/schemas/Vector3"},
-                    "recursion": {"$ref": "#/components/schemas/NestedModels"},
+                    "recursion": {
+                        "anyOf": [
+                            {"$ref": "#/components/schemas/NestedModels"},
+                            {"type": "null"},
+                        ]
+                    },
                 },
                 "required": [
                     "name",
