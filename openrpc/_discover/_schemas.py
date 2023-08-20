@@ -164,7 +164,7 @@ def _get_flattened_schemas(
                 flat_schema.defs = definitions
 
         # Remove now redundant definitions.
-        flat_schema.defs = None
+        del flat_schema.defs
 
         # Add flattened schema to new map.
         schemas[type_] = flat_schema
