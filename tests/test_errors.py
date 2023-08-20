@@ -7,6 +7,7 @@ from typing import Any
 import pytest
 
 from openrpc import RPCServer
+from tests.util import get_response, get_response_async
 
 rpc = RPCServer(title="Test Depends", version="0.1.0")
 rpc_catch_all = RPCServer(title="Test Depends", version="0.1.0")
@@ -36,7 +37,7 @@ def test_method_errors_debug() -> None:
         "jsonrpc": "2.0",
     }
     rpc.debug = True
-    result = json.loads(rpc.process_request(json.dumps(req)))
+    result = get_response(rpc, json.dumps(req))
     absolute_path = Path(__file__).resolve()
     line = result["error"]["data"][-3:-1]
     error = (
@@ -61,7 +62,7 @@ def test_method_errors() -> None:
         "jsonrpc": "2.0",
     }
     rpc.debug = False
-    result = json.loads(rpc.process_request(json.dumps(req)))
+    result = get_response(rpc, json.dumps(req))
     assert "data" not in result["error"]
     assert rpc.debug is False
 
@@ -74,7 +75,7 @@ def test_catchall_error_debug() -> None:
         "jsonrpc": "2.0",
     }
     rpc_catch_all.debug = True
-    result = json.loads(rpc_catch_all.process_request(json.dumps(req)))
+    result = get_response(rpc_catch_all, json.dumps(req))
     assert result["error"]["data"][:-3] == f"ValueError: {error_message}"
 
 
@@ -86,7 +87,7 @@ def test_catchall_error() -> None:
         "jsonrpc": "2.0",
     }
     rpc_catch_all.debug = False
-    result = json.loads(rpc_catch_all.process_request(json.dumps(req)))
+    result = get_response(rpc_catch_all, json.dumps(req))
     assert "data" not in result["error"]
 
 
@@ -100,7 +101,7 @@ async def test_catchall_error_debug_async() -> None:
         "jsonrpc": "2.0",
     }
     rpc_catch_all.debug = True
-    result = json.loads(await rpc_catch_all.process_request_async(json.dumps(req)))
+    result = await get_response_async(rpc_catch_all, json.dumps(req))
     assert result["error"]["data"][:-3] == f"ValueError: {error_message}"
 
 

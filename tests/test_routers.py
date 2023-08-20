@@ -1,9 +1,9 @@
 """Unit tests for RPC method routers."""
-import json
 
 from jsonrpcobjects.objects import Request
 
 from openrpc import RPCRouter, RPCServer
+from tests.util import get_response
 
 rpc = RPCServer(title="RouterTestServer", version="1.0.0")
 auth_router = RPCRouter()
@@ -25,14 +25,14 @@ def login() -> str:
 
 def test_router_method_call() -> None:
     req = Request(id=1, method="auth.login")
-    resp = json.loads(rpc.process_request(req.model_dump_json()))
+    resp = get_response(rpc, req.model_dump_json())
     assert resp["result"] == "AUTH_TOKEN_HERE"
 
 
 def test_router_remove() -> None:
     auth_router.remove("login")
     req = Request(id=1, method="auth.login")
-    resp = json.loads(rpc.process_request(req.model_dump_json()))
+    resp = get_response(rpc, req.model_dump_json())
     assert resp["error"]["code"] == -32601  # Method not found code.
 
 
@@ -53,7 +53,7 @@ def do_nothing() -> str:  # type: ignore
 
 def test_tags_no_prefix_router_method_call() -> None:
     req = Request(id=1, method="return_coffee")
-    resp = json.loads(rpc.process_request(req.model_dump_json()))
+    resp = get_response(rpc, req.model_dump_json())
     assert resp["result"] == "Coffee"
 
 
@@ -65,7 +65,7 @@ def test_tags() -> None:
 def test_tags_no_prefix_router_remove() -> None:
     router_with_tags_no_prefix.remove("return_coffee")
     req = Request(id=1, method="return_coffee")
-    resp = json.loads(rpc.process_request(req.model_dump_json()))
+    resp = get_response(rpc, req.model_dump_json())
     assert resp["error"]["code"] == -32601  # Method not found code.
 
 

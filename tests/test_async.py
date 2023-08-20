@@ -1,6 +1,5 @@
 """Asynchronous OpenRPC tests."""
 import asyncio
-import json
 import unittest
 from typing import Any, Optional, Union
 
@@ -45,7 +44,7 @@ class RPCTest(unittest.TestCase):
                 Request(id=2, method="wait_short").model_dump_json(),
             ]
         )
-        json.loads(self.get_result_async(f"[{requests}]"))
+        self.get_result_async(f"[{requests}]")
         self.assertTrue(wait_short_started_second)
         self.assertTrue(wait_long_finished_second)
         # Again in reverse order.
@@ -57,6 +56,6 @@ class RPCTest(unittest.TestCase):
                 Request(id=1, method="wait_long").model_dump_json(),
             ]
         )
-        json.loads(self.get_result_async(f"[{requests}]"))
+        self.get_result_async(f"[{requests}]")
         self.assertFalse(wait_short_started_second)
         self.assertTrue(wait_long_finished_second)
