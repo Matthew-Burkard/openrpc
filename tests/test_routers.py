@@ -47,7 +47,7 @@ def return_coffee() -> str:
 
 
 @router_with_tags_no_prefix.method(tags=["does_nothing"])
-def do_nothing() -> str:
+def do_nothing() -> str:  # type: ignore
     """Do nothing."""
 
 
@@ -59,7 +59,7 @@ def test_tags_no_prefix_router_method_call() -> None:
 
 def test_tags() -> None:
     tags = [m for m in rpc.methods if m.name == "do_nothing"][0].tags
-    assert [t.name for t in tags] == ["does_nothing", "test_tag"]
+    assert [t.name for t in tags or []] == ["does_nothing", "test_tag"]
 
 
 def test_tags_no_prefix_router_remove() -> None:

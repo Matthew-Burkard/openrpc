@@ -1,21 +1,15 @@
 """Test removing a method from a server."""
-import unittest
-
 from openrpc import InfoObject, RPCServer
 
 
-# noinspection PyUnusedLocal
 def add(a: int, b: int) -> int:
-    """pass"""
+    """Add two integers."""
+    return a + b
 
 
-class TestRemove(unittest.TestCase):
-    def __init__(self, *args) -> None:
-        self.info = InfoObject(title="Test JSON RPC", version="1.0.0")
-        self.server = RPCServer(**self.info.model_dump())
-        self.server.method()(add)
-        super(TestRemove, self).__init__(*args)
-
-    def test_remove(self) -> None:
-        self.server.remove("add")
-        self.assertEqual(0, len(self.server.methods))
+def test_remove() -> None:
+    info = InfoObject(title="Test JSON RPC", version="1.0.0")
+    rpc = RPCServer(**info.model_dump())
+    rpc.method()(add)
+    rpc.remove("add")
+    assert 0 == len(rpc.methods)

@@ -45,9 +45,9 @@ class InfoObject(BaseModel):
     title: str
     version: str
     description: Optional[str] = None
-    terms_of_service: Optional[str] = Field(None, alias="termsOfService")
+    terms_of_service: Optional[str] = Field(default=None, alias="termsOfService")
     contact: Optional[ContactObject] = None
-    license_: Optional[LicenseObject] = Field(None, alias="license")
+    license_: Optional[LicenseObject] = Field(default=None, alias="license")
 
 
 class ContactObject(BaseModel):
@@ -93,13 +93,15 @@ class MethodObject(BaseModel):
     summary: Optional[str] = None
     description: Optional[str] = None
     external_docs: Optional[ExternalDocumentationObject] = Field(
-        None, alias="externalDocs"
+        default=None, alias="externalDocs"
     )
     deprecated: Optional[bool] = False
     servers: Optional[list[ServerObject]] = None
     errors: Optional[list[ErrorObject]] = None
     links: Optional[list[LinkObject]] = None
-    param_structure: Optional[ParamStructure] = Field(None, alias="paramStructure")
+    param_structure: Optional[ParamStructure] = Field(
+        default=None, alias="paramStructure"
+    )
     examples: Optional[list[ExamplePairingObject]] = None
 
 

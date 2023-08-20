@@ -2,6 +2,7 @@
 import inspect
 import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -13,9 +14,9 @@ error_message = "Custom error message"
 
 
 @rpc.method()
-def method_with_error(*_args) -> None:
+def method_with_error(*_args: Any) -> None:
     """That raises an error."""
-    current_frame = inspect.currentframe()
+    current_frame: FrameType = inspect.currentframe()  # type: ignore
     try:
         raise ValueError(f"{error_message}-{current_frame.f_lineno}")
     finally:
@@ -23,9 +24,9 @@ def method_with_error(*_args) -> None:
 
 
 # noinspection PyProtectedMember
-rpc_catch_all._request_processor.process = method_with_error
+rpc_catch_all._request_processor.process = method_with_error  # type: ignore
 # noinspection PyProtectedMember
-rpc_catch_all._request_processor.process_async = method_with_error
+rpc_catch_all._request_processor.process_async = method_with_error  # type: ignore
 
 
 def test_method_errors_debug() -> None:
@@ -41,11 +42,11 @@ def test_method_errors_debug() -> None:
     error = (
         inspect.cleandoc(
             f"""
-        ValueError: {error_message}-{line}
-          File "{absolute_path}", line {line}, in method_with_error
-            raise ValueError(f"{{error_message}}-{{current_frame.f_lineno}}")
-        ValueError: Custom error message-{line}
-        """
+            ValueError: {error_message}-{line}
+              File "{absolute_path}", line {line}, in method_with_error
+                raise ValueError(f"{{error_message}}-{{current_frame.f_lineno}}")
+            ValueError: Custom error message-{line}
+            """
         )
         + "\n"
     )

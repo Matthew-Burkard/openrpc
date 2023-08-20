@@ -64,20 +64,18 @@ def test_open_rpc_info() -> None:
     rpc.contact = rpc.contact or ContactObject(name="mocha")
     rpc.license_ = rpc.license_ or LicenseObject(name="AGPLv3")
     request = Request(id=1, method="rpc.discover")
-    resp = json.loads(rpc.process_request(request.model_dump_json()))
+    resp = json.loads(rpc.process_request(request.model_dump_json()))  # type: ignore
     discover_result = resp["result"]
     assert "1.2.6" == discover_result["openrpc"]
-    assert (
-        {
-            "title": "Test OpenRPC",
-            "version": "1.0.0",
-            "description": "Testing rpc.discover",
-            "termsOfService": "Coffee",
-            "contact": {"name": "mocha"},
-            "license": {"name": "AGPLv3"},
-        },
-        discover_result["info"],
-    )
+    assert {
+        "title": "Test OpenRPC",
+        "version": "1.0.0",
+        "description": "Testing rpc.discover",
+        "termsOfService": "Coffee",
+        "contact": {"name": "mocha"},
+        "license": {"name": "AGPLv3"},
+    } == discover_result["info"]
+
     # Once had problem where state was wrongfully mutated causing
     # discover to only work right the first time.
     assert rpc.discover() == rpc.discover()
@@ -240,18 +238,15 @@ def test_return_none() -> None:
 def test_any() -> None:
     rpc = _rpc()
     rpc.method()(take_any_get_any)
-    assert {
-        "description": "pass",
-        "examples": [
-            {
-                "params": [{"name": "any_param", "value": None}],
-                "result": {"value": None},
-            }
-        ],
-        "name": "take_any_get_any",
-        "params": [{"name": "any_param", "required": True, "schema": {}}],
-        "result": {"name": "result", "schema": {}, "required": True},
-    } == rpc.discover()["methods"][0]
+    method = rpc.discover()["methods"][0]
+    # Examples
+    assert [
+        {"params": [{"name": "any_param", "value": None}], "result": {"value": None}}
+    ] == method["examples"]
+    # Params
+    assert [{"name": "any_param", "required": True, "schema": {}}] == method["params"]
+    # Result
+    assert {"name": "result", "schema": {}, "required": True} == method["result"]
 
 
 def test_no_annotations() -> None:
@@ -359,53 +354,57 @@ def _rpc() -> RPCServer:
     return RPCServer(title="Test OpenRPC", version="1.0.0", debug=True)
 
 
-# noinspection PyUnusedLocal
+# noinspection PyMissingOrEmptyDocstring
 def increment(numbers: list[Union[int, float]]) -> list[Union[int, str]]:
     """pass"""
+    return list(map(int, numbers))
 
 
-# noinspection PyUnusedLocal
 def get_distance(position: Vector2, target: Vector2) -> Vector2:
-    """pass"""
+    """Function with basic model annotations."""
+    return position or target
 
 
-# noinspection PyUnusedLocal
 def default_value(a: int = 2, b: float = 0.99792458, c: str = "c") -> str:
-    """pass"""
+    """Function with default values for params."""
+    return f"{a}{b}{c}"
 
 
 # noinspection PyUnusedLocal
 def return_none(optional_param: Optional[str]) -> None:
-    """pass"""
+    """Function with optional param that always returns None."""
+    return None
 
 
-# noinspection PyUnusedLocal
 def take_any_get_any(any_param: Any, dep: str = Depends) -> Any:
-    """pass"""
+    """Function that takes and returns any type, uses Dep argument."""
+    return any_param + dep
 
 
-# noinspection PyUnusedLocal
 def dict_and_list(dict_param: dict, list_param: list) -> dict[str, list]:
-    """pass"""
+    """For testing dict and list type annotations."""
+    dict_param[""] = list_param
+    return dict_param
 
 
-# noinspection PyUnusedLocal
-def nested_model(a: NestedModels) -> dict[str, NestedModels]:
-    """pass"""
-
-
-# noinspection PyUnusedLocal
 def typed_dict_and_list(
     dict_param: dict[str, int], list_param: list[dict[str, int]]
 ) -> dict[str, list]:
-    """pass"""
+    """For testing typed dict and list type annotations."""
+    list_param.append(dict_param)
+    return {"": list_param}
 
 
-# noinspection PyUnusedLocal
+def nested_model(a: NestedModels) -> dict[str, NestedModels]:
+    """For testing methods using nested models."""
+    return {"": a}
+
+
 def list_model_result() -> list[ListResultModel]:
-    """pass"""
+    """Function returning a list of a model."""
+    return []
 
 
-# noinspection PyUnusedLocal
-def no_annotations(a, b):
-    """pass"""
+def no_annotations(a, b):  # type: ignore
+    """To test discover for poorly written functions."""
+    return a + b

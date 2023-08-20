@@ -41,7 +41,7 @@ RecursiveModel.model_rebuild()
 
 # noinspection PyMissingOrEmptyDocstring
 class RPCTest(unittest.TestCase):
-    def __init__(self, *args) -> None:
+    def __init__(self, *args: Any) -> None:
         self.info = InfoObject(title="Test JSON RPC", version="1.0.0")
         self.server = RPCServer(**self.info.model_dump())
         self.method(add)
@@ -71,7 +71,7 @@ class RPCTest(unittest.TestCase):
         self.assertEqual(0, json.loads(resp)["result"])
 
     def test_vararg_method(self) -> None:
-        def summation(*args) -> float:
+        def summation(*args: Union[int, float]) -> float:
             return sum(args)
 
         self.method(summation)
@@ -80,7 +80,7 @@ class RPCTest(unittest.TestCase):
         self.assertEqual(27, json.loads(resp)["result"])
 
     def test_kwarg_method(self) -> None:
-        def pythagorean(**kwargs) -> bool:
+        def pythagorean(**kwargs: int) -> bool:
             return (kwargs["a"] ** 2 + kwargs["b"] ** 2) == (kwargs["c"] ** 2)
 
         self.method(pythagorean)
@@ -115,11 +115,11 @@ class RPCTest(unittest.TestCase):
         self.assertIn("result", json.loads(resp).keys())
 
     def test_parse_error(self) -> None:
-        resp = json.loads(self.get_sync_and_async_resp(b"}"))
+        resp = json.loads(self.get_sync_and_async_resp("}"))
         self.assertEqual(PARSE_ERROR, resp["error"]["code"])
 
     def test_invalid_request(self) -> None:
-        resp = json.loads(self.get_sync_and_async_resp(b'{"id": 1}'))
+        resp = json.loads(self.get_sync_and_async_resp('{"id": 1}'))
         self.assertEqual(INVALID_REQUEST, resp["error"]["code"])
 
     def test_method_not_found(self) -> None:
@@ -215,17 +215,19 @@ class RPCTest(unittest.TestCase):
         def optional_params(
             opt_str: Optional[str] = None, opt_int: Optional[int] = None
         ) -> list[Union[int, str]]:
-            return [opt_str, opt_int]
+            return [opt_str or "", opt_int or 0]
 
         self.method(optional_params)
         req_id = str(uuid.uuid4())
         # No params.
         req = Request(id=req_id, method="optional_params")
         resp = json.loads(self.get_sync_and_async_resp(req.model_dump_json()))
-        self.assertEqual([None, None], resp["result"])
+        self.assertEqual(["", 0], resp["result"])
         # With params.
-        req = ParamsRequest(id=req_id, method="optional_params", params=["three", 3])
-        resp = json.loads(self.get_sync_and_async_resp(req.model_dump_json()))
+        param_req = ParamsRequest(
+            id=req_id, method="optional_params", params=["three", 3]
+        )
+        resp = json.loads(self.get_sync_and_async_resp(param_req.model_dump_json()))
         self.assertEqual(["three", 3], resp["result"])
 
     def test_optional_object_param(self) -> None:
@@ -261,12 +263,12 @@ class RPCTest(unittest.TestCase):
         resp = json.loads(self.get_sync_and_async_resp(req.model_dump_json()))
         self.assertEqual(2, resp["result"])
         # First param.
-        req = ParamsRequest(id=1, method="default_values", params=[2])
-        resp = json.loads(self.get_sync_and_async_resp(req.model_dump_json()))
+        param_req = ParamsRequest(id=1, method="default_values", params=[2])
+        resp = json.loads(self.get_sync_and_async_resp(param_req.model_dump_json()))
         # Both params.
         self.assertEqual(3, resp["result"])
-        req = ParamsRequest(id=1, method="default_values", params=[2, 2])
-        resp = json.loads(self.get_sync_and_async_resp(req.model_dump_json()))
+        param_req = ParamsRequest(id=1, method="default_values", params=[2, 2])
+        resp = json.loads(self.get_sync_and_async_resp(param_req.model_dump_json()))
         self.assertEqual(4, resp["result"])
 
     def test_json_rpc(self) -> None:
@@ -287,10 +289,11 @@ class RPCTest(unittest.TestCase):
     def test_deserialize_nested_objects(self) -> None:
         def take_thing(thing: RecursiveModel) -> bool:
             self.assertTrue(isinstance(thing, RecursiveModel))
-            self.assertTrue(isinstance(thing.another_thing, RecursiveModel))
-            self.assertTrue(isinstance(thing.another_thing.position, Vector3))
-            self.assertTrue(
-                isinstance(thing.another_thing_no_future_annotations.position, Vector3)
+            assert isinstance(thing.another_thing, RecursiveModel)
+            assert isinstance(thing.another_thing.position, Vector3)
+            assert isinstance(thing.another_thing_no_future_annotations, RecursiveModel)
+            assert isinstance(
+                thing.another_thing_no_future_annotations.position, Vector3
             )
             return True
 
@@ -325,7 +328,7 @@ class RPCTest(unittest.TestCase):
         resp = self.get_sync_and_async_resp(req.model_dump_json())
         self.assertIsNone(resp)
 
-    def get_sync_and_async_resp(self, request: Union[str, bytes]) -> str:
+    def get_sync_and_async_resp(self, request: str) -> str:
         sync_resp = self.server.process_request(request)
         loop = asyncio.new_event_loop()
         if "method" in str(request):
@@ -333,7 +336,7 @@ class RPCTest(unittest.TestCase):
         async_resp = loop.run_until_complete(self.server.process_request_async(request))
         loop.close()
         if sync_resp != async_resp:
-            async_resp = re.sub(r"_?async_?", "", async_resp)
+            async_resp = re.sub(r"_?async_?", "", async_resp or "")
         self.assertEqual(sync_resp, async_resp)
         return sync_resp
 
@@ -344,38 +347,38 @@ class RPCTest(unittest.TestCase):
         self.server.method(name=name)(get_as_async(func))
 
 
-# noinspection PyUnresolvedReferences
 def get_as_async(func: Callable) -> Callable:
     """Get an async version of a function."""
 
-    async def _wrapper(*args, **kwargs) -> Any:
+    async def _wrapper(*args: Any, **kwargs: Any) -> Any:
         return func(*args, **kwargs)
 
     _wrapper.__name__ = f"async_{func.__name__}"
+    # noinspection PyUnresolvedReferences
     _wrapper.__annotations__ = func.__annotations__
     return _wrapper
 
 
-# noinspection PyMissingOrEmptyDocstring
 def add(x: float, y: float) -> float:
+    """Add two floats."""
     return x + y
 
 
-# noinspection PyMissingOrEmptyDocstring
 def subtract(x: float, y: float) -> float:
+    """Subtract two floats."""
     return x - y
 
 
-# noinspection PyMissingOrEmptyDocstring
 def divide(x: float, y: float) -> float:
+    """Divide two floats."""
     return x / y
 
 
-# noinspection PyMissingOrEmptyDocstring
-def args_and_kwargs(*args, **kwargs) -> Any:
+def args_and_kwargs(*args: Any, **kwargs: Any) -> Any:
+    """Function with `*args` and `**kwargs`."""
     return *args, {**kwargs}
 
 
-# noinspection PyMissingOrEmptyDocstring
 def return_none() -> None:
+    """Function that returns `None`."""
     return None

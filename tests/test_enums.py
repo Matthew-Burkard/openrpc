@@ -2,6 +2,7 @@
 import json
 import unittest
 from enum import Enum
+from typing import Any
 
 from openrpc import RPCServer
 
@@ -27,7 +28,7 @@ def enum_test_func(ee: EnumExample) -> EnumExampleWithNull:
 
 
 class EnumTest(unittest.TestCase):
-    def __init__(self, *args) -> None:
+    def __init__(self, *args: Any) -> None:
         self.rpc = RPCServer(title="Test Enums", version="1.0.0")
         super(EnumTest, self).__init__(*args)
 

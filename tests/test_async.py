@@ -2,7 +2,7 @@
 import asyncio
 import json
 import unittest
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 from jsonrpcobjects.objects import Request
 
@@ -11,7 +11,7 @@ from openrpc import InfoObject, RPCServer
 
 # noinspection PyMissingOrEmptyDocstring
 class RPCTest(unittest.TestCase):
-    def __init__(self, *args) -> None:
+    def __init__(self, *args: Any) -> None:
         self.info = InfoObject(title="Test JSON RPC", version="1.0.0")
         self.server = RPCServer(**self.info.model_dump())
         super(RPCTest, self).__init__(*args)

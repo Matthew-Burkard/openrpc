@@ -1,7 +1,7 @@
 """Test deserializing union types."""
 import json
 import unittest
-from typing import Union
+from typing import Any, Union
 
 from pydantic import BaseModel, StrictInt, StrictStr
 
@@ -24,7 +24,7 @@ def func(c: Union[CustomA, CustomB]) -> bool:
 
 
 class UnionsTest(unittest.TestCase):
-    def __init__(self, *args) -> None:
+    def __init__(self, *args: Any) -> None:
         self.rpc = RPCServer(title="Test Unions", version="1.0.0")
         super(UnionsTest, self).__init__(*args)
 
