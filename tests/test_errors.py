@@ -2,10 +2,12 @@
 import inspect
 import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 
 from openrpc import RPCServer
+from tests.util import get_response, get_response_async
 
 rpc = RPCServer(title="Test Depends", version="0.1.0")
 rpc_catch_all = RPCServer(title="Test Depends", version="0.1.0")
@@ -13,9 +15,9 @@ error_message = "Custom error message"
 
 
 @rpc.method()
-def method_with_error(*_args) -> None:
+def method_with_error(*_args: Any) -> None:
     """That raises an error."""
-    current_frame = inspect.currentframe()
+    current_frame: FrameType = inspect.currentframe()  # type: ignore
     try:
         raise ValueError(f"{error_message}-{current_frame.f_lineno}")
     finally:
@@ -23,9 +25,9 @@ def method_with_error(*_args) -> None:
 
 
 # noinspection PyProtectedMember
-rpc_catch_all._request_processor.process = method_with_error
+rpc_catch_all._request_processor.process = method_with_error  # type: ignore
 # noinspection PyProtectedMember
-rpc_catch_all._request_processor.process_async = method_with_error
+rpc_catch_all._request_processor.process_async = method_with_error  # type: ignore
 
 
 def test_method_errors_debug() -> None:
@@ -35,17 +37,17 @@ def test_method_errors_debug() -> None:
         "jsonrpc": "2.0",
     }
     rpc.debug = True
-    result = json.loads(rpc.process_request(json.dumps(req)))
+    result = get_response(rpc, json.dumps(req))
     absolute_path = Path(__file__).resolve()
     line = result["error"]["data"][-3:-1]
     error = (
         inspect.cleandoc(
             f"""
-        ValueError: {error_message}-{line}
-          File "{absolute_path}", line {line}, in method_with_error
-            raise ValueError(f"{{error_message}}-{{current_frame.f_lineno}}")
-        ValueError: Custom error message-{line}
-        """
+            ValueError: {error_message}-{line}
+              File "{absolute_path}", line {line}, in method_with_error
+                raise ValueError(f"{{error_message}}-{{current_frame.f_lineno}}")
+            ValueError: Custom error message-{line}
+            """
         )
         + "\n"
     )
@@ -60,7 +62,7 @@ def test_method_errors() -> None:
         "jsonrpc": "2.0",
     }
     rpc.debug = False
-    result = json.loads(rpc.process_request(json.dumps(req)))
+    result = get_response(rpc, json.dumps(req))
     assert "data" not in result["error"]
     assert rpc.debug is False
 
@@ -73,7 +75,7 @@ def test_catchall_error_debug() -> None:
         "jsonrpc": "2.0",
     }
     rpc_catch_all.debug = True
-    result = json.loads(rpc_catch_all.process_request(json.dumps(req)))
+    result = get_response(rpc_catch_all, json.dumps(req))
     assert result["error"]["data"][:-3] == f"ValueError: {error_message}"
 
 
@@ -85,7 +87,7 @@ def test_catchall_error() -> None:
         "jsonrpc": "2.0",
     }
     rpc_catch_all.debug = False
-    result = json.loads(rpc_catch_all.process_request(json.dumps(req)))
+    result = get_response(rpc_catch_all, json.dumps(req))
     assert "data" not in result["error"]
 
 
@@ -99,7 +101,7 @@ async def test_catchall_error_debug_async() -> None:
         "jsonrpc": "2.0",
     }
     rpc_catch_all.debug = True
-    result = json.loads(await rpc_catch_all.process_request_async(json.dumps(req)))
+    result = await get_response_async(rpc_catch_all, json.dumps(req))
     assert result["error"]["data"][:-3] == f"ValueError: {error_message}"
 
 

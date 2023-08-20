@@ -41,25 +41,38 @@ def get_methods(
     :param type_schema_map: Type to Schema map.
     :return: OpenRPC method objects.
     """
-    return [
-        MethodObject(
+    methods = []
+    for m in rpc_methods:
+        if m.metadata.name == "rpc.discover":
+            continue
+        method = MethodObject(
             name=m.metadata.name or m.function.__name__,
             params=m.metadata.params or _get_params(m.function, type_schema_map),
             result=m.metadata.result or _get_result(m.function, type_schema_map),
-            tags=m.metadata.tags,
-            summary=m.metadata.summary,
-            description=_get_description(m),
-            externalDocs=m.metadata.external_docs,
-            deprecated=m.metadata.deprecated,
-            servers=m.metadata.servers,
-            errors=m.metadata.errors,
-            links=m.metadata.links,
-            paramStructure=m.metadata.param_structure,
             examples=m.metadata.examples or [_get_example(m.function)],
         )
-        for m in rpc_methods
-        if m.metadata.name != "rpc.discover"
-    ]
+        # Don't pass `None` values to constructor for sake of
+        # `exclude_unset` in discover.
+        if m.metadata.tags is not None:
+            method.tags = m.metadata.tags
+        if m.metadata.summary is not None:
+            method.summary = m.metadata.summary
+        if (description := _get_description(m)) is not None:
+            method.description = description
+        if m.metadata.external_docs is not None:
+            method.external_docs = m.metadata.external_docs
+        if m.metadata.deprecated is not None:
+            method.deprecated = m.metadata.deprecated
+        if m.metadata.servers is not None:
+            method.servers = m.metadata.servers
+        if m.metadata.errors is not None:
+            method.errors = m.metadata.errors
+        if m.metadata.links is not None:
+            method.links = m.metadata.links
+        if m.metadata.param_structure is not None:
+            method.param_structure = m.metadata.param_structure
+        methods.append(method)
+    return methods
 
 
 def _get_result(
@@ -80,10 +93,11 @@ def _get_params(
         k for k, v in signature.parameters.items() if v.default != InspectEmpty
     }
     depends = [k for k, v in signature.parameters.items() if v.default is Depends]
+    type_hints = get_type_hints(function)
     return [
         ContentDescriptorObject(
             name=name,
-            schema=_get_schema(param.annotation, type_schema_map),
+            schema=_get_schema(type_hints.get(param.name) or Any, type_schema_map),
             required=name not in has_default
             and _is_required(_annotation(param.annotation)),
         )
@@ -93,13 +107,7 @@ def _get_params(
 
 
 def _is_required(annotation: Any) -> bool:
-    def _get_name(arg: Any) -> str:
-        try:
-            return arg.__name__
-        except AttributeError:
-            return ""
-
-    return "NoneType" not in (_get_name(a) for a in get_args(annotation))
+    return NoneType not in get_args(annotation)
 
 
 def _get_schema(
@@ -147,7 +155,7 @@ def _get_example(function: Callable) -> ExamplePairingObject:
     )
     param_values = lorem_pysum.generate(param_example_type)
     params = [
-        ExampleObject(value=getattr(param_values, name))
+        ExampleObject(name=name, value=getattr(param_values, name))
         for name in param_values.model_fields
     ]
 
@@ -191,4 +199,6 @@ def _get_description(rpc_method: RPCMethod) -> Optional[str]:
 
 
 def _annotation(annotation: Any) -> Any:
-    return type(None) if annotation in [None, InspectEmpty] else annotation
+    if annotation == InspectEmpty:
+        return Any
+    return type(None) if annotation is None else annotation

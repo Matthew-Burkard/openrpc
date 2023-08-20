@@ -1,6 +1,5 @@
 """Test the generated "rpc.discover" method."""
 import json
-import unittest
 from enum import Enum
 from typing import Any, List, Optional, Union
 
@@ -8,7 +7,17 @@ from jsonrpcobjects.objects import Request
 from pydantic import BaseModel, Field
 
 # noinspection PyProtectedMember
-from openrpc import ContactObject, Depends, LicenseObject, RPCServer
+from openrpc import (
+    ContactObject,
+    Depends,
+    ErrorObject,
+    ExternalDocumentationObject,
+    LicenseObject,
+    LinkObject,
+    ParamStructure,
+    RPCServer,
+    ServerObject,
+)
 from tests.util import Vector3
 
 
@@ -46,379 +55,400 @@ class ListResultModel(BaseModel):
     name: str
 
 
-class DiscoverTest(unittest.TestCase):
-    def __init__(self, *args) -> None:
-        self.rpc = RPCServer(title="Test OpenRPC", version="1.0.0", debug=True)
-        self.rpc.method()(increment)
-        self.rpc.method()(get_distance)
-        self.rpc.method()(return_none)
-        self.rpc.method()(default_value)
-        self.rpc.method()(take_any_get_any)
-        self.rpc.method()(dict_and_list)
-        self.rpc.method()(nested_model)
-        self.rpc.method()(typed_dict_and_list)
-        self.rpc.method()(list_model_result)
-        self.rpc.method()(no_annotations)
-        self.rpc.title = self.rpc.title or "Test OpenRPC"
-        self.rpc.version = self.rpc.version or "1.0.0"
-        self.rpc.description = self.rpc.description or "Testing rpc.discover"
-        self.rpc.terms_of_service = self.rpc.terms_of_service or "Coffee"
-        self.rpc.contact = self.rpc.contact or ContactObject(name="mocha")
-        self.rpc.license_ = self.rpc.license_ or LicenseObject(name="AGPLv3")
-        request = Request(id=1, method="rpc.discover")
-        resp = json.loads(self.rpc.process_request(request.model_dump_json()))
-        self.discover_result = resp["result"]
-        super(DiscoverTest, self).__init__(*args)
+def test_open_rpc_info() -> None:
+    rpc = RPCServer(
+        title="Test OpenRPC",
+        version="1.0.0",
+        debug=True,
+        description="description",
+        terms_of_service="terms_of_service",
+        contact=ContactObject(),
+        license_=LicenseObject(name="name"),
+    )
+    rpc.method()(increment)
+    rpc.method()(get_distance)
+    rpc.method()(return_none)
+    rpc.method()(default_value)
+    rpc.method()(take_any_get_any)
+    rpc.method()(dict_and_list)
+    rpc.method()(nested_model)
+    rpc.method()(typed_dict_and_list)
+    rpc.method()(list_model_result)
+    rpc.method()(no_annotations)
+    rpc.title = rpc.title or "Test OpenRPC"
+    rpc.version = rpc.version or "1.0.0"
+    rpc.description = rpc.description or "Testing rpc.discover"
+    rpc.terms_of_service = rpc.terms_of_service or "Coffee"
+    rpc.contact = rpc.contact or ContactObject(name="mocha")
+    rpc.license_ = rpc.license_ or LicenseObject(name="AGPLv3")
+    request = Request(id=1, method="rpc.discover")
+    resp = json.loads(rpc.process_request(request.model_dump_json()))  # type: ignore
+    discover_result = resp["result"]
+    assert "1.2.6" == discover_result["openrpc"]
+    assert discover_result["info"] == {
+        "contact": {},
+        "description": "description",
+        "license": {"name": "name"},
+        "termsOfService": "terms_of_service",
+        "title": "Test OpenRPC",
+        "version": "1.0.0",
+    }
 
-    def test_open_rpc_info(self) -> None:
-        self.assertEqual("1.2.6", self.discover_result["openrpc"])
-        self.assertEqual(
-            {
-                "title": "Test OpenRPC",
-                "version": "1.0.0",
-                "description": "Testing rpc.discover",
-                "termsOfService": "Coffee",
-                "contact": {"name": "mocha"},
-                "license": {"name": "AGPLv3"},
+    # Once had problem where state was wrongfully mutated causing
+    # discover to only work right the first time.
+    assert rpc.discover() == rpc.discover()
+
+
+def test_method_properties() -> None:
+    url = "http://localhost:8000"
+    rpc = _rpc()
+    rpc.method(
+        summary="Summary",
+        external_docs=ExternalDocumentationObject(url=url),
+        deprecated=True,
+        servers=[ServerObject(name="Server", url=url)],
+        errors=[ErrorObject(code=0, message="Error Message")],
+        links=[LinkObject(name="Link")],
+        param_structure=ParamStructure.BY_NAME,
+    )(method_with_properties)
+    method = rpc.discover()["methods"][0]
+    assert method["name"] == "method_with_properties"
+    assert method["description"] == "Method to test other method properties."
+
+
+def test_lists() -> None:
+    rpc = _rpc()
+    rpc.method()(increment)
+    method = rpc.discover()["methods"][0]
+    # Examples
+    assert method["examples"] == [
+        {"params": [{"name": "numbers", "value": [0.0]}], "result": {"value": [0]}}
+    ]
+    # Params
+    assert method["params"] == [
+        {
+            "name": "numbers",
+            "schema": {
+                "type": "array",
+                "items": {"anyOf": [{"type": "integer"}, {"type": "number"}]},
             },
-            self.discover_result["info"],
-        )
+            "required": True,
+        }
+    ]
+    # Result
+    assert method["result"] == {
+        "name": "result",
+        "schema": {
+            "type": "array",
+            "items": {"anyOf": [{"type": "integer"}, {"type": "string"}]},
+        },
+        "required": True,
+    }
 
-    def test_lists(self) -> None:
-        method = [
-            m for m in self.discover_result["methods"] if m["name"] == "increment"
-        ][0]
-        self.assertEqual(
-            {
-                "description": "pass",
-                "examples": [
-                    {
-                        "params": [{"value": [0.0, 0.0, 0.0]}],
-                        "result": {"value": [0, 0, 0]},
-                    }
-                ],
-                "name": "increment",
-                "params": [
-                    {
-                        "name": "numbers",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "anyOf": [{"type": "integer"}, {"type": "number"}]
-                            },
-                        },
-                        "required": True,
-                    }
-                ],
-                "result": {
-                    "name": "result",
-                    "schema": {
-                        "type": "array",
-                        "items": {"anyOf": [{"type": "integer"}, {"type": "string"}]},
-                    },
-                    "required": True,
-                },
-            },
-            method,
-        )
 
-    def test_schema_params(self) -> None:
-        method = [
-            m for m in self.discover_result["methods"] if m["name"] == "get_distance"
-        ][0]
-        self.assertEqual(
-            {
-                "description": "pass",
-                "examples": [
-                    {
-                        "params": [
-                            {
-                                "value": {
-                                    "enum_field": "A",
-                                    "vanilla_model": {"x": 0.0, "y": 0.0, "z": 0.0},
-                                    "x": 0.0,
-                                    "y": 0.0,
-                                }
-                            },
-                            {
-                                "value": {
-                                    "enum_field": "A",
-                                    "vanilla_model": {"x": 0.0, "y": 0.0, "z": 0.0},
-                                    "x": 0.0,
-                                    "y": 0.0,
-                                }
-                            },
-                        ],
-                        "result": {
-                            "value": {
-                                "enum_field": "A",
-                                "vanilla_model": {"x": 0.0, "y": 0.0, "z": 0.0},
-                                "x": 0.0,
-                                "y": 0.0,
-                            }
-                        },
-                    }
-                ],
-                "name": "get_distance",
-                "params": [
-                    {
-                        "name": "position",
-                        "schema": {"$ref": "#/components/schemas/Vector2"},
-                        "required": True,
-                    },
-                    {
-                        "name": "target",
-                        "schema": {"$ref": "#/components/schemas/Vector2"},
-                        "required": True,
-                    },
-                ],
-                "result": {
-                    "name": "result",
-                    "schema": {"$ref": "#/components/schemas/Vector2"},
-                    "required": True,
-                },
-            },
-            method,
-        )
-
-    def test_defaults(self) -> None:
-        method = [
-            m for m in self.discover_result["methods"] if m["name"] == "default_value"
-        ][0]
-        self.assertEqual(
-            {
-                "description": "pass",
-                "examples": [
-                    {
-                        "params": [{"value": 0}, {"value": 0.0}, {"value": "string"}],
-                        "result": {"value": "string"},
-                    }
-                ],
-                "name": "default_value",
-                "params": [
-                    {
-                        "name": "a",
-                        "schema": {"type": "integer"},
-                        "required": False,
-                    },
-                    {
-                        "name": "b",
-                        "schema": {"type": "number"},
-                        "required": False,
-                    },
-                    {
-                        "name": "c",
-                        "schema": {"type": "string"},
-                        "required": False,
-                    },
-                ],
-                "result": {
-                    "name": "result",
-                    "schema": {"type": "string"},
-                    "required": True,
-                },
-            },
-            method,
-        )
-
-    def test_return_none(self) -> None:
-        method = [
-            m for m in self.discover_result["methods"] if m["name"] == "return_none"
-        ][0]
-        self.assertEqual(
-            {
-                "description": "pass",
-                "examples": [{"params": [{"value": "string"}], "result": {}}],
-                "name": "return_none",
-                "params": [
-                    {
-                        "name": "optional_param",
-                        "schema": {"anyOf": [{"type": "string"}, {"type": "null"}]},
-                        "required": False,
-                    }
-                ],
-                "result": {
-                    "name": "result",
-                    "schema": {"type": "null"},
-                    "required": True,
-                },
-            },
-            method,
-        )
-
-    def test_any(self) -> None:
-        method = [
-            m
-            for m in self.discover_result["methods"]
-            if m["name"] == "take_any_get_any"
-        ][0]
-        self.assertEqual(
-            {
-                "description": "pass",
-                "examples": [{"params": [{}], "result": {}}],
-                "name": "take_any_get_any",
-                "params": [{"name": "any_param", "required": True, "schema": {}}],
-                "result": {"name": "result", "schema": {}, "required": True},
-            },
-            method,
-        )
-
-    def test_schemas(self) -> None:
-        self.assertEqual(
-            {
-                "type": "object",
-                "title": "Vector3",
-                "description": "x, y, and z values.",
-                "properties": {
-                    "x": {"title": "X", "type": "number"},
-                    "y": {"title": "Y", "type": "number"},
-                    "z": {"title": "Z", "type": "number"},
-                },
-                "required": ["x", "y", "z"],
-            },
-            self.discover_result["components"]["schemas"]["Vector3"],
-        )
-
-    def test_recursive_schemas(self) -> None:
-        self.assertEqual(
-            {
-                "description": "To test models with other models as fields.",
-                "properties": {
-                    "any_of": {
-                        "anyOf": [
-                            {"$ref": "#/components/schemas/Vector3"},
-                            {"$ref": "#/components/schemas/NestedModels"},
-                        ],
-                        "title": "Any Of",
-                    },
-                    "dict_model_values": {
-                        "additionalProperties": {
-                            "$ref": "#/components/schemas/Vector2"
-                        },
-                        "title": "Dict Model Values",
-                        "type": "object",
-                    },
-                    "list_recursion": {
-                        "items": {
-                            "anyOf": [
-                                {"$ref": "#/components/schemas/NestedModels"},
-                                {"type": "null"},
-                            ]
-                        },
-                        "title": "List Recursion",
-                        "type": "array",
-                    },
-                    "name": {"title": "Name", "type": "string"},
-                    "path": {
-                        "items": {"$ref": "#/components/schemas/Vector3"},
-                        "title": "Path",
-                        "type": "array",
-                    },
-                    "position": {"$ref": "#/components/schemas/Vector3"},
-                    "recursion": {
-                        "anyOf": [
-                            {"$ref": "#/components/schemas/NestedModels"},
-                            {"type": "null"},
-                        ]
+def test_schema_params() -> None:
+    rpc = _rpc()
+    rpc.method()(get_distance)
+    method = rpc.discover()["methods"][0]
+    # Examples
+    assert method["examples"] == [
+        {
+            "params": [
+                {
+                    "name": "position",
+                    "value": {
+                        "enum_field": "A",
+                        "vanilla_model": {"x": 0.0, "y": 0.0, "z": 0.0},
+                        "x": 0.0,
+                        "y": 0.0,
                     },
                 },
-                "required": [
-                    "name",
-                    "position",
-                    "path",
-                    "recursion",
-                    "list_recursion",
-                    "any_of",
+                {
+                    "name": "target",
+                    "value": {
+                        "enum_field": "A",
+                        "vanilla_model": {"x": 0.0, "y": 0.0, "z": 0.0},
+                        "x": 0.0,
+                        "y": 0.0,
+                    },
+                },
+            ],
+            "result": {
+                "value": {
+                    "enum_field": "A",
+                    "vanilla_model": {"x": 0.0, "y": 0.0, "z": 0.0},
+                    "x": 0.0,
+                    "y": 0.0,
+                }
+            },
+        }
+    ]
+    # Params
+    assert method["params"] == [
+        {
+            "name": "position",
+            "schema": {"$ref": "#/components/schemas/Vector2"},
+            "required": True,
+        },
+        {
+            "name": "target",
+            "schema": {"$ref": "#/components/schemas/Vector2"},
+            "required": True,
+        },
+    ]
+    # Result
+    assert method["result"] == {
+        "name": "result",
+        "schema": {"$ref": "#/components/schemas/Vector2"},
+        "required": True,
+    }
+
+
+def test_defaults() -> None:
+    rpc = _rpc()
+    rpc.method()(default_value)
+    method = rpc.discover()["methods"][0]
+    # Examples
+    assert method["examples"] == [
+        {
+            "params": [
+                {"name": "a", "value": 0},
+                {"name": "b", "value": 0.0},
+                {"name": "c", "value": "string"},
+            ],
+            "result": {"value": "string"},
+        }
+    ]
+    # Params
+    assert method["params"] == [
+        {
+            "name": "a",
+            "schema": {"type": "integer"},
+            "required": False,
+        },
+        {
+            "name": "b",
+            "schema": {"type": "number"},
+            "required": False,
+        },
+        {
+            "name": "c",
+            "schema": {"type": "string"},
+            "required": False,
+        },
+    ]
+    # Result
+    assert method["result"] == {
+        "name": "result",
+        "schema": {"type": "string"},
+        "required": True,
+    }
+
+
+def test_return_none() -> None:
+    rpc = _rpc()
+    rpc.method()(return_none)
+    method = rpc.discover()["methods"][0]
+    # Examples
+    assert method["examples"] == [
+        {
+            "params": [{"name": "optional_param", "value": "string"}],
+            "result": {"value": None},
+        }
+    ]
+    # Params
+    assert method["params"] == [
+        {
+            "name": "optional_param",
+            "schema": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+            "required": False,
+        }
+    ]
+    # Result
+    assert method["result"] == {
+        "name": "result",
+        "schema": {"type": "null"},
+        "required": True,
+    }
+
+
+def test_any() -> None:
+    rpc = _rpc()
+    rpc.method()(take_any_get_any)
+    method = rpc.discover()["methods"][0]
+    # Examples
+    assert method["examples"] == [
+        {"params": [{"name": "any_param", "value": None}], "result": {"value": None}}
+    ]
+    # Params
+    assert method["params"] == [{"name": "any_param", "required": True, "schema": {}}]
+    # Result
+    assert method["result"] == {"name": "result", "schema": {}, "required": True}
+
+
+def test_no_annotations() -> None:
+    rpc = _rpc()
+    rpc.method()(no_annotations)
+    method = rpc.discover()["methods"][0]
+    # Examples
+    assert method["examples"] == [
+        {
+            "params": [
+                {"name": "a", "value": None},
+                {"name": "b", "value": None},
+            ],
+            "result": {"value": None},
+        }
+    ]
+    # Params
+    assert method["params"] == [
+        {
+            "name": "a",
+            "schema": {},
+            "required": True,
+        },
+        {
+            "name": "b",
+            "schema": {},
+            "required": True,
+        },
+    ]
+    # Result
+    assert method["result"] == {
+        "name": "result",
+        "required": True,
+        "schema": {"type": "null"},
+    }
+
+
+def test_recursive_schemas() -> None:
+    rpc = _rpc()
+    rpc.method()(nested_model)
+    doc = rpc.discover()
+    assert doc["components"]["schemas"]["NestedModels"] == {
+        "description": "To test models with other models as fields.",
+        "properties": {
+            "any_of": {
+                "anyOf": [
+                    {"$ref": "#/components/schemas/Vector3"},
+                    {"$ref": "#/components/schemas/NestedModels"},
                 ],
-                "title": "NestedModels",
+                "title": "Any Of",
+            },
+            "dict_model_values": {
+                "additionalProperties": {"$ref": "#/components/schemas/Vector2"},
+                "title": "Dict Model Values",
                 "type": "object",
             },
-            self.discover_result["components"]["schemas"]["NestedModels"],
-        )
-
-    def test_no_annotations(self) -> None:
-        method = [
-            m for m in self.discover_result["methods"] if m["name"] == "no_annotations"
-        ][0]
-        self.assertEqual(
-            {
-                "description": "pass",
-                "examples": [{"params": [{}, {}], "result": {}}],
-                "name": "no_annotations",
-                "params": [
-                    {
-                        "name": "a",
-                        "schema": {},
-                        "required": True,
-                    },
-                    {
-                        "name": "b",
-                        "schema": {},
-                        "required": True,
-                    },
-                ],
-                "result": {
-                    "name": "result",
-                    "required": True,
-                    "schema": {"type": "null"},
+            "list_recursion": {
+                "items": {
+                    "anyOf": [
+                        {"$ref": "#/components/schemas/NestedModels"},
+                        {"type": "null"},
+                    ]
                 },
+                "title": "List Recursion",
+                "type": "array",
             },
-            method,
-        )
+            "name": {"title": "Name", "type": "string"},
+            "path": {
+                "items": {"$ref": "#/components/schemas/Vector3"},
+                "title": "Path",
+                "type": "array",
+            },
+            "position": {"$ref": "#/components/schemas/Vector3"},
+            "recursion": {
+                "anyOf": [
+                    {"$ref": "#/components/schemas/NestedModels"},
+                    {"type": "null"},
+                ]
+            },
+        },
+        "required": [
+            "name",
+            "position",
+            "path",
+            "recursion",
+            "list_recursion",
+            "any_of",
+        ],
+        "title": "NestedModels",
+        "type": "object",
+    }
 
-    def test_multiple_discover(self) -> None:
-        # Once had problem where state was wrongfully mutated causing
-        # discover to only work right the first timme.
-        self.assertEqual(self.rpc.discover(), self.rpc.discover())
+    assert doc["components"]["schemas"]["Vector3"] == {
+        "type": "object",
+        "title": "Vector3",
+        "description": "x, y, and z values.",
+        "properties": {
+            "x": {"title": "X", "type": "number"},
+            "y": {"title": "Y", "type": "number"},
+            "z": {"title": "Z", "type": "number"},
+        },
+        "required": ["x", "y", "z"],
+    }
 
 
-# noinspection PyUnusedLocal
+def _rpc() -> RPCServer:
+    return RPCServer(title="Test OpenRPC", version="1.0.0", debug=True)
+
+
+# noinspection PyMissingOrEmptyDocstring
 def increment(numbers: list[Union[int, float]]) -> list[Union[int, str]]:
-    """pass"""
+    """Collections and unions."""
+    return list(map(int, numbers))
 
 
-# noinspection PyUnusedLocal
 def get_distance(position: Vector2, target: Vector2) -> Vector2:
-    """pass"""
+    """Function with basic model annotations."""
+    return position or target
 
 
-# noinspection PyUnusedLocal
 def default_value(a: int = 2, b: float = 0.99792458, c: str = "c") -> str:
-    """pass"""
+    """Function with default values for params."""
+    return f"{a}{b}{c}"
 
 
 # noinspection PyUnusedLocal
 def return_none(optional_param: Optional[str]) -> None:
-    """pass"""
+    """Function with optional param that always returns None."""
+    return None
 
 
-# noinspection PyUnusedLocal
 def take_any_get_any(any_param: Any, dep: str = Depends) -> Any:
-    """pass"""
+    """Function that takes and returns any type, uses Dep argument."""
+    return any_param + dep
 
 
-# noinspection PyUnusedLocal
 def dict_and_list(dict_param: dict, list_param: list) -> dict[str, list]:
-    """pass"""
+    """For testing dict and list type annotations."""
+    dict_param[""] = list_param
+    return dict_param
 
 
-# noinspection PyUnusedLocal
-def nested_model(a: NestedModels) -> dict[str, NestedModels]:
-    """pass"""
-
-
-# noinspection PyUnusedLocal
 def typed_dict_and_list(
     dict_param: dict[str, int], list_param: list[dict[str, int]]
 ) -> dict[str, list]:
-    """pass"""
+    """For testing typed dict and list type annotations."""
+    list_param.append(dict_param)
+    return {"": list_param}
 
 
-# noinspection PyUnusedLocal
+def nested_model(a: NestedModels) -> dict[str, NestedModels]:
+    """For testing methods using nested models."""
+    return {"": a}
+
+
 def list_model_result() -> list[ListResultModel]:
-    """pass"""
+    """Function returning a list of a model."""
+    return []
 
 
-# noinspection PyUnusedLocal
-def no_annotations(a, b):
-    """pass"""
+def no_annotations(a, b):  # type: ignore
+    """To test discover for poorly written functions."""
+    return a + b
+
+
+def method_with_properties() -> None:
+    """Method to test other method properties."""
+    return None

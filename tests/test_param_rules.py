@@ -2,6 +2,7 @@
 import json
 
 from openrpc import ParamStructure, RPCServer
+from tests.util import get_response
 
 rpc = RPCServer(title="Test Depends", version="0.1.0")
 rpc_catch_all = RPCServer(title="Test Depends", version="0.1.0")
@@ -27,7 +28,7 @@ def test_by_position() -> None:
         "params": [2, 2],
         "jsonrpc": "2.0",
     }
-    result = json.loads(rpc.process_request(json.dumps(position_req)))
+    result = get_response(rpc, json.dumps(position_req))
     assert result["result"] == 4
     name_req = {
         "id": 1,
@@ -35,7 +36,7 @@ def test_by_position() -> None:
         "params": {"a": 2, "b": 2},
         "jsonrpc": "2.0",
     }
-    result = json.loads(rpc.process_request(json.dumps(name_req)))
+    result = get_response(rpc, json.dumps(name_req))
     assert result["error"]["data"] == "Params must be passed by position."
 
 
@@ -46,7 +47,7 @@ def test_by_name() -> None:
         "params": {"a": 2, "b": 2},
         "jsonrpc": "2.0",
     }
-    result = json.loads(rpc.process_request(json.dumps(name_req)))
+    result = get_response(rpc, json.dumps(name_req))
     assert result["result"] == 4
     position_req = {
         "id": 1,
@@ -54,5 +55,5 @@ def test_by_name() -> None:
         "params": [2, 2],
         "jsonrpc": "2.0",
     }
-    result = json.loads(rpc.process_request(json.dumps(position_req)))
+    result = get_response(rpc, json.dumps(position_req))
     assert result["error"]["data"] == "Params must be passed by name."

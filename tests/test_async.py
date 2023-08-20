@@ -1,8 +1,7 @@
 """Asynchronous OpenRPC tests."""
 import asyncio
-import json
 import unittest
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 from jsonrpcobjects.objects import Request
 
@@ -11,7 +10,7 @@ from openrpc import InfoObject, RPCServer
 
 # noinspection PyMissingOrEmptyDocstring
 class RPCTest(unittest.TestCase):
-    def __init__(self, *args) -> None:
+    def __init__(self, *args: Any) -> None:
         self.info = InfoObject(title="Test JSON RPC", version="1.0.0")
         self.server = RPCServer(**self.info.model_dump())
         super(RPCTest, self).__init__(*args)
@@ -45,7 +44,7 @@ class RPCTest(unittest.TestCase):
                 Request(id=2, method="wait_short").model_dump_json(),
             ]
         )
-        json.loads(self.get_result_async(f"[{requests}]"))
+        self.get_result_async(f"[{requests}]")
         self.assertTrue(wait_short_started_second)
         self.assertTrue(wait_long_finished_second)
         # Again in reverse order.
@@ -57,6 +56,6 @@ class RPCTest(unittest.TestCase):
                 Request(id=1, method="wait_long").model_dump_json(),
             ]
         )
-        json.loads(self.get_result_async(f"[{requests}]"))
+        self.get_result_async(f"[{requests}]")
         self.assertFalse(wait_short_started_second)
         self.assertTrue(wait_long_finished_second)

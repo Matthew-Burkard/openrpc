@@ -4,6 +4,7 @@ import json
 import pytest
 
 from openrpc import Depends, RPCServer
+from tests.util import get_response, get_response_async
 
 rpc = RPCServer(title="Test Depends", version="0.1.0")
 
@@ -29,10 +30,10 @@ async def async_method_with_dep(arg: int, dep: str = Depends) -> str:
 def test_depends() -> None:
     user = "Coffee"
     req = {"id": 1, "method": "method_with_dep", "params": [1], "jsonrpc": "2.0"}
-    result = json.loads(rpc.process_request(json.dumps(req), {"dep": user}))
+    result = get_response(rpc, json.dumps(req), {"dep": user})
     assert result["result"] == f"1-{user}"
     req = {"id": 1, "method": "method_with_dep", "params": {"arg": 1}, "jsonrpc": "2.0"}
-    result = json.loads(rpc.process_request(json.dumps(req), {"dep": user}))
+    result = get_response(rpc, json.dumps(req), {"dep": user})
     assert result["result"] == f"1-{user}"
 
 
@@ -43,7 +44,7 @@ def test_depends_missing_dependency() -> None:
         "params": {"arg": 1},
         "jsonrpc": "2.0",
     }
-    result = json.loads(rpc.process_request(json.dumps(req)))
+    result = get_response(rpc, json.dumps(req))
     assert result["error"]["message"] == "Server error"
 
 
@@ -56,9 +57,7 @@ def test_depends_extra_dependencies() -> None:
         "params": {"arg": 1},
         "jsonrpc": "2.0",
     }
-    result = json.loads(
-        rpc.process_request(json.dumps(req), {"dep": user, "name": name})
-    )
+    result = get_response(rpc, json.dumps(req), {"dep": user, "name": name})
     assert result["result"] == f"1-{user}"
 
 
@@ -69,7 +68,7 @@ def test_depends_shadow_dep_name() -> None:
         "params": {"dep": 1},
         "jsonrpc": "2.0",
     }
-    result = json.loads(rpc.process_request(json.dumps(req), {"dep": "Mocha"}))
+    result = get_response(rpc, json.dumps(req), {"dep": "Mocha"})
     assert result["result"] == 1
 
 
@@ -82,5 +81,5 @@ async def test_depends_async() -> None:
         "params": {"arg": 1},
         "jsonrpc": "2.0",
     }
-    result = json.loads(await rpc.process_request_async(json.dumps(req), {"dep": user}))
+    result = await get_response_async(rpc, json.dumps(req), {"dep": user})
     assert result["result"] == f"1-{user}"

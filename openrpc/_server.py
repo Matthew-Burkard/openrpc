@@ -54,14 +54,17 @@ class RPCServer(MethodRegistrar):
         self._request_processor.debug = debug
         # Set OpenRPC server info.
         self._debug = debug
-        self._info = InfoObject(
-            title=title or "RPC Server",
-            version=version or "0.1.0",
-            description=description,
-            termsOfService=terms_of_service,
-            contact=contact,
-            license=license_,
-        )
+        self._info = InfoObject(title=title or "RPC Server", version=version or "0.1.0")
+        # Don't pass `None` values to constructor for sake of
+        # `exclude_unset` in discover.
+        if description is not None:
+            self._info.description = description
+        if terms_of_service is not None:
+            self._info.terms_of_service = terms_of_service
+        if contact is not None:
+            self._info.contact = contact
+        if license_ is not None:
+            self._info.license_ = license_
         # Register discover method.
         schema = SchemaObject()
         schema.ref = _META_REF
@@ -249,7 +252,7 @@ class RPCServer(MethodRegistrar):
     def discover(self) -> dict[str, Any]:
         """Execute "rpc.discover" method defined in OpenRPC spec."""
         return get_openrpc_doc(self._info, self._rpc_methods.values()).model_dump(
-            by_alias=True, exclude_unset=True, exclude_none=True
+            by_alias=True, exclude_unset=True
         )
 
     def _get_error_response(self, error: Exception) -> ErrorResponse:
