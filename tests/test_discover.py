@@ -7,7 +7,17 @@ from jsonrpcobjects.objects import Request
 from pydantic import BaseModel, Field
 
 # noinspection PyProtectedMember
-from openrpc import ContactObject, Depends, LicenseObject, RPCServer
+from openrpc import (
+    ContactObject,
+    Depends,
+    ErrorObject,
+    ExternalDocumentationObject,
+    LicenseObject,
+    LinkObject,
+    ParamStructure,
+    RPCServer,
+    ServerObject,
+)
 from tests.util import Vector3
 
 
@@ -46,7 +56,15 @@ class ListResultModel(BaseModel):
 
 
 def test_open_rpc_info() -> None:
-    rpc = _rpc()
+    rpc = RPCServer(
+        title="Test OpenRPC",
+        version="1.0.0",
+        debug=True,
+        description="description",
+        terms_of_service="terms_of_service",
+        contact=ContactObject(),
+        license_=LicenseObject(name="name"),
+    )
     rpc.method()(increment)
     rpc.method()(get_distance)
     rpc.method()(return_none)
@@ -67,32 +85,47 @@ def test_open_rpc_info() -> None:
     resp = json.loads(rpc.process_request(request.model_dump_json()))  # type: ignore
     discover_result = resp["result"]
     assert "1.2.6" == discover_result["openrpc"]
-    assert {
+    assert discover_result["info"] == {
+        "contact": {},
+        "description": "description",
+        "license": {"name": "name"},
+        "termsOfService": "terms_of_service",
         "title": "Test OpenRPC",
         "version": "1.0.0",
-        "description": "Testing rpc.discover",
-        "termsOfService": "Coffee",
-        "contact": {"name": "mocha"},
-        "license": {"name": "AGPLv3"},
-    } == discover_result["info"]
+    }
 
     # Once had problem where state was wrongfully mutated causing
     # discover to only work right the first time.
     assert rpc.discover() == rpc.discover()
 
 
+def test_method_properties() -> None:
+    url = "http://localhost:8000"
+    rpc = _rpc()
+    rpc.method(
+        summary="Summary",
+        external_docs=ExternalDocumentationObject(url=url),
+        deprecated=True,
+        servers=[ServerObject(name="Server", url=url)],
+        errors=[ErrorObject(code=0, message="Error Message")],
+        links=[LinkObject(name="Link")],
+        param_structure=ParamStructure.BY_NAME,
+    )(method_with_properties)
+    method = rpc.discover()["methods"][0]
+    assert method["name"] == "method_with_properties"
+    assert method["description"] == "Method to test other method properties."
+
+
 def test_lists() -> None:
     rpc = _rpc()
     rpc.method()(increment)
     method = rpc.discover()["methods"][0]
-    assert method["name"] == "increment"
-    assert method["description"] == "pass"
     # Examples
-    assert [
+    assert method["examples"] == [
         {"params": [{"name": "numbers", "value": [0.0]}], "result": {"value": [0]}}
-    ] == method["examples"]
+    ]
     # Params
-    assert [
+    assert method["params"] == [
         {
             "name": "numbers",
             "schema": {
@@ -101,16 +134,16 @@ def test_lists() -> None:
             },
             "required": True,
         }
-    ] == method["params"]
+    ]
     # Result
-    assert {
+    assert method["result"] == {
         "name": "result",
         "schema": {
             "type": "array",
             "items": {"anyOf": [{"type": "integer"}, {"type": "string"}]},
         },
         "required": True,
-    } == method["result"]
+    }
 
 
 def test_schema_params() -> None:
@@ -118,7 +151,7 @@ def test_schema_params() -> None:
     rpc.method()(get_distance)
     method = rpc.discover()["methods"][0]
     # Examples
-    assert [
+    assert method["examples"] == [
         {
             "params": [
                 {
@@ -149,9 +182,9 @@ def test_schema_params() -> None:
                 }
             },
         }
-    ] == method["examples"]
+    ]
     # Params
-    assert [
+    assert method["params"] == [
         {
             "name": "position",
             "schema": {"$ref": "#/components/schemas/Vector2"},
@@ -162,13 +195,13 @@ def test_schema_params() -> None:
             "schema": {"$ref": "#/components/schemas/Vector2"},
             "required": True,
         },
-    ] == method["params"]
+    ]
     # Result
-    assert {
+    assert method["result"] == {
         "name": "result",
         "schema": {"$ref": "#/components/schemas/Vector2"},
         "required": True,
-    } == method["result"]
+    }
 
 
 def test_defaults() -> None:
@@ -176,7 +209,7 @@ def test_defaults() -> None:
     rpc.method()(default_value)
     method = rpc.discover()["methods"][0]
     # Examples
-    assert [
+    assert method["examples"] == [
         {
             "params": [
                 {"name": "a", "value": 0},
@@ -185,9 +218,9 @@ def test_defaults() -> None:
             ],
             "result": {"value": "string"},
         }
-    ] == method["examples"]
+    ]
     # Params
-    assert [
+    assert method["params"] == [
         {
             "name": "a",
             "schema": {"type": "integer"},
@@ -203,11 +236,13 @@ def test_defaults() -> None:
             "schema": {"type": "string"},
             "required": False,
         },
-    ] == method["params"]
-    # Result
-    assert {"name": "result", "schema": {"type": "string"}, "required": True} == method[
-        "result"
     ]
+    # Result
+    assert method["result"] == {
+        "name": "result",
+        "schema": {"type": "string"},
+        "required": True,
+    }
 
 
 def test_return_none() -> None:
@@ -215,24 +250,26 @@ def test_return_none() -> None:
     rpc.method()(return_none)
     method = rpc.discover()["methods"][0]
     # Examples
-    assert [
+    assert method["examples"] == [
         {
             "params": [{"name": "optional_param", "value": "string"}],
             "result": {"value": None},
         }
-    ] == method["examples"]
+    ]
     # Params
-    assert [
+    assert method["params"] == [
         {
             "name": "optional_param",
             "schema": {"anyOf": [{"type": "string"}, {"type": "null"}]},
             "required": False,
         }
-    ] == method["params"]
-    # Result
-    assert {"name": "result", "schema": {"type": "null"}, "required": True} == method[
-        "result"
     ]
+    # Result
+    assert method["result"] == {
+        "name": "result",
+        "schema": {"type": "null"},
+        "required": True,
+    }
 
 
 def test_any() -> None:
@@ -240,13 +277,13 @@ def test_any() -> None:
     rpc.method()(take_any_get_any)
     method = rpc.discover()["methods"][0]
     # Examples
-    assert [
+    assert method["examples"] == [
         {"params": [{"name": "any_param", "value": None}], "result": {"value": None}}
-    ] == method["examples"]
+    ]
     # Params
-    assert [{"name": "any_param", "required": True, "schema": {}}] == method["params"]
+    assert method["params"] == [{"name": "any_param", "required": True, "schema": {}}]
     # Result
-    assert {"name": "result", "schema": {}, "required": True} == method["result"]
+    assert method["result"] == {"name": "result", "schema": {}, "required": True}
 
 
 def test_no_annotations() -> None:
@@ -254,7 +291,7 @@ def test_no_annotations() -> None:
     rpc.method()(no_annotations)
     method = rpc.discover()["methods"][0]
     # Examples
-    assert [
+    assert method["examples"] == [
         {
             "params": [
                 {"name": "a", "value": None},
@@ -262,9 +299,9 @@ def test_no_annotations() -> None:
             ],
             "result": {"value": None},
         }
-    ] == method["examples"]
+    ]
     # Params
-    assert [
+    assert method["params"] == [
         {
             "name": "a",
             "schema": {},
@@ -275,18 +312,20 @@ def test_no_annotations() -> None:
             "schema": {},
             "required": True,
         },
-    ] == method["params"]
-    # Result
-    assert {"name": "result", "required": True, "schema": {"type": "null"}} == method[
-        "result"
     ]
+    # Result
+    assert method["result"] == {
+        "name": "result",
+        "required": True,
+        "schema": {"type": "null"},
+    }
 
 
 def test_recursive_schemas() -> None:
     rpc = _rpc()
     rpc.method()(nested_model)
     doc = rpc.discover()
-    assert {
+    assert doc["components"]["schemas"]["NestedModels"] == {
         "description": "To test models with other models as fields.",
         "properties": {
             "any_of": {
@@ -335,9 +374,9 @@ def test_recursive_schemas() -> None:
         ],
         "title": "NestedModels",
         "type": "object",
-    } == doc["components"]["schemas"]["NestedModels"]
+    }
 
-    assert {
+    assert doc["components"]["schemas"]["Vector3"] == {
         "type": "object",
         "title": "Vector3",
         "description": "x, y, and z values.",
@@ -347,7 +386,7 @@ def test_recursive_schemas() -> None:
             "z": {"title": "Z", "type": "number"},
         },
         "required": ["x", "y", "z"],
-    } == doc["components"]["schemas"]["Vector3"]
+    }
 
 
 def _rpc() -> RPCServer:
@@ -356,7 +395,7 @@ def _rpc() -> RPCServer:
 
 # noinspection PyMissingOrEmptyDocstring
 def increment(numbers: list[Union[int, float]]) -> list[Union[int, str]]:
-    """pass"""
+    """Collections and unions."""
     return list(map(int, numbers))
 
 
@@ -408,3 +447,8 @@ def list_model_result() -> list[ListResultModel]:
 def no_annotations(a, b):  # type: ignore
     """To test discover for poorly written functions."""
     return a + b
+
+
+def method_with_properties() -> None:
+    """Method to test other method properties."""
+    return None

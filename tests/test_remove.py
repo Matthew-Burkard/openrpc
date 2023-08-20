@@ -12,4 +12,4 @@ def test_remove() -> None:
     rpc = RPCServer(**info.model_dump())
     rpc.method()(add)
     rpc.remove("add")
-    assert 0 == len(rpc.methods)
+    assert len(rpc.methods) == 0

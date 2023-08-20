@@ -1,5 +1,4 @@
 """OpenRPC custom JSON RPC errors tests."""
-import json
 from typing import Any
 
 from jsonrpcobjects.errors import JSONRPCError
@@ -31,6 +30,6 @@ def test_custom_error() -> None:
     params = {"a": 0, "b": 0}
     req = ParamsRequest(id=1, method="divide", params=params).model_dump_json()
     error = get_response(rpc, req)["error"]
-    assert custom_error_object.message == error["message"]
-    assert custom_error_object.code == error["code"]
-    assert params == error["data"]
+    assert error["message"] == custom_error_object.message
+    assert error["code"] == custom_error_object.code
+    assert error["data"] == params

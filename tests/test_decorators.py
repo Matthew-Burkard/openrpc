@@ -19,9 +19,9 @@ def subtract(a: int, b: int) -> int:
 
 def test_plain_decorator() -> None:
     req = '{"id": 1, "method": "add", "params": [1, 3], "jsonrpc": "2.0"}'
-    assert 4 == get_response(rpc, req)["result"]
+    assert get_response(rpc, req)["result"] == 4
 
 
 def test_kwargs_decorator() -> None:
     req = '{"id": 1, "method": "math.subtract", "params": [1, 3], "jsonrpc": "2.0"}'
-    assert -2 == get_response(rpc, req)["result"]
+    assert get_response(rpc, req)["result"] == -2
