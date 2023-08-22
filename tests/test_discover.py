@@ -1,5 +1,7 @@
 """Test the generated "rpc.discover" method."""
+import datetime
 import json
+from _decimal import Decimal
 from enum import Enum
 from typing import Any, List, Optional, Union
 
@@ -53,6 +55,14 @@ class ListResultModel(BaseModel):
     """To test models as a list result."""
 
     name: str
+
+
+class ComplexObjects(BaseModel):
+    date_field: datetime.date
+    time_field: datetime.time
+    datetime_field: datetime.datetime
+    timedelta_field: datetime.timedelta
+    decimal_field: Decimal
 
 
 def test_open_rpc_info() -> None:
@@ -268,7 +278,7 @@ def test_return_none() -> None:
         {
             "name": "optional_param",
             "schema": {"anyOf": [{"type": "string"}, {"type": "null"}]},
-            "required": False,
+            "required": True,
         }
     ]
     # Result
@@ -325,6 +335,67 @@ def test_no_annotations() -> None:
         "name": "result",
         "required": True,
         "schema": {"type": "null"},
+    }
+
+
+def test_complex_objects() -> None:
+    rpc = _rpc()
+    rpc.method()(method_using_complex_objects)
+    method = rpc.discover()["methods"][0]
+    # Examples
+    assert method["examples"] == [
+        {
+            "params": [
+                {"name": "date_field", "value": "1788-06-21"},
+                {"name": "time_field", "value": "00:00:00"},
+                {"name": "datetime_field", "value": "1788-06-21T00:00:00"},
+                {"name": "timedelta_field", "value": "PT0S"},
+                {"name": "decimal_field", "value": "1.0"},
+            ],
+            "result": {
+                "value": {
+                    "date_field": "1788-06-21",
+                    "datetime_field": "1788-06-21T00:00:00",
+                    "decimal_field": "1.0",
+                    "time_field": "00:00:00",
+                    "timedelta_field": "PT0S",
+                }
+            },
+        }
+    ]
+    # Params
+    assert method["params"] == [
+        {
+            "name": "date_field",
+            "required": True,
+            "schema": {"format": "date", "type": "string"},
+        },
+        {
+            "name": "time_field",
+            "required": True,
+            "schema": {"format": "time", "type": "string"},
+        },
+        {
+            "name": "datetime_field",
+            "required": True,
+            "schema": {"format": "date-time", "type": "string"},
+        },
+        {
+            "name": "timedelta_field",
+            "required": True,
+            "schema": {"format": "duration", "type": "string"},
+        },
+        {
+            "name": "decimal_field",
+            "required": True,
+            "schema": {"anyOf": [{"type": "number"}, {"type": "string"}]},
+        },
+    ]
+    # Result
+    assert method["result"] == {
+        "name": "result",
+        "required": True,
+        "schema": {"$ref": "#/components/schemas/ComplexObjects"},
     }
 
 
@@ -459,3 +530,20 @@ def no_annotations(a, b):  # type: ignore
 def method_with_properties() -> None:
     """Method to test other method properties."""
     return None
+
+
+def method_using_complex_objects(
+    date_field: datetime.date,
+    time_field: datetime.time,
+    datetime_field: datetime.datetime,
+    timedelta_field: datetime.timedelta,
+    decimal_field: Decimal,
+) -> ComplexObjects:
+    """Method to test schema generation for complex objects."""
+    return ComplexObjects(
+        date_field=date_field,
+        time_field=time_field,
+        datetime_field=datetime_field,
+        timedelta_field=timedelta_field,
+        decimal_field=decimal_field,
+    )

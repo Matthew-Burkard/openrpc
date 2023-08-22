@@ -1,10 +1,13 @@
 """Module for generating OpenRPC document methods."""
 __all__ = ("get_methods",)
 
+import datetime
 import inspect
+from _decimal import Decimal
 from typing import (
     Any,
     Callable,
+    ForwardRef,
     get_args,
     get_origin,
     get_type_hints,
@@ -17,6 +20,9 @@ from typing import (
 import lorem_pysum
 from pydantic import create_model
 
+# noinspection PyProtectedMember
+from pydantic.v1.typing import evaluate_forwardref
+
 from openrpc import (
     ContentDescriptorObject,
     Depends,
@@ -28,8 +34,6 @@ from openrpc import (
 from openrpc._rpcmethod import RPCMethod
 
 NoneType = type(None)
-# noinspection PyUnresolvedReferences,PyProtectedMember
-InspectEmpty = inspect._empty
 
 
 def get_methods(
@@ -78,9 +82,12 @@ def get_methods(
 def _get_result(
     function: Callable, type_schema_map: dict[Type, SchemaObject]
 ) -> ContentDescriptorObject:
+    type_hints = {
+        k: _annotation(v, function) for k, v in get_type_hints(function).items()
+    }
     return ContentDescriptorObject(
         name="result",
-        schema=_get_schema(get_type_hints(function).get("return"), type_schema_map),
+        schema=_get_schema(type_hints.get("return"), type_schema_map),
         required=_is_required(get_type_hints(function).get("return")),
     )
 
@@ -90,16 +97,19 @@ def _get_params(
 ) -> list[ContentDescriptorObject]:
     signature = inspect.signature(function)
     has_default = {
-        k for k, v in signature.parameters.items() if v.default != InspectEmpty
+        k
+        for k, v in signature.parameters.items()
+        if v.default != inspect.Signature.empty
     }
     depends = [k for k, v in signature.parameters.items() if v.default is Depends]
-    type_hints = get_type_hints(function)
+    type_hints = {
+        k: _annotation(v, function) for k, v in get_type_hints(function).items()
+    }
     return [
         ContentDescriptorObject(
             name=name,
             schema=_get_schema(type_hints.get(param.name) or Any, type_schema_map),
-            required=name not in has_default
-            and _is_required(_annotation(param.annotation)),
+            required=name not in has_default,
         )
         for name, param in signature.parameters.items()
         if name not in depends + ["return"]
@@ -113,31 +123,37 @@ def _is_required(annotation: Any) -> bool:
 def _get_schema(
     annotation: Any, type_schema_map: dict[Type, SchemaObject]
 ) -> SchemaObject:
-    if annotation in (InspectEmpty, Any):
-        return SchemaObject()
-
-    if schema := type_schema_map.get(annotation):
-        ref_schema = SchemaObject()
-        ref_schema.ref = f"#/components/schemas/{schema.title}"
-        return ref_schema
-
-    if get_origin(annotation) == Union:
-        return SchemaObject(
-            anyOf=[_get_schema(a, type_schema_map) for a in get_args(annotation)]
-        )
-
+    schema = SchemaObject()
     schema_type = _py_to_schema_type(annotation)
 
-    if schema_type == "object":
-        return SchemaObject(type=schema_type, additionalProperties=True)
+    if existing_schema := type_schema_map.get(annotation):
+        schema.ref = f"#/components/schemas/{existing_schema.title}"
 
-    if schema_type == "array":
-        schema = SchemaObject(type=schema_type)
+    elif annotation in [
+        Decimal,
+        datetime.date,
+        datetime.time,
+        datetime.datetime,
+        datetime.timedelta,
+    ]:
+        schema = _py_object_to_schema(annotation)
+
+    elif _is_union(get_origin(annotation)):
+        schema.any_of = [_get_schema(a, type_schema_map) for a in get_args(annotation)]
+
+    elif schema_type == "object":
+        schema.type = schema_type
+        schema.additional_properties = True
+
+    elif schema_type == "array":
+        schema.type = schema_type
         if args := get_args(annotation):
             schema.items = _get_schema(args[0], type_schema_map)
-        return schema
 
-    return SchemaObject(type=schema_type)
+    elif schema_type is not None:
+        schema.type = schema_type
+
+    return schema
 
 
 def _get_example(function: Callable) -> ExamplePairingObject:
@@ -148,7 +164,7 @@ def _get_example(function: Callable) -> ExamplePairingObject:
     param_example_type = create_model(  # type: ignore
         "ExampleParams",
         **{
-            k: (_annotation(v.annotation), ...)
+            k: (_annotation(v.annotation, function), ...)
             for k, v in signature.parameters.items()
             if k not in depends
         },
@@ -161,7 +177,8 @@ def _get_example(function: Callable) -> ExamplePairingObject:
 
     # Create model with result as fields to generate example value.
     result_example_type = create_model(
-        "ExampleResult", result=(_annotation(signature.return_annotation), ...)
+        "ExampleResult",
+        result=(_annotation(signature.return_annotation, function), ...),
     )
     result_value = lorem_pysum.generate(result_example_type, use_default_values=False)
     result = ExampleObject(value=result_value.result)  # type: ignore
@@ -169,13 +186,35 @@ def _get_example(function: Callable) -> ExamplePairingObject:
     return ExamplePairingObject(params=params, result=result)
 
 
-def _py_to_schema_type(annotation: Any) -> str:
+def _py_object_to_schema(
+    annotation: Union[
+        Type[Decimal],
+        Type[datetime.date],
+        Type[datetime.time],
+        Type[datetime.datetime],
+        Type[datetime.timedelta],
+    ]
+) -> SchemaObject:
+    return {
+        Decimal: SchemaObject(
+            anyOf=[SchemaObject(type="number"), SchemaObject(type="string")]
+        ),
+        datetime.date: SchemaObject(format="date", type="string"),
+        datetime.time: SchemaObject(format="time", type="string"),
+        datetime.datetime: SchemaObject(format="date-time", type="string"),
+        datetime.timedelta: SchemaObject(format="duration", type="string"),
+    }[annotation]
+
+
+def _py_to_schema_type(annotation: Any) -> Optional[str]:
     py_to_schema = {
         None: "null",
         str: "string",
         int: "integer",
         float: "number",
         bool: "boolean",
+        inspect.Signature.empty: None,
+        Any: None,
     }
     origin = get_origin(annotation)
     flat_collections = [list, set, tuple]
@@ -185,7 +224,7 @@ def _py_to_schema_type(annotation: Any) -> str:
         return "object"
     if NoneType is annotation:
         return "null"
-    return py_to_schema.get(annotation) or "object"
+    return py_to_schema.get(annotation)
 
 
 def _get_description(rpc_method: RPCMethod) -> Optional[str]:
@@ -198,7 +237,19 @@ def _get_description(rpc_method: RPCMethod) -> Optional[str]:
     return description
 
 
-def _annotation(annotation: Any) -> Any:
-    if annotation == InspectEmpty:
+def _annotation(annotation: Any, function: Callable) -> Any:
+    if annotation == inspect.Signature.empty:
         return Any
+    globalns = getattr(function, "__globals__", {})
+    if isinstance(annotation, str):
+        annotation = ForwardRef(annotation)
+        annotation = evaluate_forwardref(annotation, globalns, globalns)
     return type(None) if annotation is None else annotation
+
+
+def _is_union(origin: Any) -> bool:
+    try:
+        # Python3.10 union types need to be checked differently.
+        return origin is Union or origin.__name__ == "UnionType"
+    except AttributeError:
+        return False
