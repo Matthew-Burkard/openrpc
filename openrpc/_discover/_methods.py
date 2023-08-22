@@ -153,7 +153,7 @@ def _get_example(function: Callable) -> ExamplePairingObject:
             if k not in depends
         },
     )
-    param_values = lorem_pysum.generate(param_example_type)
+    param_values = lorem_pysum.generate(param_example_type, use_default_values=False)
     params = [
         ExampleObject(name=name, value=getattr(param_values, name))
         for name in param_values.model_fields
@@ -163,7 +163,7 @@ def _get_example(function: Callable) -> ExamplePairingObject:
     result_example_type = create_model(
         "ExampleResult", result=(_annotation(signature.return_annotation), ...)
     )
-    result_value = lorem_pysum.generate(result_example_type)
+    result_value = lorem_pysum.generate(result_example_type, use_default_values=False)
     result = ExampleObject(value=result_value.result)  # type: ignore
 
     return ExamplePairingObject(params=params, result=result)

@@ -114,6 +114,13 @@ def test_method_properties() -> None:
     method = rpc.discover()["methods"][0]
     assert method["name"] == "method_with_properties"
     assert method["description"] == "Method to test other method properties."
+    assert method["summary"] == "Summary"
+    assert method["externalDocs"] == {"url": url}
+    assert method["deprecated"] is True
+    assert method["servers"] == [{"name": "Server", "url": url}]
+    assert method["errors"] == [{"code": 0, "message": "Error Message"}]
+    assert method["links"] == [{"name": "Link"}]
+    assert method["paramStructure"] is ParamStructure.BY_NAME
 
 
 def test_lists() -> None:
@@ -122,7 +129,7 @@ def test_lists() -> None:
     method = rpc.discover()["methods"][0]
     # Examples
     assert method["examples"] == [
-        {"params": [{"name": "numbers", "value": [0.0]}], "result": {"value": [0]}}
+        {"params": [{"name": "numbers", "value": [1]}], "result": {"value": [1]}}
     ]
     # Params
     assert method["params"] == [
@@ -158,27 +165,27 @@ def test_schema_params() -> None:
                     "name": "position",
                     "value": {
                         "enum_field": "A",
-                        "vanilla_model": {"x": 0.0, "y": 0.0, "z": 0.0},
-                        "x": 0.0,
-                        "y": 0.0,
+                        "vanilla_model": {"x": 1.0, "y": 1.0, "z": 1.0},
+                        "x": 1.0,
+                        "y": 1.0,
                     },
                 },
                 {
                     "name": "target",
                     "value": {
                         "enum_field": "A",
-                        "vanilla_model": {"x": 0.0, "y": 0.0, "z": 0.0},
-                        "x": 0.0,
-                        "y": 0.0,
+                        "vanilla_model": {"x": 1.0, "y": 1.0, "z": 1.0},
+                        "x": 1.0,
+                        "y": 1.0,
                     },
                 },
             ],
             "result": {
                 "value": {
                     "enum_field": "A",
-                    "vanilla_model": {"x": 0.0, "y": 0.0, "z": 0.0},
-                    "x": 0.0,
-                    "y": 0.0,
+                    "vanilla_model": {"x": 1.0, "y": 1.0, "z": 1.0},
+                    "x": 1.0,
+                    "y": 1.0,
                 }
             },
         }
@@ -212,8 +219,8 @@ def test_defaults() -> None:
     assert method["examples"] == [
         {
             "params": [
-                {"name": "a", "value": 0},
-                {"name": "b", "value": 0.0},
+                {"name": "a", "value": 1},
+                {"name": "b", "value": 1.0},
                 {"name": "c", "value": "string"},
             ],
             "result": {"value": "string"},
@@ -278,7 +285,7 @@ def test_any() -> None:
     method = rpc.discover()["methods"][0]
     # Examples
     assert method["examples"] == [
-        {"params": [{"name": "any_param", "value": None}], "result": {"value": None}}
+        {"params": [{"name": "any_param", "value": {}}], "result": {"value": {}}}
     ]
     # Params
     assert method["params"] == [{"name": "any_param", "required": True, "schema": {}}]
@@ -294,10 +301,10 @@ def test_no_annotations() -> None:
     assert method["examples"] == [
         {
             "params": [
-                {"name": "a", "value": None},
-                {"name": "b", "value": None},
+                {"name": "a", "value": {}},
+                {"name": "b", "value": {}},
             ],
-            "result": {"value": None},
+            "result": {"value": {}},
         }
     ]
     # Params
