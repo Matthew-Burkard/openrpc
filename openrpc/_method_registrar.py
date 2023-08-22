@@ -46,7 +46,7 @@ class MethodRegistrar:
     def debug(self, debug: bool) -> None:
         self._request_processor.debug = debug
 
-    def method(  # noqa: PLR0913
+    def method(
         self,
         *args: CallableType,
         name: Optional[str] = None,

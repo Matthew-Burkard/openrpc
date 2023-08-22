@@ -71,7 +71,7 @@ NotDeserialized = NotDeserializedType()
 class MethodProcessor:
     """Execute a method passing it a parsed JSON RPC 2.0 request."""
 
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         method: RPCMethod,
         uncaught_error_code: int,
