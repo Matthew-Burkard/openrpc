@@ -91,7 +91,7 @@ pydantic = ">=2.0,<3.0"
 
 [[package]]
 name = "lorem-pysum"
-version = "1.0.0"
+version = "1.0.1"
 description = "Library to generate instances of Pydantic models."
 category = "main"
 optional = false
@@ -168,7 +168,7 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "pydantic"
-version = "2.2.1"
+version = "2.3.0"
 description = "Data validation using Python type hints"
 category = "main"
 optional = false
@@ -176,7 +176,7 @@ python-versions = ">=3.7"
 
 [package.dependencies]
 annotated-types = ">=0.4.0"
-pydantic-core = "2.6.1"
+pydantic-core = "2.6.3"
 typing-extensions = ">=4.6.1"
 
 [package.extras]
@@ -184,7 +184,7 @@ email = ["email-validator (>=2.0.0)"]
 
 [[package]]
 name = "pydantic-core"
-version = "2.6.1"
+version = "2.6.3"
 description = ""
 category = "main"
 optional = false
@@ -254,7 +254,7 @@ python-versions = ">=3.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "8d3857db9da62de1d8a1663bcde6c72b7a9e9b3c68d0e4de6c8128414c03a0c7"
+content-hash = "bfd0aa23d46f025fbe3367b9c1e45c208a323628ec7e2671c18e9d46f0f69fdf"
 
 [metadata.files]
 annotated-types = []

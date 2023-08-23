@@ -88,7 +88,7 @@ def _get_result(
     return ContentDescriptorObject(
         name="result",
         schema=_get_schema(type_hints.get("return"), type_schema_map),
-        required=_is_required(get_type_hints(function).get("return")),
+        required=NoneType not in get_args(get_type_hints(function).get("return")),
     )
 
 
@@ -116,10 +116,6 @@ def _get_params(
     ]
 
 
-def _is_required(annotation: Any) -> bool:
-    return NoneType not in get_args(annotation)
-
-
 def _get_schema(
     annotation: Any, type_schema_map: dict[Type, SchemaObject]
 ) -> SchemaObject:
@@ -143,12 +139,23 @@ def _get_schema(
 
     elif schema_type == "object":
         schema.type = schema_type
-        schema.additional_properties = True
+        # Dict annotation must have exactly 0 or two args.
+        if args := get_args(annotation):
+            schema.additional_properties = _get_schema(args[1], type_schema_map)
 
     elif schema_type == "array":
         schema.type = schema_type
+        origin = get_origin(annotation)
         if args := get_args(annotation):
-            schema.items = _get_schema(args[0], type_schema_map)
+            if origin is tuple:
+                schema.prefix_items = [
+                    _get_schema(arg, type_schema_map) for arg in args
+                ]
+            else:
+                # More than one arg in set/list annotation makes no sense.
+                schema.items = _get_schema(args[0], type_schema_map)
+                if origin is set:
+                    schema.unique_items = True
 
     elif schema_type is not None:
         schema.type = schema_type

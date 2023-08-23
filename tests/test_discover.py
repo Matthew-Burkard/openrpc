@@ -65,6 +65,27 @@ class ComplexObjects(BaseModel):
     decimal_field: Decimal
 
 
+class CollectionsModel(BaseModel):
+    list_field: list
+    list_str: list[str]
+    list_list: list[list]
+    list_list_int: list[list[int]]
+    list_union: list[Union[str, int]]
+    tuple_field: tuple
+    tuple_str: tuple[str]
+    tuple_tuple: tuple[tuple]
+    tuple_tuple_int: tuple[tuple[int]]
+    tuple_union: tuple[Union[str, int]]
+    tuple_int_str_none: tuple[int, str, None]
+    set_str: set[str]
+    set_union: set[Union[str, int]]
+    dict_field: dict
+    dict_str: dict[str, str]
+    dict_dict: dict[str, dict]
+    dict_int_keys: dict[int, str]
+    dict_union: dict[str, Union[str, int]]
+
+
 def test_open_rpc_info() -> None:
     rpc = RPCServer(
         title="Test OpenRPC",
@@ -399,6 +420,132 @@ def test_complex_objects() -> None:
     }
 
 
+def test_collections() -> None:
+    rpc = _rpc()
+    rpc.method()(method_using_collections)
+    method = rpc.discover()["methods"][0]
+
+    # Params
+    # Lists
+    assert method["params"][0] == {
+        "name": "list_field",
+        "required": True,
+        "schema": {"type": "array"},
+    }
+    assert method["params"][1] == {
+        "name": "list_str",
+        "required": True,
+        "schema": {"type": "array", "items": {"type": "string"}},
+    }
+    assert method["params"][2] == {
+        "name": "list_list",
+        "required": True,
+        "schema": {"type": "array", "items": {"type": "array"}},
+    }
+    assert method["params"][3] == {
+        "name": "list_list_int",
+        "required": True,
+        "schema": {
+            "type": "array",
+            "items": {"type": "array", "items": {"type": "integer"}},
+        },
+    }
+    assert method["params"][4] == {
+        "name": "list_union",
+        "required": True,
+        "schema": {
+            "items": {"anyOf": [{"type": "string"}, {"type": "integer"}]},
+            "type": "array",
+        },
+    }
+    # Tuples
+    assert method["params"][5] == {
+        "name": "tuple_field",
+        "required": True,
+        "schema": {"type": "array"},
+    }
+    assert method["params"][6] == {
+        "name": "tuple_str",
+        "required": True,
+        "schema": {"prefixItems": [{"type": "string"}], "type": "array"},
+    }
+    assert method["params"][7] == {
+        "name": "tuple_tuple",
+        "required": True,
+        "schema": {"prefixItems": [{"type": "array"}], "type": "array"},
+    }
+    assert method["params"][8] == {
+        "name": "tuple_tuple_int",
+        "required": True,
+        "schema": {
+            "prefixItems": [{"prefixItems": [{"type": "integer"}], "type": "array"}],
+            "type": "array",
+        },
+    }
+    assert method["params"][9] == {
+        "name": "tuple_union",
+        "required": True,
+        "schema": {
+            "prefixItems": [{"anyOf": [{"type": "string"}, {"type": "integer"}]}],
+            "type": "array",
+        },
+    }
+    assert method["params"][10] == {
+        "name": "tuple_int_str_none",
+        "required": True,
+        "schema": {
+            "type": "array",
+            "prefixItems": [{"type": "integer"}, {"type": "string"}, {"type": "null"}],
+        },
+    }
+    # Sets
+    assert method["params"][11] == {
+        "name": "set_str",
+        "required": True,
+        "schema": {"items": {"type": "string"}, "type": "array", "uniqueItems": True},
+    }
+    assert method["params"][12] == {
+        "name": "set_union",
+        "required": True,
+        "schema": {
+            "items": {"anyOf": [{"type": "string"}, {"type": "integer"}]},
+            "type": "array",
+            "uniqueItems": True,
+        },
+    }
+    # Dictionaries
+    assert method["params"][13] == {
+        "name": "dict_field",
+        "required": True,
+        "schema": {"type": "object"},
+    }
+    assert method["params"][14] == {
+        "name": "dict_str",
+        "required": True,
+        "schema": {"additionalProperties": {"type": "string"}, "type": "object"},
+    }
+    assert method["params"][15] == {
+        "name": "dict_dict",
+        "required": True,
+        "schema": {"additionalProperties": {"type": "object"}, "type": "object"},
+    }
+    assert method["params"][16] == {
+        "name": "dict_int_keys",
+        "required": True,
+        "schema": {"additionalProperties": {"type": "string"}, "type": "object"},
+    }
+    assert method["params"][17] == {
+        "name": "dict_union",
+        "required": True,
+        "schema": {
+            "additionalProperties": {
+                "anyOf": [{"type": "string"}, {"type": "integer"}]
+            },
+            "type": "object",
+        },
+    }
+
+
 def test_recursive_schemas() -> None:
     rpc = _rpc()
     rpc.method()(nested_model)
@@ -546,4 +693,47 @@ def method_using_complex_objects(
         datetime_field=datetime_field,
         timedelta_field=timedelta_field,
         decimal_field=decimal_field,
+    )
+
+
+def method_using_collections(
+    list_field: list,
+    list_str: list[str],
+    list_list: list[list],
+    list_list_int: list[list[int]],
+    list_union: list[Union[str, int]],
+    tuple_field: tuple,
+    tuple_str: tuple[str],
+    tuple_tuple: tuple[tuple],
+    tuple_tuple_int: tuple[tuple[int]],
+    tuple_union: tuple[Union[str, int]],
+    tuple_int_str_none: tuple[int, str, None],
+    set_str: set[str],
+    set_union: set[Union[str, int]],
+    dict_field: dict,
+    dict_str: dict[str, str],
+    dict_dict: dict[str, dict],
+    dict_int_keys: dict[int, str],
+    dict_union: dict[str, Union[str, int]],
+) -> CollectionsModel:
+    """Method using collection types."""
+    return CollectionsModel(
+        list_field=list_field,
+        list_str=list_str,
+        list_list=list_list,
+        list_list_int=list_list_int,
+        list_union=list_union,
+        tuple_field=tuple_field,
+        tuple_str=tuple_str,
+        tuple_tuple=tuple_tuple,
+        tuple_tuple_int=tuple_tuple_int,
+        tuple_union=tuple_union,
+        tuple_int_str_none=tuple_int_str_none,
+        set_str=set_str,
+        set_union=set_union,
+        dict_field=dict_field,
+        dict_str=dict_str,
+        dict_dict=dict_dict,
+        dict_int_keys=dict_int_keys,
+        dict_union=dict_union,
     )
