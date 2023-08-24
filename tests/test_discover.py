@@ -1,5 +1,7 @@
 """Test the generated "rpc.discover" method."""
+import datetime
 import json
+from _decimal import Decimal
 from enum import Enum
 from typing import Any, List, Optional, Union
 
@@ -53,6 +55,35 @@ class ListResultModel(BaseModel):
     """To test models as a list result."""
 
     name: str
+
+
+class ComplexObjects(BaseModel):
+    date_field: datetime.date
+    time_field: datetime.time
+    datetime_field: datetime.datetime
+    timedelta_field: datetime.timedelta
+    decimal_field: Decimal
+
+
+class CollectionsModel(BaseModel):
+    list_field: list
+    list_str: list[str]
+    list_list: list[list]
+    list_list_int: list[list[int]]
+    list_union: list[Union[str, int]]
+    tuple_field: tuple
+    tuple_str: tuple[str]
+    tuple_tuple: tuple[tuple]
+    tuple_tuple_int: tuple[tuple[int]]
+    tuple_union: tuple[Union[str, int]]
+    tuple_int_str_none: tuple[int, str, None]
+    set_str: set[str]
+    set_union: set[Union[str, int]]
+    dict_field: dict
+    dict_str: dict[str, str]
+    dict_dict: dict[str, dict]
+    dict_int_keys: dict[int, str]
+    dict_union: dict[str, Union[str, int]]
 
 
 def test_open_rpc_info() -> None:
@@ -268,7 +299,7 @@ def test_return_none() -> None:
         {
             "name": "optional_param",
             "schema": {"anyOf": [{"type": "string"}, {"type": "null"}]},
-            "required": False,
+            "required": True,
         }
     ]
     # Result
@@ -325,6 +356,193 @@ def test_no_annotations() -> None:
         "name": "result",
         "required": True,
         "schema": {"type": "null"},
+    }
+
+
+def test_complex_objects() -> None:
+    rpc = _rpc()
+    rpc.method()(method_using_complex_objects)
+    method = rpc.discover()["methods"][0]
+    # Examples
+    assert method["examples"] == [
+        {
+            "params": [
+                {"name": "date_field", "value": "1788-06-21"},
+                {"name": "time_field", "value": "00:00:00"},
+                {"name": "datetime_field", "value": "1788-06-21T00:00:00"},
+                {"name": "timedelta_field", "value": "PT0S"},
+                {"name": "decimal_field", "value": "1.0"},
+            ],
+            "result": {
+                "value": {
+                    "date_field": "1788-06-21",
+                    "datetime_field": "1788-06-21T00:00:00",
+                    "decimal_field": "1.0",
+                    "time_field": "00:00:00",
+                    "timedelta_field": "PT0S",
+                }
+            },
+        }
+    ]
+    # Params
+    assert method["params"] == [
+        {
+            "name": "date_field",
+            "required": True,
+            "schema": {"format": "date", "type": "string"},
+        },
+        {
+            "name": "time_field",
+            "required": True,
+            "schema": {"format": "time", "type": "string"},
+        },
+        {
+            "name": "datetime_field",
+            "required": True,
+            "schema": {"format": "date-time", "type": "string"},
+        },
+        {
+            "name": "timedelta_field",
+            "required": True,
+            "schema": {"format": "duration", "type": "string"},
+        },
+        {
+            "name": "decimal_field",
+            "required": True,
+            "schema": {"anyOf": [{"type": "number"}, {"type": "string"}]},
+        },
+    ]
+    # Result
+    assert method["result"] == {
+        "name": "result",
+        "required": True,
+        "schema": {"$ref": "#/components/schemas/ComplexObjects"},
+    }
+
+
+def test_collections() -> None:
+    rpc = _rpc()
+    rpc.method()(method_using_collections)
+    method = rpc.discover()["methods"][0]
+
+    # Params
+    # Lists
+    assert method["params"][0] == {
+        "name": "list_field",
+        "required": True,
+        "schema": {"type": "array"},
+    }
+    assert method["params"][1] == {
+        "name": "list_str",
+        "required": True,
+        "schema": {"type": "array", "items": {"type": "string"}},
+    }
+    assert method["params"][2] == {
+        "name": "list_list",
+        "required": True,
+        "schema": {"type": "array", "items": {"type": "array"}},
+    }
+    assert method["params"][3] == {
+        "name": "list_list_int",
+        "required": True,
+        "schema": {
+            "type": "array",
+            "items": {"type": "array", "items": {"type": "integer"}},
+        },
+    }
+    assert method["params"][4] == {
+        "name": "list_union",
+        "required": True,
+        "schema": {
+            "items": {"anyOf": [{"type": "string"}, {"type": "integer"}]},
+            "type": "array",
+        },
+    }
+    # Tuples
+    assert method["params"][5] == {
+        "name": "tuple_field",
+        "required": True,
+        "schema": {"type": "array"},
+    }
+    assert method["params"][6] == {
+        "name": "tuple_str",
+        "required": True,
+        "schema": {"prefixItems": [{"type": "string"}], "type": "array"},
+    }
+    assert method["params"][7] == {
+        "name": "tuple_tuple",
+        "required": True,
+        "schema": {"prefixItems": [{"type": "array"}], "type": "array"},
+    }
+    assert method["params"][8] == {
+        "name": "tuple_tuple_int",
+        "required": True,
+        "schema": {
+            "prefixItems": [{"prefixItems": [{"type": "integer"}], "type": "array"}],
+            "type": "array",
+        },
+    }
+    assert method["params"][9] == {
+        "name": "tuple_union",
+        "required": True,
+        "schema": {
+            "prefixItems": [{"anyOf": [{"type": "string"}, {"type": "integer"}]}],
+            "type": "array",
+        },
+    }
+    assert method["params"][10] == {
+        "name": "tuple_int_str_none",
+        "required": True,
+        "schema": {
+            "type": "array",
+            "prefixItems": [{"type": "integer"}, {"type": "string"}, {"type": "null"}],
+        },
+    }
+    # Sets
+    assert method["params"][11] == {
+        "name": "set_str",
+        "required": True,
+        "schema": {"items": {"type": "string"}, "type": "array", "uniqueItems": True},
+    }
+    assert method["params"][12] == {
+        "name": "set_union",
+        "required": True,
+        "schema": {
+            "items": {"anyOf": [{"type": "string"}, {"type": "integer"}]},
+            "type": "array",
+            "uniqueItems": True,
+        },
+    }
+    # Dictionaries
+    assert method["params"][13] == {
+        "name": "dict_field",
+        "required": True,
+        "schema": {"type": "object"},
+    }
+    assert method["params"][14] == {
+        "name": "dict_str",
+        "required": True,
+        "schema": {"additionalProperties": {"type": "string"}, "type": "object"},
+    }
+    assert method["params"][15] == {
+        "name": "dict_dict",
+        "required": True,
+        "schema": {"additionalProperties": {"type": "object"}, "type": "object"},
+    }
+    assert method["params"][16] == {
+        "name": "dict_int_keys",
+        "required": True,
+        "schema": {"additionalProperties": {"type": "string"}, "type": "object"},
+    }
+    assert method["params"][17] == {
+        "name": "dict_union",
+        "required": True,
+        "schema": {
+            "additionalProperties": {
+                "anyOf": [{"type": "string"}, {"type": "integer"}]
+            },
+            "type": "object",
+        },
     }
 
 
@@ -459,3 +677,63 @@ def no_annotations(a, b):  # type: ignore
 def method_with_properties() -> None:
     """Method to test other method properties."""
     return None
+
+
+def method_using_complex_objects(
+    date_field: datetime.date,
+    time_field: datetime.time,
+    datetime_field: datetime.datetime,
+    timedelta_field: datetime.timedelta,
+    decimal_field: Decimal,
+) -> ComplexObjects:
+    """Method to test schema generation for complex objects."""
+    return ComplexObjects(
+        date_field=date_field,
+        time_field=time_field,
+        datetime_field=datetime_field,
+        timedelta_field=timedelta_field,
+        decimal_field=decimal_field,
+    )
+
+
+def method_using_collections(
+    list_field: list,
+    list_str: list[str],
+    list_list: list[list],
+    list_list_int: list[list[int]],
+    list_union: list[Union[str, int]],
+    tuple_field: tuple,
+    tuple_str: tuple[str],
+    tuple_tuple: tuple[tuple],
+    tuple_tuple_int: tuple[tuple[int]],
+    tuple_union: tuple[Union[str, int]],
+    tuple_int_str_none: tuple[int, str, None],
+    set_str: set[str],
+    set_union: set[Union[str, int]],
+    dict_field: dict,
+    dict_str: dict[str, str],
+    dict_dict: dict[str, dict],
+    dict_int_keys: dict[int, str],
+    dict_union: dict[str, Union[str, int]],
+) -> CollectionsModel:
+    """Method using collection types."""
+    return CollectionsModel(
+        list_field=list_field,
+        list_str=list_str,
+        list_list=list_list,
+        list_list_int=list_list_int,
+        list_union=list_union,
+        tuple_field=tuple_field,
+        tuple_str=tuple_str,
+        tuple_tuple=tuple_tuple,
+        tuple_tuple_int=tuple_tuple_int,
+        tuple_union=tuple_union,
+        tuple_int_str_none=tuple_int_str_none,
+        set_str=set_str,
+        set_union=set_union,
+        dict_field=dict_field,
+        dict_str=dict_str,
+        dict_dict=dict_dict,
+        dict_int_keys=dict_int_keys,
+        dict_union=dict_union,
+    )
