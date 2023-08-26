@@ -252,9 +252,9 @@ def test_defaults() -> None:
     assert method["examples"] == [
         {
             "params": [
-                {"name": "a", "value": 1},
-                {"name": "b", "value": 1.0},
-                {"name": "c", "value": "string"},
+                {"name": "a", "value": 2},
+                {"name": "b", "value": 0.99792458},
+                {"name": "c", "value": "c"},
             ],
             "result": {"value": "string"},
         }
