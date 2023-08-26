@@ -1,7 +1,13 @@
 """Provides classes for storing RPC method data."""
-from typing import Callable, Optional
+__all__ = ("MethodMetaData", "RPCMethod", "resolved_annotation")
+
+import inspect
+from typing import Any, Callable, ForwardRef, Optional, Type
 
 from pydantic import BaseModel
+
+# noinspection PyProtectedMember
+from pydantic.v1.typing import evaluate_forwardref
 
 from openrpc._objects import (
     ContentDescriptorObject,
@@ -39,3 +45,16 @@ class RPCMethod(BaseModel):
     function: Callable
     metadata: MethodMetaData
     depends_params: list[str]
+    params_model: Type[BaseModel]
+    result_model: Type[BaseModel]
+
+
+def resolved_annotation(annotation: Any, function: Callable) -> Any:
+    """Get annotation resolved."""
+    if annotation == inspect.Signature.empty:
+        return Any
+    globalns = getattr(function, "__globals__", {})
+    if isinstance(annotation, str):
+        annotation = ForwardRef(annotation)
+        annotation = evaluate_forwardref(annotation, globalns, globalns)
+    return type(None) if annotation is None else annotation
