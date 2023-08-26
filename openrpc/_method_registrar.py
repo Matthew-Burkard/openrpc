@@ -8,7 +8,10 @@ import warnings
 from functools import partial
 from typing import Callable, Optional, TypeVar, Union
 
+from pydantic import create_model
+
 from openrpc import Depends
+from openrpc._common import MethodMetaData, resolved_annotation, RPCMethod
 from openrpc._objects import (
     ContentDescriptorObject,
     ErrorObject,
@@ -20,7 +23,6 @@ from openrpc._objects import (
     TagObject,
 )
 from openrpc._request_processor import RequestProcessor
-from openrpc._rpcmethod import MethodMetaData, RPCMethod
 
 log = logging.getLogger("openrpc")
 
@@ -149,13 +151,35 @@ class MethodRegistrar:
         self._request_processor.methods.pop(method)
 
     def _method(self, function: CallableType, metadata: MethodMetaData) -> CallableType:
-        dependencies = [
-            k
-            for k, v in inspect.signature(function).parameters.items()
-            if v.default is Depends
-        ]
+        signature = inspect.signature(function)
+        depends = [k for k, v in signature.parameters.items() if v.default is Depends]
+
+        # Params model.
+        param_model = create_model(  # type: ignore
+            f"{metadata.name}ParamsModel",
+            **{
+                k: (
+                    resolved_annotation(v.annotation, function),
+                    v.default if v.default is not inspect.Signature.empty else ...,
+                )
+                for k, v in signature.parameters.items()
+                if k not in depends and not k.startswith("_")
+            },
+        )
+
+        # Result Model
+        result_model = create_model(
+            f"{metadata.name}ResultModel",
+            result=(resolved_annotation(signature.return_annotation, function), ...),
+        )
+
+        # Add method to processor method list.
         rpc_method = RPCMethod(
-            function=function, metadata=metadata, depends_params=dependencies
+            function=function,
+            metadata=metadata,
+            depends_params=depends,
+            params_model=param_model,
+            result_model=result_model,
         )
         self._rpc_methods[metadata.name] = rpc_method
         log.debug(

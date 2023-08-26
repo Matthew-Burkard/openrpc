@@ -6,9 +6,9 @@ import json
 from typing import Iterable
 
 from openrpc import ComponentsObject, InfoObject, OpenRPCObject
+from openrpc._common import RPCMethod
 from openrpc._discover._methods import get_methods
 from openrpc._discover._schemas import get_type_to_schema_map
-from openrpc._rpcmethod import RPCMethod
 
 
 def get_openrpc_doc(
@@ -32,7 +32,7 @@ def get_openrpc_doc(
             OpenRPCObject(
                 openrpc="1.2.6",
                 info=info,
-                methods=get_methods(rpc_methods, type_schema_map),
+                methods=get_methods(rpc_methods),
                 components=components,
             ).model_dump_json(by_alias=True, exclude_unset=True)
             # Workaround to OpenRPC playground bug resolving definitions.

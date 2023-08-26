@@ -169,6 +169,7 @@ def test_lists() -> None:
             "schema": {
                 "type": "array",
                 "items": {"anyOf": [{"type": "integer"}, {"type": "number"}]},
+                "title": "Numbers",
             },
             "required": True,
         }
@@ -179,6 +180,7 @@ def test_lists() -> None:
         "schema": {
             "type": "array",
             "items": {"anyOf": [{"type": "integer"}, {"type": "string"}]},
+            "title": "Result",
         },
         "required": True,
     }
@@ -261,25 +263,25 @@ def test_defaults() -> None:
     assert method["params"] == [
         {
             "name": "a",
-            "schema": {"type": "integer"},
             "required": False,
+            "schema": {"default": 2, "title": "A", "type": "integer"},
         },
         {
             "name": "b",
-            "schema": {"type": "number"},
             "required": False,
+            "schema": {"default": 0.99792458, "title": "B", "type": "number"},
         },
         {
             "name": "c",
-            "schema": {"type": "string"},
             "required": False,
+            "schema": {"default": "c", "title": "C", "type": "string"},
         },
     ]
     # Result
     assert method["result"] == {
         "name": "result",
-        "schema": {"type": "string"},
         "required": True,
+        "schema": {"title": "Result", "type": "string"},
     }
 
 
@@ -298,15 +300,18 @@ def test_return_none() -> None:
     assert method["params"] == [
         {
             "name": "optional_param",
-            "schema": {"anyOf": [{"type": "string"}, {"type": "null"}]},
             "required": True,
+            "schema": {
+                "anyOf": [{"type": "string"}, {"type": "null"}],
+                "title": "Optional Param",
+            },
         }
     ]
     # Result
     assert method["result"] == {
         "name": "result",
-        "schema": {"type": "null"},
         "required": True,
+        "schema": {"title": "Result", "type": "null"},
     }
 
 
@@ -319,9 +324,15 @@ def test_any() -> None:
         {"params": [{"name": "any_param", "value": {}}], "result": {"value": {}}}
     ]
     # Params
-    assert method["params"] == [{"name": "any_param", "required": True, "schema": {}}]
+    assert method["params"] == [
+        {"name": "any_param", "required": True, "schema": {"title": "Any Param"}}
+    ]
     # Result
-    assert method["result"] == {"name": "result", "schema": {}, "required": True}
+    assert method["result"] == {
+        "name": "result",
+        "required": True,
+        "schema": {"title": "Result"},
+    }
 
 
 def test_no_annotations() -> None:
@@ -340,22 +351,14 @@ def test_no_annotations() -> None:
     ]
     # Params
     assert method["params"] == [
-        {
-            "name": "a",
-            "schema": {},
-            "required": True,
-        },
-        {
-            "name": "b",
-            "schema": {},
-            "required": True,
-        },
+        {"name": "a", "required": True, "schema": {"title": "A"}},
+        {"name": "b", "required": True, "schema": {"title": "B"}},
     ]
     # Result
     assert method["result"] == {
         "name": "result",
         "required": True,
-        "schema": {"type": "null"},
+        "schema": {"title": "Result"},
     }
 
 
@@ -389,27 +392,38 @@ def test_complex_objects() -> None:
         {
             "name": "date_field",
             "required": True,
-            "schema": {"format": "date", "type": "string"},
+            "schema": {"format": "date", "title": "Date Field", "type": "string"},
         },
         {
             "name": "time_field",
             "required": True,
-            "schema": {"format": "time", "type": "string"},
+            "schema": {"format": "time", "title": "Time Field", "type": "string"},
         },
         {
             "name": "datetime_field",
             "required": True,
-            "schema": {"format": "date-time", "type": "string"},
+            "schema": {
+                "format": "date-time",
+                "title": "Datetime Field",
+                "type": "string",
+            },
         },
         {
             "name": "timedelta_field",
             "required": True,
-            "schema": {"format": "duration", "type": "string"},
+            "schema": {
+                "format": "duration",
+                "title": "Timedelta Field",
+                "type": "string",
+            },
         },
         {
             "name": "decimal_field",
             "required": True,
-            "schema": {"anyOf": [{"type": "number"}, {"type": "string"}]},
+            "schema": {
+                "anyOf": [{"type": "number"}, {"type": "string"}],
+                "title": "Decimal Field",
+            },
         },
     ]
     # Result
@@ -430,24 +444,29 @@ def test_collections() -> None:
     assert method["params"][0] == {
         "name": "list_field",
         "required": True,
-        "schema": {"type": "array"},
+        "schema": {"items": {}, "title": "List Field", "type": "array"},
     }
     assert method["params"][1] == {
         "name": "list_str",
         "required": True,
-        "schema": {"type": "array", "items": {"type": "string"}},
+        "schema": {"items": {"type": "string"}, "title": "List Str", "type": "array"},
     }
     assert method["params"][2] == {
         "name": "list_list",
         "required": True,
-        "schema": {"type": "array", "items": {"type": "array"}},
+        "schema": {
+            "items": {"items": {}, "type": "array"},
+            "title": "List List",
+            "type": "array",
+        },
     }
     assert method["params"][3] == {
         "name": "list_list_int",
         "required": True,
         "schema": {
+            "items": {"items": {"type": "integer"}, "type": "array"},
+            "title": "List List Int",
             "type": "array",
-            "items": {"type": "array", "items": {"type": "integer"}},
         },
     }
     assert method["params"][4] == {
@@ -455,6 +474,7 @@ def test_collections() -> None:
         "required": True,
         "schema": {
             "items": {"anyOf": [{"type": "string"}, {"type": "integer"}]},
+            "title": "List Union",
             "type": "array",
         },
     }
@@ -462,23 +482,45 @@ def test_collections() -> None:
     assert method["params"][5] == {
         "name": "tuple_field",
         "required": True,
-        "schema": {"type": "array"},
+        "schema": {"items": {}, "title": "Tuple Field", "type": "array"},
     }
     assert method["params"][6] == {
         "name": "tuple_str",
         "required": True,
-        "schema": {"prefixItems": [{"type": "string"}], "type": "array"},
+        "schema": {
+            "maxItems": 1,
+            "minItems": 1,
+            "prefixItems": [{"type": "string"}],
+            "title": "Tuple Str",
+            "type": "array",
+        },
     }
     assert method["params"][7] == {
         "name": "tuple_tuple",
         "required": True,
-        "schema": {"prefixItems": [{"type": "array"}], "type": "array"},
+        "schema": {
+            "maxItems": 1,
+            "minItems": 1,
+            "prefixItems": [{"items": {}, "type": "array"}],
+            "title": "Tuple Tuple",
+            "type": "array",
+        },
     }
     assert method["params"][8] == {
         "name": "tuple_tuple_int",
         "required": True,
         "schema": {
-            "prefixItems": [{"prefixItems": [{"type": "integer"}], "type": "array"}],
+            "maxItems": 1,
+            "minItems": 1,
+            "prefixItems": [
+                {
+                    "maxItems": 1,
+                    "minItems": 1,
+                    "prefixItems": [{"type": "integer"}],
+                    "type": "array",
+                }
+            ],
+            "title": "Tuple Tuple Int",
             "type": "array",
         },
     }
@@ -486,7 +528,10 @@ def test_collections() -> None:
         "name": "tuple_union",
         "required": True,
         "schema": {
+            "maxItems": 1,
+            "minItems": 1,
             "prefixItems": [{"anyOf": [{"type": "string"}, {"type": "integer"}]}],
+            "title": "Tuple Union",
             "type": "array",
         },
     }
@@ -494,21 +539,30 @@ def test_collections() -> None:
         "name": "tuple_int_str_none",
         "required": True,
         "schema": {
-            "type": "array",
+            "maxItems": 3,
+            "minItems": 3,
             "prefixItems": [{"type": "integer"}, {"type": "string"}, {"type": "null"}],
+            "title": "Tuple Int Str None",
+            "type": "array",
         },
     }
     # Sets
     assert method["params"][11] == {
         "name": "set_str",
         "required": True,
-        "schema": {"items": {"type": "string"}, "type": "array", "uniqueItems": True},
+        "schema": {
+            "items": {"type": "string"},
+            "title": "Set Str",
+            "type": "array",
+            "uniqueItems": True,
+        },
     }
     assert method["params"][12] == {
         "name": "set_union",
         "required": True,
         "schema": {
             "items": {"anyOf": [{"type": "string"}, {"type": "integer"}]},
+            "title": "Set Union",
             "type": "array",
             "uniqueItems": True,
         },
@@ -517,22 +571,34 @@ def test_collections() -> None:
     assert method["params"][13] == {
         "name": "dict_field",
         "required": True,
-        "schema": {"type": "object"},
+        "schema": {"title": "Dict Field", "type": "object"},
     }
     assert method["params"][14] == {
         "name": "dict_str",
         "required": True,
-        "schema": {"additionalProperties": {"type": "string"}, "type": "object"},
+        "schema": {
+            "additionalProperties": {"type": "string"},
+            "title": "Dict Str",
+            "type": "object",
+        },
     }
     assert method["params"][15] == {
         "name": "dict_dict",
         "required": True,
-        "schema": {"additionalProperties": {"type": "object"}, "type": "object"},
+        "schema": {
+            "additionalProperties": {"type": "object"},
+            "title": "Dict Dict",
+            "type": "object",
+        },
     }
     assert method["params"][16] == {
         "name": "dict_int_keys",
         "required": True,
-        "schema": {"additionalProperties": {"type": "string"}, "type": "object"},
+        "schema": {
+            "additionalProperties": {"type": "string"},
+            "title": "Dict Int Keys",
+            "type": "object",
+        },
     }
     assert method["params"][17] == {
         "name": "dict_union",
@@ -541,6 +607,7 @@ def test_collections() -> None:
             "additionalProperties": {
                 "anyOf": [{"type": "string"}, {"type": "integer"}]
             },
+            "title": "Dict Union",
             "type": "object",
         },
     }

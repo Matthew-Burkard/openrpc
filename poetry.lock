@@ -91,14 +91,14 @@ pydantic = ">=2.0,<3.0"
 
 [[package]]
 name = "lorem-pysum"
-version = "1.0.1"
+version = "1.0.2"
 description = "Library to generate instances of Pydantic models."
 category = "main"
 optional = false
 python-versions = ">=3.9,<4.0"
 
 [package.dependencies]
-pydantic = ">=2.2.0,<3.0.0"
+pydantic = ">=2.3.0,<3.0.0"
 
 [[package]]
 name = "mypy"
@@ -229,7 +229,7 @@ testing = ["coverage (>=6.2)", "hypothesis (>=5.7.1)", "flaky (>=3.5.0)", "mypy 
 
 [[package]]
 name = "ruff"
-version = "0.0.285"
+version = "0.0.286"
 description = "An extremely fast Python linter, written in Rust."
 category = "dev"
 optional = false
@@ -254,7 +254,7 @@ python-versions = ">=3.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "bfd0aa23d46f025fbe3367b9c1e45c208a323628ec7e2671c18e9d46f0f69fdf"
+content-hash = "cb339019375ebdb123b09d4e867f15c14d2a16b3b96cc4e4e2e1fe5553216414"
 
 [metadata.files]
 annotated-types = []
