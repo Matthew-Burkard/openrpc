@@ -38,7 +38,7 @@ from jsonrpcobjects.objects import (
 )
 
 from openrpc import ParamStructure
-from openrpc._rpcmethod import RPCMethod
+from openrpc._common import RPCMethod
 
 log = logging.getLogger("openrpc")
 by_position_error = DataError(

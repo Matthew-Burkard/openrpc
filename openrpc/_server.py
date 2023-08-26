@@ -19,7 +19,7 @@ from openrpc._objects import (
     SchemaObject,
     TagObject,
 )
-from openrpc._rpcmethod import MethodMetaData
+from openrpc._common import MethodMetaData
 from ._discover.discover import get_openrpc_doc
 
 log = logging.getLogger("openrpc")

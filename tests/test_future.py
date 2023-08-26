@@ -8,6 +8,9 @@ from openrpc import RPCServer
 
 
 def test_future() -> None:
+    if sys.version_info < (3, 10):
+        return None
+
     def future(
         union_str_int: Union[str, int], list_str: list[str] | None = None
     ) -> list[str]:
@@ -16,8 +19,6 @@ def test_future() -> None:
 
     rpc = RPCServer(title="Test OpenRPC", version="1.0.0", debug=True)
     rpc.method()(future)
-    if sys.version_info < (3, 10):
-        return None
     method = rpc.discover()["methods"][0]
     # Examples
     assert method["examples"] == [
@@ -34,7 +35,10 @@ def test_future() -> None:
         {
             "name": "union_str_int",
             "required": True,
-            "schema": {"anyOf": [{"type": "string"}, {"type": "integer"}]},
+            "schema": {
+                "anyOf": [{"type": "string"}, {"type": "integer"}],
+                "title": "Union Str Int",
+            },
         },
         {
             "name": "list_str",
@@ -43,7 +47,9 @@ def test_future() -> None:
                 "anyOf": [
                     {"items": {"type": "string"}, "type": "array"},
                     {"type": "null"},
-                ]
+                ],
+                "default": None,
+                "title": "List Str",
             },
         },
     ]
@@ -51,5 +57,5 @@ def test_future() -> None:
     assert method["result"] == {
         "name": "result",
         "required": True,
-        "schema": {"items": {"type": "string"}, "type": "array"},
+        "schema": {"items": {"type": "string"}, "type": "array", "title": "Result"},
     }
