@@ -81,12 +81,12 @@ def _get_params(rpc_method: RPCMethod) -> list[ContentDescriptorObject]:
 
 
 def _get_example(rpc_method: RPCMethod) -> ExamplePairingObject:
-    param_values = lorem_pysum.generate(rpc_method.params_model)
+    param_values = lorem_pysum.generate(rpc_method.params_model, explicit_default=True)
     params = [
         ExampleObject(name=name, value=getattr(param_values, name))
         for name in param_values.model_fields
     ]
-    result_value = lorem_pysum.generate(rpc_method.result_model)
+    result_value = lorem_pysum.generate(rpc_method.result_model, explicit_default=True)
     result = ExampleObject(value=result_value.result)  # type: ignore
 
     return ExamplePairingObject(params=params, result=result)
