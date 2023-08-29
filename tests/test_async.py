@@ -5,13 +5,13 @@ from typing import Any, Optional, Union
 
 from jsonrpcobjects.objects import Request
 
-from openrpc import InfoObject, RPCServer
+from openrpc import Info, RPCServer
 
 
 # noinspection PyMissingOrEmptyDocstring
 class RPCTest(unittest.TestCase):
     def __init__(self, *args: Any) -> None:
-        self.info = InfoObject(title="Test JSON RPC", version="1.0.0")
+        self.info = Info(title="Test JSON RPC", version="1.0.0")
         self.server = RPCServer(**self.info.model_dump())
         super(RPCTest, self).__init__(*args)
 

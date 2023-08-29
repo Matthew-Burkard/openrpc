@@ -6,19 +6,13 @@ from typing import get_args, Iterable, Optional
 import lorem_pysum
 from pydantic_core import PydanticUndefined
 
-from openrpc import (
-    ContentDescriptorObject,
-    ExampleObject,
-    ExamplePairingObject,
-    MethodObject,
-    SchemaObject,
-)
+from openrpc import ContentDescriptor, Example, ExamplePairing, Method, Schema
 from openrpc._common import RPCMethod
 
 NoneType = type(None)
 
 
-def get_methods(rpc_methods: Iterable[RPCMethod]) -> list[MethodObject]:
+def get_methods(rpc_methods: Iterable[RPCMethod]) -> list[Method]:
     """Get OpenRPC method objects.
 
     :param rpc_methods: Decorated functions data.
@@ -28,7 +22,7 @@ def get_methods(rpc_methods: Iterable[RPCMethod]) -> list[MethodObject]:
     for m in rpc_methods:
         if m.metadata.name == "rpc.discover":
             continue
-        method = MethodObject(
+        method = Method(
             name=m.metadata.name or m.function.__name__,
             params=m.metadata.params or _get_params(m),
             result=m.metadata.result or _get_result(m),
@@ -58,20 +52,20 @@ def get_methods(rpc_methods: Iterable[RPCMethod]) -> list[MethodObject]:
     return methods
 
 
-def _get_result(rpc_method: RPCMethod) -> ContentDescriptorObject:
+def _get_result(rpc_method: RPCMethod) -> ContentDescriptor:
     result_field = rpc_method.result_model.model_fields["result"]
-    return ContentDescriptorObject(
+    return ContentDescriptor(
         name="result",
         schema=rpc_method.result_model.model_json_schema()["properties"]["result"],
         required=NoneType not in get_args(result_field),
     )
 
 
-def _get_params(rpc_method: RPCMethod) -> list[ContentDescriptorObject]:
+def _get_params(rpc_method: RPCMethod) -> list[ContentDescriptor]:
     return [
-        ContentDescriptorObject(
+        ContentDescriptor(
             name=name,
-            schema=SchemaObject(
+            schema=Schema(
                 **rpc_method.params_model.model_json_schema()["properties"][name]
             ),
             required=field.default is PydanticUndefined,
@@ -80,16 +74,16 @@ def _get_params(rpc_method: RPCMethod) -> list[ContentDescriptorObject]:
     ]
 
 
-def _get_example(rpc_method: RPCMethod) -> ExamplePairingObject:
+def _get_example(rpc_method: RPCMethod) -> ExamplePairing:
     param_values = lorem_pysum.generate(rpc_method.params_model, explicit_default=True)
     params = [
-        ExampleObject(name=name, value=getattr(param_values, name))
+        Example(name=name, value=getattr(param_values, name))
         for name in param_values.model_fields
     ]
     result_value = lorem_pysum.generate(rpc_method.result_model, explicit_default=True)
-    result = ExampleObject(value=result_value.result)  # type: ignore
+    result = Example(value=result_value.result)  # type: ignore
 
-    return ExamplePairingObject(params=params, result=result)
+    return ExamplePairing(params=params, result=result)
 
 
 def _get_description(rpc_method: RPCMethod) -> Optional[str]:

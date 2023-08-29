@@ -15,7 +15,7 @@ from typing import (
 
 from pydantic import BaseModel
 
-from openrpc import Depends, SchemaObject
+from openrpc import Depends, Schema
 
 Model = TypeVar("Model", bound=BaseModel)
 ModelType = Type[Model]
@@ -23,13 +23,13 @@ EnumType = TypeVar("EnumType", bound=BaseModel)
 TypeOfEnumType = Type[EnumType]
 
 
-def get_type_to_schema_map(functions: Iterable[Callable]) -> dict[Type, SchemaObject]:
+def get_type_to_schema_map(functions: Iterable[Callable]) -> dict[Type, Schema]:
     """Get a map of class type to JSON Schema.
 
     :param functions: All `method` decorated functions.
     :return: A map of class type to JSON Schema.
     """
-    type_to_schema_map: dict[ModelType, SchemaObject] = {}
+    type_to_schema_map: dict[ModelType, Schema] = {}
     for function in functions:
         # Get all model schemas used in methods including child schemas.
         for model_type in _get_models_from_function(function):
@@ -37,7 +37,7 @@ def get_type_to_schema_map(functions: Iterable[Callable]) -> dict[Type, SchemaOb
             type_to_schema_map = {**type_to_schema_map, **schemas}
         # Get all enum schemas used in methods.
         for enum_type in _get_enums_from_function(function):
-            type_to_schema_map[enum_type] = SchemaObject(
+            type_to_schema_map[enum_type] = Schema(
                 title=enum_type.__name__,
                 enum=[it.value for it in enum_type],
                 description=enum_type.__doc__ or None,
@@ -76,13 +76,13 @@ def _get_enums_from_function(function: Callable) -> list[ModelType]:
 
 def _get_model_schemas(
     type_: ModelType,
-    type_to_schema_map: dict[ModelType, SchemaObject],
+    type_to_schema_map: dict[ModelType, Schema],
     processed_types: Optional[list[ModelType]] = None,
-) -> tuple[dict[ModelType, SchemaObject], list[ModelType]]:
+) -> tuple[dict[ModelType, Schema], list[ModelType]]:
     # `processed_types` prevents recursive schema infinite loops.
     processed_types = processed_types or []
     types = [type_]
-    schemas = {type_: SchemaObject(**type_.model_json_schema())}
+    schemas = {type_: Schema(**type_.model_json_schema())}
 
     # Get all child schemas from fields.
     for field in type_.model_fields.values():
@@ -118,7 +118,7 @@ def _get_model_schemas(
             if isinstance(enum_schema.defs, dict):
                 for name, definition in enum_schema.defs.items():
                     if name == field.annotation.__name__ and isinstance(
-                        definition, SchemaObject
+                        definition, Schema
                     ):
                         schemas[field.annotation] = definition
                 types += field.annotation
@@ -133,8 +133,8 @@ def _is_model(type_: Any) -> bool:
 
 
 def _get_flattened_schemas(
-    type_to_schema_map: dict[Type, SchemaObject]
-) -> dict[Type, SchemaObject]:
+    type_to_schema_map: dict[Type, Schema]
+) -> dict[Type, Schema]:
     # Pydantic uses $defs which do not work in OpenRPC playground,
     # a number of alterations to Pydantic generated schemas need to be
     # made.
@@ -149,7 +149,7 @@ def _get_flattened_schemas(
             and isinstance(schema.all_of, list)
         ):
             all_of = schema.all_of[0]
-            if isinstance(all_of, SchemaObject) and isinstance(all_of.ref, str):
+            if isinstance(all_of, Schema) and isinstance(all_of.ref, str):
                 title = all_of.ref.removeprefix("#/$defs/")
                 definitions = {
                     name: definition
@@ -159,7 +159,7 @@ def _get_flattened_schemas(
                 flat_schema = [
                     definition
                     for name, definition in schema.defs.items()
-                    if name == title and isinstance(definition, SchemaObject)
+                    if name == title and isinstance(definition, Schema)
                 ][0]
                 flat_schema.defs = definitions
 
