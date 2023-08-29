@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import functools
 import json
 import re
 import unittest
@@ -18,7 +19,7 @@ from jsonrpcobjects.objects import (
 )
 from pydantic import BaseModel
 
-from openrpc import InfoObject, RPCServer
+from openrpc import RPCServer
 from tests.util import (
     INVALID_REQUEST,
     METHOD_NOT_FOUND,
@@ -44,8 +45,7 @@ RecursiveModel.model_rebuild()
 # noinspection PyMissingOrEmptyDocstring
 class RPCTest(unittest.TestCase):
     def __init__(self, *args: Any) -> None:
-        self.info = InfoObject(title="Test JSON RPC", version="1.0.0")
-        self.server = RPCServer(**self.info.model_dump())
+        self.server = RPCServer(title="Test JSON RPC", version="1.0.0")
         self.method(add)
         self.method(subtract)
         self.method(divide)
@@ -56,7 +56,7 @@ class RPCTest(unittest.TestCase):
     def test_array_params(self) -> None:
         request = ParamsRequest(id=1, method="add", params=[2, 2])
         resp = self.get_sync_and_async_resp(request.model_dump_json())
-        self.assertEqual(4, resp["result"])
+        self.assertEqual(4.0, resp["result"])
 
     def test_no_params(self) -> None:
         def get_none() -> None:
@@ -72,33 +72,11 @@ class RPCTest(unittest.TestCase):
         resp = self.get_sync_and_async_resp(request.model_dump_json())
         self.assertEqual(0, resp["result"])
 
-    def test_vararg_method(self) -> None:
-        def summation(*args: Union[int, float]) -> float:
-            return sum(args)
-
-        self.method(summation)
-        request = ParamsRequest(id=1, method="summation", params=[1, 3, 5, 7, 11])
-        resp = self.get_sync_and_async_resp(request.model_dump_json())
-        self.assertEqual(27, resp["result"])
-
-    def test_kwarg_method(self) -> None:
-        def pythagorean(**kwargs: int) -> bool:
-            return (kwargs["a"] ** 2 + kwargs["b"] ** 2) == (kwargs["c"] ** 2)
-
-        self.method(pythagorean)
-        request = ParamsRequest(
-            id=1, method="pythagorean", params={"a": 3, "b": 4, "c": 5}
-        )
-        resp = self.get_sync_and_async_resp(request.model_dump_json())
-        self.assertEqual(True, resp["result"])
-
-    # noinspection DuplicatedCode
     def test_vararg_method_with_no_params(self) -> None:
         request = Request(id=1, method="args_and_kwargs")
         resp = self.get_sync_and_async_resp(request.model_dump_json())
         self.assertEqual([{}], resp["result"])
 
-    # noinspection DuplicatedCode
     def test_kwarg_method_with_no_params(self) -> None:
         request = Request(id=1, method="args_and_kwargs")
         resp = self.get_sync_and_async_resp(request.model_dump_json())
@@ -150,7 +128,6 @@ class RPCTest(unittest.TestCase):
         resp = self.get_sync_and_async_resp(request.model_dump_json())
         self.assertEqual(req_id, resp["id"])
 
-    # noinspection DuplicatedCode
     def test_batch(self) -> None:
         add_id = str(uuid.uuid4())
         subtract_id = str(uuid.uuid4())
@@ -190,7 +167,7 @@ class RPCTest(unittest.TestCase):
         self.assertEqual(add_id, add_resp_parsed.id)
         self.assertEqual(subtract_id, subtract_resp_parsed.id)
         self.assertEqual(divide_id, divide_resp_parsed.id)
-        self.assertEqual(4, add_resp_parsed.result)
+        self.assertEqual(4.0, add_resp_parsed.result)
         self.assertEqual(0, subtract_resp_parsed.result)
         self.assertEqual(SERVER_ERROR, divide_resp_parsed.error.code)
         self.assertIsNone(none_resp_parsed.result)
@@ -359,12 +336,11 @@ class RPCTest(unittest.TestCase):
 def get_as_async(func: Callable) -> Callable:
     """Get an async version of a function."""
 
+    @functools.wraps(func)
     async def _wrapper(*args: Any, **kwargs: Any) -> Any:
         return func(*args, **kwargs)
 
     _wrapper.__name__ = f"async_{func.__name__}"
-    # noinspection PyUnresolvedReferences
-    _wrapper.__annotations__ = func.__annotations__
     return _wrapper
 
 

@@ -22,7 +22,7 @@ def func(c: Union[CustomA, CustomB]) -> bool:
 
 
 def test_union_casting() -> None:
-    rpc = RPCServer(title="Test Unions", version="1.0.0")
+    rpc = RPCServer(title="Test Unions", version="1.0.0", debug=True)
     rpc.method()(func)
     req1 = {
         "id": 0,
@@ -42,9 +42,7 @@ def test_union_casting() -> None:
         "params": [{"int_field": 3.14}],
         "jsonrpc": "2.0",
     }
-    res1 = get_response(rpc, json.dumps(req1))["result"]
-    res2 = get_response(rpc, json.dumps(req2))["result"]
-    res3 = get_response(rpc, json.dumps(req3))
-    assert res1 is True
-    assert res2 is True
-    assert res3["error"]["message"] == "Internal error"
+
+    assert get_response(rpc, json.dumps(req1))["result"] is True
+    assert get_response(rpc, json.dumps(req2))["result"] is True
+    assert get_response(rpc, json.dumps(req3))["error"]["message"] == "Invalid params"

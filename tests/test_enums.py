@@ -5,7 +5,7 @@ from enum import Enum
 from openrpc import RPCServer
 from tests.util import get_response
 
-rpc = RPCServer(title="Test Enums", version="1.0.0")
+rpc = RPCServer(title="Test Enums", version="1.0.0", debug=True)
 
 
 class EnumExample(Enum):
@@ -84,6 +84,6 @@ def test_calling_enums_method_with_bar_param() -> None:
     }
     res = get_response(rpc, json.dumps(req))
     assert (
-        res["error"]["data"]
-        == "Failed to deserialize request param [5] to type [<enum 'EnumExample'>]"
+        res["error"]["data"].split("\n")[0]
+        == "1 validation error for enum_test_funcParamsModel"
     )
