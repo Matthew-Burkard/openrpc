@@ -19,7 +19,7 @@ def get_openrpc_doc(info: Info, rpc_methods: Iterable[RPCMethod]) -> OpenRPC:
     :return: The OpenRPC doc for the given server.
     """
     type_schema_map = get_type_to_schema_map(
-        [rpc.function for rpc in rpc_methods if rpc.metadata.name != "rpc.discover"]
+        [rpc for rpc in rpc_methods if rpc.metadata.name != "rpc.discover"]
     )
     components = Components(
         schemas={v.title or "": v for v in type_schema_map.values()}

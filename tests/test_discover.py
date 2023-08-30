@@ -612,6 +612,17 @@ def test_collections() -> None:
     }
 
 
+def test_method_union_model() -> None:
+    rpc = _rpc()
+    rpc.method()(method_union_model)
+    doc = rpc.discover()
+
+    assert list(doc["components"]["schemas"].keys()) == [
+        "ComplexObjects",
+        "CollectionsModel",
+    ]
+
+
 def test_recursive_schemas() -> None:
     rpc = _rpc()
     rpc.method()(nested_model)
@@ -803,3 +814,8 @@ def method_using_collections(
         dict_int_keys=dict_int_keys,
         dict_union=dict_union,
     )
+
+
+def method_union_model() -> Union[ComplexObjects, CollectionsModel, None]:
+    """Method with union model."""
+    return None
