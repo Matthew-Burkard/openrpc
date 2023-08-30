@@ -2,25 +2,25 @@
 from __future__ import annotations
 
 __all__ = (
-    "ComponentsObject",
-    "ContactObject",
-    "ContentDescriptorObject",
-    "ErrorObject",
-    "ExampleObject",
-    "ExamplePairingObject",
-    "ExternalDocumentationObject",
-    "InfoObject",
-    "LicenseObject",
-    "LinkObject",
-    "MethodObject",
-    "OpenRPCObject",
+    "Components",
+    "Contact",
+    "ContentDescriptor",
+    "Error",
+    "Example",
+    "ExamplePairing",
+    "ExternalDocumentation",
+    "Info",
+    "License",
+    "Link",
+    "Method",
+    "OpenRPC",
     "ParamStructure",
-    "ReferenceObject",
-    "SchemaObject",
+    "Reference",
+    "Schema",
     "SchemaType",
-    "ServerObject",
-    "ServerVariableObject",
-    "TagObject",
+    "Server",
+    "ServerVariable",
+    "Tag",
 )
 
 from enum import Enum
@@ -28,7 +28,7 @@ from typing import Any, Optional, Union
 
 from pydantic import BaseModel, Field
 
-SchemaType = Union["SchemaObject", bool]
+SchemaType = Union["Schema", bool]
 
 
 class ParamStructure(Enum):
@@ -39,18 +39,18 @@ class ParamStructure(Enum):
     EITHER = "either"
 
 
-class InfoObject(BaseModel):
+class Info(BaseModel):
     """The object provides metadata about the API."""
 
     title: str
     version: str
     description: Optional[str] = None
     terms_of_service: Optional[str] = Field(default=None, alias="termsOfService")
-    contact: Optional[ContactObject] = None
-    license_: Optional[LicenseObject] = Field(default=None, alias="license")
+    contact: Optional[Contact] = None
+    license_: Optional[License] = Field(default=None, alias="license")
 
 
-class ContactObject(BaseModel):
+class Contact(BaseModel):
     """Contact information for the exposed API."""
 
     name: Optional[str] = None
@@ -58,24 +58,24 @@ class ContactObject(BaseModel):
     email: Optional[str] = None
 
 
-class LicenseObject(BaseModel):
+class License(BaseModel):
     """License information for the exposed API."""
 
     name: str
     url: Optional[str] = None
 
 
-class ServerObject(BaseModel):
+class Server(BaseModel):
     """An object representing a Server."""
 
     name: str
     url: str
     summary: Optional[str] = None
     description: Optional[str] = None
-    variables: Optional[dict[str, ServerVariableObject]] = None
+    variables: Optional[dict[str, ServerVariable]] = None
 
 
-class ServerVariableObject(BaseModel):
+class ServerVariable(BaseModel):
     """Represents a Server Variable for server URL template substitution."""
 
     default: str
@@ -83,29 +83,29 @@ class ServerVariableObject(BaseModel):
     description: Optional[str] = None
 
 
-class MethodObject(BaseModel):
+class Method(BaseModel):
     """Describes the interface for the given method name."""
 
     name: str
-    params: list[ContentDescriptorObject]
-    result: ContentDescriptorObject
-    tags: Optional[list[TagObject]] = None
+    params: list[ContentDescriptor]
+    result: ContentDescriptor
+    tags: Optional[list[Tag]] = None
     summary: Optional[str] = None
     description: Optional[str] = None
-    external_docs: Optional[ExternalDocumentationObject] = Field(
+    external_docs: Optional[ExternalDocumentation] = Field(
         default=None, alias="externalDocs"
     )
     deprecated: Optional[bool] = False
-    servers: Optional[list[ServerObject]] = None
-    errors: Optional[list[ErrorObject]] = None
-    links: Optional[list[LinkObject]] = None
+    servers: Optional[list[Server]] = None
+    errors: Optional[list[Error]] = None
+    links: Optional[list[Link]] = None
     param_structure: Optional[ParamStructure] = Field(
         default=None, alias="paramStructure"
     )
-    examples: Optional[list[ExamplePairingObject]] = None
+    examples: Optional[list[ExamplePairing]] = None
 
 
-class ContentDescriptorObject(BaseModel):
+class ContentDescriptor(BaseModel):
     """Describes either parameters or result."""
 
     name: str
@@ -116,7 +116,7 @@ class ContentDescriptorObject(BaseModel):
     deprecated: bool = False
 
 
-class SchemaObject(BaseModel):
+class Schema(BaseModel):
     """JSON Schema object."""
 
     id: Optional[str] = Field(alias="$id", default=None)
@@ -176,17 +176,17 @@ class SchemaObject(BaseModel):
     schema_: Optional[str] = Field(alias="$schema", default=None)
 
 
-class ExamplePairingObject(BaseModel):
+class ExamplePairing(BaseModel):
     """Consists of a set of example params and result."""
 
     name: Optional[str] = None
     description: Optional[str] = None
     summary: Optional[str] = None
-    params: Optional[list[ExampleObject]] = None
-    result: Optional[ExampleObject] = None
+    params: Optional[list[Example]] = None
+    result: Optional[Example] = None
 
 
-class ExampleObject(BaseModel):
+class Example(BaseModel):
     """Example that is intended to match a given Content Descriptor Schema."""
 
     name: Optional[str] = None
@@ -196,7 +196,7 @@ class ExampleObject(BaseModel):
     external_value: Optional[str] = Field(default=None, alias="externalValue")
 
 
-class LinkObject(BaseModel):
+class Link(BaseModel):
     """The Link object represents a possible design-time link for a result."""
 
     name: str
@@ -204,10 +204,10 @@ class LinkObject(BaseModel):
     summary: Optional[str] = None
     method: Optional[str] = None
     params: Optional[Any] = None
-    server: Optional[ServerObject] = None
+    server: Optional[Server] = None
 
 
-class ErrorObject(BaseModel):
+class Error(BaseModel):
     """Defines an application level error."""
 
     code: int
@@ -215,75 +215,73 @@ class ErrorObject(BaseModel):
     data: Optional[Any] = None
 
 
-class ComponentsObject(BaseModel):
+class Components(BaseModel):
     """Holds a set of reusable objects for different aspects of the OpenRPC."""
 
-    content_descriptors: Optional[dict[str, ContentDescriptorObject]] = Field(
+    content_descriptors: Optional[dict[str, ContentDescriptor]] = Field(
         default=None, alias="contentDescriptors"
     )
     schemas: Optional[dict[str, SchemaType]] = None
-    examples: Optional[dict[str, ExampleObject]] = None
-    links: Optional[dict[str, LinkObject]] = None
-    errors: Optional[dict[str, ErrorObject]] = None
-    example_pairing_objects: Optional[dict[str, ExamplePairingObject]] = Field(
+    examples: Optional[dict[str, Example]] = None
+    links: Optional[dict[str, Link]] = None
+    errors: Optional[dict[str, Error]] = None
+    example_pairing_objects: Optional[dict[str, ExamplePairing]] = Field(
         default=None, alias="examplePairingObjects"
     )
-    tags: Optional[dict[str, TagObject]] = None
+    tags: Optional[dict[str, Tag]] = None
 
 
-class TagObject(BaseModel):
+class Tag(BaseModel):
     """Adds metadata to a single tag that is used by the Method Object."""
 
     name: str
     summary: Optional[str] = None
     description: Optional[str] = None
-    external_docs: Optional[ExternalDocumentationObject] = Field(
+    external_docs: Optional[ExternalDocumentation] = Field(
         default=None, alias="externalDocs"
     )
 
 
-class ExternalDocumentationObject(BaseModel):
+class ExternalDocumentation(BaseModel):
     """Allows referencing an external resource for extended documentation."""
 
     url: str
     description: Optional[str] = None
 
 
-class ReferenceObject(BaseModel):
+class Reference(BaseModel):
     """A simple object to allow referencing other components in the specification."""
 
     ref: str = Field(alias="$ref")
 
 
-class OpenRPCObject(BaseModel):
+class OpenRPC(BaseModel):
     """Root object of the OpenRPC document."""
 
     openrpc: str
-    info: InfoObject
-    methods: list[MethodObject]
-    servers: Union[list[ServerObject], ServerObject] = ServerObject(
-        name="default", url="localhost"
-    )
-    components: Optional[ComponentsObject] = None
-    external_docs: Optional[ExternalDocumentationObject] = Field(
+    info: Info
+    methods: list[Method]
+    servers: Union[list[Server], Server] = Server(name="default", url="localhost")
+    components: Optional[Components] = None
+    external_docs: Optional[ExternalDocumentation] = Field(
         default=None, alias="externalDocs"
     )
 
 
-InfoObject.model_rebuild()
-ContactObject.model_rebuild()
-LicenseObject.model_rebuild()
-ServerObject.model_rebuild()
-ServerVariableObject.model_rebuild()
-MethodObject.model_rebuild()
-ContentDescriptorObject.model_rebuild()
-SchemaObject.model_rebuild()
-ExamplePairingObject.model_rebuild()
-ExampleObject.model_rebuild()
-LinkObject.model_rebuild()
-ErrorObject.model_rebuild()
-ComponentsObject.model_rebuild()
-TagObject.model_rebuild()
-ExternalDocumentationObject.model_rebuild()
-OpenRPCObject.model_rebuild()
-ReferenceObject.model_rebuild()
+Info.model_rebuild()
+Contact.model_rebuild()
+License.model_rebuild()
+Server.model_rebuild()
+ServerVariable.model_rebuild()
+Method.model_rebuild()
+ContentDescriptor.model_rebuild()
+Schema.model_rebuild()
+ExamplePairing.model_rebuild()
+Example.model_rebuild()
+Link.model_rebuild()
+Error.model_rebuild()
+Components.model_rebuild()
+Tag.model_rebuild()
+ExternalDocumentation.model_rebuild()
+OpenRPC.model_rebuild()
+Reference.model_rebuild()

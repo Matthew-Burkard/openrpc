@@ -9,17 +9,17 @@ from jsonrpcobjects.errors import INTERNAL_ERROR
 from jsonrpcobjects.objects import DataError, Error, ErrorResponse
 
 from openrpc import RPCRouter
+from openrpc._common import MethodMetaData
 from openrpc._method_registrar import CallableType, MethodRegistrar
 from openrpc._objects import (
-    ContactObject,
-    ContentDescriptorObject,
-    InfoObject,
-    LicenseObject,
-    MethodObject,
-    SchemaObject,
-    TagObject,
+    Contact,
+    ContentDescriptor,
+    Info,
+    License,
+    Method,
+    Schema,
+    Tag,
 )
-from openrpc._common import MethodMetaData
 from ._discover.discover import get_openrpc_doc
 
 log = logging.getLogger("openrpc")
@@ -35,9 +35,10 @@ class RPCServer(MethodRegistrar):
         version: Optional[str] = None,
         description: Optional[str] = None,
         terms_of_service: Optional[str] = None,
-        contact: Optional[ContactObject] = None,
-        license_: Optional[LicenseObject] = None,
-        debug: bool = False,  # noqa: FBT001,FBT002
+        contact: Optional[Contact] = None,
+        license_: Optional[License] = None,
+        *,
+        debug: bool = False,
     ) -> None:
         """Init an OpenRPC server.
 
@@ -54,7 +55,7 @@ class RPCServer(MethodRegistrar):
         self._request_processor.debug = debug
         # Set OpenRPC server info.
         self._debug = debug
-        self._info = InfoObject(title=title or "RPC Server", version=version or "0.1.0")
+        self._info = Info(title=title or "RPC Server", version=version or "0.1.0")
         # Don't pass `None` values to constructor for sake of
         # `exclude_unset` in discover.
         if description is not None:
@@ -66,12 +67,12 @@ class RPCServer(MethodRegistrar):
         if license_ is not None:
             self._info.license_ = license_
         # Register discover method.
-        schema = SchemaObject()
+        schema = Schema()
         schema.ref = _META_REF
         self.method(
             name="rpc.discover",
             params=[],
-            result=ContentDescriptorObject(name="OpenRPC Schema", schema=schema),
+            result=ContentDescriptor(name="OpenRPC Schema", schema=schema),
         )(self.discover)
 
     @property
@@ -111,21 +112,21 @@ class RPCServer(MethodRegistrar):
         self._info.terms_of_service = terms_of_service
 
     @property
-    def contact(self) -> Optional[ContactObject]:
+    def contact(self) -> Optional[Contact]:
         """Contact information for the exposed API."""
         return self._info.contact
 
     @contact.setter
-    def contact(self, contact: ContactObject) -> None:
+    def contact(self, contact: Contact) -> None:
         self._info.contact = contact
 
     @property
-    def license_(self) -> Optional[LicenseObject]:
+    def license_(self) -> Optional[License]:
         """License information for the exposed API."""
         return self._info.license_
 
     @license_.setter
-    def license_(self, license_: LicenseObject) -> None:
+    def license_(self, license_: License) -> None:
         self._info.license_ = license_
 
     @property
@@ -138,7 +139,7 @@ class RPCServer(MethodRegistrar):
         self._request_processor.uncaught_error_code = default_error_code
 
     @property
-    def methods(self) -> list[MethodObject]:
+    def methods(self) -> list[Method]:
         """Get all methods of this server."""
         return get_openrpc_doc(self._info, self._rpc_methods.values()).methods
 
@@ -158,7 +159,7 @@ class RPCServer(MethodRegistrar):
         self,
         router: RPCRouter,
         prefix: Optional[str] = None,
-        tags: Optional[list[Union[TagObject, str]]] = None,
+        tags: Optional[list[Union[Tag, str]]] = None,
     ) -> None:
         """Add an RPC method router to this server.
 
@@ -175,9 +176,7 @@ class RPCServer(MethodRegistrar):
             if prefix:
                 new_data.name = f"{prefix}{metadata.name}"
             if tags:
-                tag_objects = [
-                    t if isinstance(t, TagObject) else TagObject(name=t) for t in tags
-                ]
+                tag_objects = [t if isinstance(t, Tag) else Tag(name=t) for t in tags]
                 if new_data.tags:
                     new_data.tags.extend(tag_objects)
                 else:

@@ -21,8 +21,8 @@ from jsonrpcobjects.objects import (
 )
 from pydantic import ValidationError
 
-from openrpc._method_processor import MethodProcessor
 from openrpc._common import RPCMethod
+from openrpc._method_processor import MethodProcessor
 
 log = logging.getLogger("openrpc")
 NotificationTypes = (Notification, ParamsNotification)

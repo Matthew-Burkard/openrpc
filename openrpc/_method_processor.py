@@ -5,24 +5,10 @@ __all__ = ("MethodProcessor",)
 import inspect
 import logging
 import traceback
-from enum import Enum
 from pathlib import Path
-from typing import (
-    Any,
-    get_args,
-    get_origin,
-    get_type_hints,
-    Optional,
-    Type,
-    Union,
-)
+from typing import Any, Optional, Union
 
-from jsonrpcobjects.errors import (
-    INTERNAL_ERROR,
-    InternalError,
-    InvalidParams,
-    JSONRPCError,
-)
+from jsonrpcobjects.errors import InvalidParams, JSONRPCError
 from jsonrpcobjects.objects import (
     DataError,
     Error,
@@ -36,6 +22,7 @@ from jsonrpcobjects.objects import (
     RequestType,
     ResultResponse,
 )
+from pydantic import ValidationError
 
 from openrpc import ParamStructure
 from openrpc._common import RPCMethod
@@ -47,25 +34,6 @@ by_position_error = DataError(
 by_name_error = DataError(
     code=-32602, message="Invalid params", data="Params must be passed by name."
 )
-
-
-class DeserializationError(InternalError):
-    """Raised when a request param cannot be deserialized."""
-
-    def __init__(self, param: Any, p_type: Any) -> None:
-        msg = f"Failed to deserialize request param [{param}] to type [{p_type}]"
-        super().__init__(DataError(**{**INTERNAL_ERROR.model_dump(), **{"data": msg}}))
-
-
-class NotDeserializedType:
-    """Returned by deserialization method if deserialization fails.
-
-    The deserialized value may very well be False or None, so a custom
-    type needs to be made to represent a failure to deserialize.
-    """
-
-
-NotDeserialized = NotDeserializedType()
 
 
 class MethodProcessor:
@@ -124,7 +92,6 @@ class MethodProcessor:
             return self._get_error_response(error)
 
     def _execute(self) -> Any:
-        annotations = get_type_hints(self.method.function)
         params: Optional[Union[dict, list]]
         params_msg = ""
         missing_dependencies = [
@@ -142,13 +109,13 @@ class MethodProcessor:
         elif isinstance(self.request.params, list):
             if self.method.metadata.param_structure == ParamStructure.BY_NAME:
                 raise InvalidParams(by_name_error)
-            params = self._get_list_params(self.request.params, annotations)
+            params = self._get_list_params(self.request.params)
             result = self.method.function(*params, **dependencies)
             params_msg = ", ".join(str(p) for p in params)
         else:
             if self.method.metadata.param_structure == ParamStructure.BY_POSITION:
                 raise InvalidParams(by_position_error)
-            params = self._get_dict_params(self.request.params, annotations)
+            params = self._get_dict_params(self.request.params)
             result = self.method.function(**params, **dependencies)
             params_msg = ", ".join(f"{k}={v}" for k, v in params.items())
 
@@ -185,41 +152,30 @@ class MethodProcessor:
 
         return ErrorResponse(id=self.request.id, error=error_object).model_dump_json()
 
-    def _get_list_params(self, params: list, annotations: dict) -> list:
+    def _get_list_params(self, params: list[Any]) -> list[Any]:
         try:
+            params_dict = {}
+            for i, field_name in enumerate(self.method.params_model.model_fields):
+                # Params may have default values.
+                if i < len(params):
+                    params_dict[field_name] = params[i]
+            validated_params = self.method.params_model(**params_dict)
             return [
-                self._deserialize(p, list(annotations.values())[i])
-                for i, p in enumerate(params)
+                getattr(validated_params, field_name)
+                for field_name in validated_params.model_fields
             ]
-        except IndexError:
-            return params
+        except ValidationError as e:
+            raise InvalidParams(
+                DataError(code=-32602, message="Invalid params", data=str(e))
+            ) from e
 
-    def _get_dict_params(self, params: dict, annotations: dict) -> dict:
+    def _get_dict_params(self, params: dict[str, Any]) -> dict[str, Any]:
         try:
-            return {k: self._deserialize(p, annotations[k]) for k, p in params.items()}
-        except KeyError:
-            return params
-
-    def _deserialize(self, param: Any, p_type: Type) -> Any:
-        try:
-            if isinstance(p_type, type) and issubclass(p_type, Enum):
-                return p_type(param)
-            if get_origin(p_type) == Union:
-                for arg in get_args(p_type):
-                    try:
-                        res = self._deserialize(param, arg)
-                    except DeserializationError:
-                        continue
-                    return res
-            if get_origin(p_type) == list:
-                types = get_args(p_type)
-                return [self._deserialize(it, types[0]) for it in param]
-            try:
-                return p_type(**param)
-            except (TypeError, AttributeError, KeyError):
-                return p_type(param)
-        except (TypeError, AttributeError, KeyError, ValueError) as e:
-            raise DeserializationError(param, p_type) from e
+            return self.method.params_model(**params).model_dump()
+        except ValidationError as e:
+            raise InvalidParams(
+                DataError(code=-32602, message="Invalid params", data=str(e))
+            ) from e
 
 
 def _get_trimmed_traceback(error: Exception) -> str:

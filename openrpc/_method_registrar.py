@@ -13,14 +13,14 @@ from pydantic import create_model
 from openrpc import Depends
 from openrpc._common import MethodMetaData, resolved_annotation, RPCMethod
 from openrpc._objects import (
-    ContentDescriptorObject,
-    ErrorObject,
-    ExamplePairingObject,
-    ExternalDocumentationObject,
-    LinkObject,
+    ContentDescriptor,
+    Error,
+    ExamplePairing,
+    ExternalDocumentation,
+    Link,
     ParamStructure,
-    ServerObject,
-    TagObject,
+    Server,
+    Tag,
 )
 from openrpc._request_processor import RequestProcessor
 
@@ -52,18 +52,18 @@ class MethodRegistrar:
         self,
         *args: CallableType,
         name: Optional[str] = None,
-        params: Optional[list[ContentDescriptorObject]] = None,
-        result: Optional[ContentDescriptorObject] = None,
-        tags: Optional[list[Union[TagObject, str]]] = None,
+        params: Optional[list[ContentDescriptor]] = None,
+        result: Optional[ContentDescriptor] = None,
+        tags: Optional[list[Union[Tag, str]]] = None,
         summary: Optional[str] = None,
         description: Optional[str] = None,
-        external_docs: Optional[ExternalDocumentationObject] = None,
+        external_docs: Optional[ExternalDocumentation] = None,
         deprecated: Optional[bool] = None,
-        servers: Optional[list[ServerObject]] = None,
-        errors: Optional[list[ErrorObject]] = None,
-        links: Optional[list[LinkObject]] = None,
+        servers: Optional[list[Server]] = None,
+        errors: Optional[list[Error]] = None,
+        links: Optional[list[Link]] = None,
         param_structure: Optional[ParamStructure] = None,
-        examples: Optional[list[ExamplePairingObject]] = None,
+        examples: Optional[list[ExamplePairing]] = None,
     ) -> Union[CallableType, Callable[[DecoratedCallableType], DecoratedCallableType]]:
         """Register a method with this OpenRPC server.
 
@@ -90,7 +90,7 @@ class MethodRegistrar:
         :return: The method decorator.
         """
         tag_objects = (
-            [tag if isinstance(tag, TagObject) else TagObject(name=tag) for tag in tags]
+            [tag if isinstance(tag, Tag) else Tag(name=tag) for tag in tags]
             if tags is not None
             else None
         )
