@@ -91,7 +91,7 @@ pydantic = ">=2.0,<3.0"
 
 [[package]]
 name = "lorem-pysum"
-version = "1.0.2"
+version = "1.1.1"
 description = "Library to generate instances of Pydantic models."
 category = "main"
 optional = false
@@ -254,7 +254,7 @@ python-versions = ">=3.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "cb339019375ebdb123b09d4e867f15c14d2a16b3b96cc4e4e2e1fe5553216414"
+content-hash = "654d90aef9f9c44f5b80bc7e7af94b04cc5e19c7782e79c03a15774affe5b14b"
 
 [metadata.files]
 annotated-types = []

@@ -8,17 +8,16 @@ from typing import Any, List, Optional, Union
 from jsonrpcobjects.objects import Request
 from pydantic import BaseModel, Field
 
-# noinspection PyProtectedMember
 from openrpc import (
-    ContactObject,
+    Contact,
     Depends,
-    ErrorObject,
-    ExternalDocumentationObject,
-    LicenseObject,
-    LinkObject,
+    Error,
+    ExternalDocumentation,
+    License,
+    Link,
     ParamStructure,
     RPCServer,
-    ServerObject,
+    Server,
 )
 from tests.util import Vector3
 
@@ -93,8 +92,8 @@ def test_open_rpc_info() -> None:
         debug=True,
         description="description",
         terms_of_service="terms_of_service",
-        contact=ContactObject(),
-        license_=LicenseObject(name="name"),
+        contact=Contact(),
+        license_=License(name="name"),
     )
     rpc.method()(increment)
     rpc.method()(get_distance)
@@ -110,8 +109,8 @@ def test_open_rpc_info() -> None:
     rpc.version = rpc.version or "1.0.0"
     rpc.description = rpc.description or "Testing rpc.discover"
     rpc.terms_of_service = rpc.terms_of_service or "Coffee"
-    rpc.contact = rpc.contact or ContactObject(name="mocha")
-    rpc.license_ = rpc.license_ or LicenseObject(name="AGPLv3")
+    rpc.contact = rpc.contact or Contact(name="mocha")
+    rpc.license_ = rpc.license_ or License(name="AGPLv3")
     request = Request(id=1, method="rpc.discover")
     resp = json.loads(rpc.process_request(request.model_dump_json()))  # type: ignore
     discover_result = resp["result"]
@@ -135,11 +134,11 @@ def test_method_properties() -> None:
     rpc = _rpc()
     rpc.method(
         summary="Summary",
-        external_docs=ExternalDocumentationObject(url=url),
+        external_docs=ExternalDocumentation(url=url),
         deprecated=True,
-        servers=[ServerObject(name="Server", url=url)],
-        errors=[ErrorObject(code=0, message="Error Message")],
-        links=[LinkObject(name="Link")],
+        servers=[Server(name="Server", url=url)],
+        errors=[Error(code=0, message="Error Message")],
+        links=[Link(name="Link")],
         param_structure=ParamStructure.BY_NAME,
     )(method_with_properties)
     method = rpc.discover()["methods"][0]
@@ -252,9 +251,9 @@ def test_defaults() -> None:
     assert method["examples"] == [
         {
             "params": [
-                {"name": "a", "value": 1},
-                {"name": "b", "value": 1.0},
-                {"name": "c", "value": "string"},
+                {"name": "a", "value": 2},
+                {"name": "b", "value": 0.99792458},
+                {"name": "c", "value": "c"},
             ],
             "result": {"value": "string"},
         }
@@ -613,6 +612,17 @@ def test_collections() -> None:
     }
 
 
+def test_method_union_model() -> None:
+    rpc = _rpc()
+    rpc.method()(method_union_model)
+    doc = rpc.discover()
+
+    assert list(doc["components"]["schemas"].keys()) == [
+        "ComplexObjects",
+        "CollectionsModel",
+    ]
+
+
 def test_recursive_schemas() -> None:
     rpc = _rpc()
     rpc.method()(nested_model)
@@ -804,3 +814,8 @@ def method_using_collections(
         dict_int_keys=dict_int_keys,
         dict_union=dict_union,
     )
+
+
+def method_union_model() -> Union[ComplexObjects, CollectionsModel, None]:
+    """Method with union model."""
+    return None

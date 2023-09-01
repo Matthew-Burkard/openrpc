@@ -32,33 +32,41 @@ stages:
 
 black:
   stage: analysis
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
   <<: *setup_env
   script:
     - black --check $PROJECT_SRC_DIR
 
 ruff:
   stage: analysis
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
   <<: *setup_env
   script:
     - ruff check $PROJECT_SRC_DIR
 
 mypy:
   stage: analysis
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
   <<: *setup_env
   script:
     - mypy $PROJECT_SRC_DIR
 
 pytest:
   stage: test
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
   <<: *setup_env
   script:
     - poetry run pytest tests/
 
 deploy:
   stage: deploy
-  <<: *setup_env
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
+  <<: *setup_env
   script:
     - poetry build
     - poetry publish -u "$PYPI_USERNAME" -p "$PYPI_TOKEN"

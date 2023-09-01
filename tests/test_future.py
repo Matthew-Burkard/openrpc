@@ -25,7 +25,7 @@ def test_future() -> None:
         {
             "params": [
                 {"name": "union_str_int", "value": "string"},
-                {"name": "list_str", "value": ["string"]},
+                {"name": "list_str", "value": None},
             ],
             "result": {"value": ["string"]},
         }
