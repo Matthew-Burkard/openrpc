@@ -156,7 +156,7 @@ class MethodRegistrar:
 
         # Params model.
         param_model = create_model(  # type: ignore
-            f"{metadata.name}ParamsModel",
+            f"{metadata.name}Params",
             **{
                 k: (
                     resolved_annotation(v.annotation, function),
@@ -169,7 +169,7 @@ class MethodRegistrar:
 
         # Result Model
         result_model = create_model(
-            f"{metadata.name}ResultModel",
+            f"{metadata.name}Result",
             result=(resolved_annotation(signature.return_annotation, function), ...),
         )
 
