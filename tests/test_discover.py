@@ -111,6 +111,7 @@ def test_open_rpc_info() -> None:
     rpc.terms_of_service = rpc.terms_of_service or "Coffee"
     rpc.contact = rpc.contact or Contact(name="mocha")
     rpc.license_ = rpc.license_ or License(name="AGPLv3")
+    rpc.servers = rpc.servers or Server(name="default", url="localhost")
     request = Request(id=1, method="rpc.discover")
     resp = json.loads(rpc.process_request(request.model_dump_json()))  # type: ignore
     discover_result = resp["result"]

@@ -18,6 +18,7 @@ from openrpc._objects import (
     License,
     Method,
     Schema,
+    Server,
     Tag,
 )
 from ._discover.discover import get_openrpc_doc
@@ -37,6 +38,7 @@ class RPCServer(MethodRegistrar):
         terms_of_service: Optional[str] = None,
         contact: Optional[Contact] = None,
         license_: Optional[License] = None,
+        servers: Optional[Union[list[Server], Server]] = None,
         *,
         debug: bool = False,
     ) -> None:
@@ -48,6 +50,7 @@ class RPCServer(MethodRegistrar):
         :param terms_of_service: App terms of service.
         :param contact: Contact information.
         :param license_: App license.
+        :param servers: Servers hosting this RPC API.
         :param debug: Include internal error details in responses.
         """
         super().__init__()
@@ -66,6 +69,7 @@ class RPCServer(MethodRegistrar):
             self._info.contact = contact
         if license_ is not None:
             self._info.license_ = license_
+        self._servers = servers or Server(name="default", url="localhost")
         # Register discover method.
         schema = Schema()
         schema.ref = _META_REF
@@ -130,6 +134,15 @@ class RPCServer(MethodRegistrar):
         self._info.license_ = license_
 
     @property
+    def servers(self) -> Union[list[Server], Server]:
+        """Server Objects, which provide connectivity information to a target server."""
+        return self._servers
+
+    @servers.setter
+    def servers(self, servers: Union[list[Server], Server]) -> None:
+        self._servers = servers
+
+    @property
     def default_error_code(self) -> int:
         """JSON-RPC error code used when a method raises an error."""
         return self._request_processor.uncaught_error_code
@@ -141,7 +154,9 @@ class RPCServer(MethodRegistrar):
     @property
     def methods(self) -> list[Method]:
         """Get all methods of this server."""
-        return get_openrpc_doc(self._info, self._rpc_methods.values()).methods
+        return get_openrpc_doc(
+            self._info, self._rpc_methods.values(), self._servers
+        ).methods
 
     @property
     def debug(self) -> bool:
@@ -252,9 +267,9 @@ class RPCServer(MethodRegistrar):
 
     def discover(self) -> dict[str, Any]:
         """Execute "rpc.discover" method defined in OpenRPC spec."""
-        return get_openrpc_doc(self._info, self._rpc_methods.values()).model_dump(
-            by_alias=True, exclude_unset=True
-        )
+        return get_openrpc_doc(
+            self._info, self._rpc_methods.values(), self._servers
+        ).model_dump(by_alias=True, exclude_unset=True)
 
     def _get_error_response(self, error: Exception) -> ErrorResponse:
         log.exception("%s:", type(error).__name__)
