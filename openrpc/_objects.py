@@ -313,6 +313,7 @@ class BearerAuth(BaseModel):
     type: Literal["bearer"] = "bearer"
     in_: str = Field(default="header", alias="in")
     description: Optional[str] = None
+    scopes: dict[str, str] = Field(default_factory=dict)
 
 
 class APIKeyAuth(BaseModel):
@@ -321,6 +322,7 @@ class APIKeyAuth(BaseModel):
     type: Literal["apikey"] = "apikey"
     in_: str = Field(default="header", alias="in")
     description: Optional[str] = None
+    scopes: dict[str, str] = Field(default_factory=dict)
 
 
 class RPCPermissionError(JSONRPCError):
