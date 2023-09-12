@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 __all__ = (
+    "APIKeyAuth",
+    "BearerAuth",
     "Components",
     "Contact",
     "ContentDescriptor",
@@ -13,8 +15,10 @@ __all__ = (
     "License",
     "Link",
     "Method",
+    "OAuth2",
     "OpenRPC",
     "ParamStructure",
+    "RPCPermissionError",
     "Reference",
     "Schema",
     "SchemaType",
@@ -26,6 +30,8 @@ __all__ = (
 from enum import Enum
 from typing import Any, Literal, Optional, Union
 
+from jsonrpcobjects.objects import Error as RPCError
+from jsonrpcobjects.errors import JSONRPCError
 from pydantic import BaseModel, Field
 
 SchemaType = Union["Schema", bool]
@@ -103,6 +109,7 @@ class Method(BaseModel):
         default=None, alias="paramStructure"
     )
     examples: Optional[list[ExamplePairing]] = None
+    x_security: Optional[dict[str, list[str]]] = Field(default=None, alias="x-security")
 
 
 class ContentDescriptor(BaseModel):
@@ -243,7 +250,6 @@ class Tag(BaseModel):
     external_docs: Optional[ExternalDocumentation] = Field(
         default=None, alias="externalDocs"
     )
-    x_security: Optional[dict[str, list[str]]] = Field(default=None, alias="x-security")
 
 
 class ExternalDocumentation(BaseModel):
@@ -293,6 +299,14 @@ class APIKeyAuth(BaseModel):
 
     type: Literal["apikey"]
     in_: str = Field(default="header", alias="in")
+
+
+class RPCPermissionError(JSONRPCError):
+    """Error raised when method caller is missing permissions."""
+
+    def __init__(self) -> None:
+        error = RPCError(code=-32099, message="Permission error")
+        super(RPCPermissionError, self).__init__(error=error)
 
 
 Info.model_rebuild()

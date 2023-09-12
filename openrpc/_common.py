@@ -4,7 +4,7 @@ __all__ = ("MethodMetaData", "RPCMethod", "resolved_annotation")
 import inspect
 from typing import Any, Callable, ForwardRef, Optional, Type
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 # noinspection PyProtectedMember
 from pydantic.v1.typing import evaluate_forwardref
@@ -37,6 +37,7 @@ class MethodMetaData(BaseModel):
     links: Optional[list[Link]] = None
     param_structure: Optional[ParamStructure] = None
     examples: Optional[list[ExamplePairing]] = None
+    security: dict[str, list[str]] = Field(default_factory=dict)
 
 
 class RPCMethod(BaseModel):

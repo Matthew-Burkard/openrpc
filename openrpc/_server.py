@@ -220,7 +220,10 @@ class RPCServer(MethodRegistrar):
         self._routers.append(router)
 
     def process_request(
-        self, data: Union[bytes, str], depends: Optional[dict[str, Any]] = None
+        self,
+        data: Union[bytes, str],
+        depends: Optional[dict[str, Any]] = None,
+        security: Optional[dict[str, list[str]]] = None,
     ) -> Optional[str]:
         """Process a JSON-RPC2 request and get the response.
 
@@ -228,12 +231,13 @@ class RPCServer(MethodRegistrar):
         :param depends: Values passed to functions with dependencies.
             Values will be passed if the keyname matches the arg name
             that is a dependency.
+        :param security: Scheme and scopes of method caller.
         :return: A JSON-RPC2 response or None if the request was a
             notification.
         """
         try:
             log.debug("Processing request: %s", data)
-            resp = self._request_processor.process(data, depends)
+            resp = self._request_processor.process(data, depends, security)
             if resp:
                 log.debug("Responding: %s", resp)
         except Exception as error:
@@ -242,7 +246,10 @@ class RPCServer(MethodRegistrar):
             return resp
 
     async def process_request_async(
-        self, data: Union[bytes, str], depends: Optional[dict[str, Any]] = None
+        self,
+        data: Union[bytes, str],
+        depends: Optional[dict[str, Any]] = None,
+        security: Optional[dict[str, list[str]]] = None,
     ) -> Optional[str]:
         """Process a JSON-RPC2 request and get the response.
 
@@ -252,12 +259,13 @@ class RPCServer(MethodRegistrar):
         :param depends: Values passed to functions with dependencies.
             Values will be passed if the keyname matches the arg name
             that is a dependency.
+        :param security: Scheme and scopes of method caller.
         :return: A JSON-RPC2 response or None if the request was a
             notification.
         """
         try:
             log.debug("Processing request: %s", data)
-            resp = await self._request_processor.process_async(data, depends)
+            resp = await self._request_processor.process_async(data, depends, security)
             if resp:
                 log.debug("Responding: %s", resp)
         except Exception as error:
