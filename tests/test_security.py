@@ -1,10 +1,22 @@
 """Unit tests for permissions."""
 from jsonrpcobjects.objects import ErrorResponse, ResultResponse
 
-from openrpc import RPCServer
+from openrpc import OAuth2, OAuth2Flow, OAuth2FlowType, RPCServer
 from tests import util
 
-rpc = RPCServer()
+security = {
+    "oauth2": OAuth2(
+        flows=[
+            OAuth2Flow(
+                type=OAuth2FlowType.AUTHORIZATION_CODE,
+                authorizationUrl="http://localhost:8000/oauth",
+                tokenUrl="http://localhost:8000/oauth.access",
+                scopes={"coffee": "The coffee scope.", "mocha": "The mocha scope."},
+            )
+        ]
+    )
+}
+rpc = RPCServer(security_schemes=security)
 
 
 @rpc.method(security={"oauth2": ["coffee", "mocha"]})
@@ -72,4 +84,23 @@ def test_multiple_schemes_permit() -> None:
 
 
 def test_security_discover() -> None:
-    pass
+    request = '{"id": 1, "method": "rpc.discover", "jsonrpc": "2.0"}'
+    result = util.parse_response(
+        rpc.process_request(request, security={"apikey": ["pickle"]})
+    )
+    assert isinstance(result, ResultResponse)
+    assert result.result["components"]["x-securitySchemes"] == {
+        "oauth2": {
+            "flows": [
+                {
+                    "authorizationUrl": "http://localhost:8000/oauth",
+                    "scopes": {
+                        "coffee": "The coffee scope.",
+                        "mocha": "The mocha scope.",
+                    },
+                    "tokenUrl": "http://localhost:8000/oauth.access",
+                    "type": "authorizationCode",
+                }
+            ]
+        }
+    }
