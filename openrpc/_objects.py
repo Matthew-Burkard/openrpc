@@ -16,6 +16,8 @@ __all__ = (
     "Link",
     "Method",
     "OAuth2",
+    "OAuth2Flow",
+    "OAuth2FlowType",
     "OpenRPC",
     "ParamStructure",
     "RPCPermissionError",
@@ -278,13 +280,30 @@ class OpenRPC(BaseModel):
     )
 
 
+class OAuth2FlowType(Enum):
+    """Types of OAuth 2.0 flows."""
+
+    AUTHORIZATION_CODE = "authorizationCode"
+    CLIENT_CREDENTIALS = "clientCredentials"
+    IMPLICIT = "implicit"
+    PASSWORD = "password"  # noqa: S105
+
+
+class OAuth2Flow(BaseModel):
+    """An OAuth 2.0 flow."""
+
+    type: OAuth2FlowType
+    authorization_url: str = Field(alias="authorizationUrl")
+    refresh_url: str = Field(alias="refreshUrl")
+    token_url: str = Field(alias="tokenUrl")
+    scopes: dict[str, str] = Field(default_factory=dict)
+
+
 class OAuth2(BaseModel):
     """Describes OAuth 2.0 security scheme used by an API."""
 
     type: Literal["oauth2"]
-    authorization_url: str = Field(alias="authorizationUrl")
-    token_url: str = Field(alias="tokenUrl")
-    scopes: dict[str, str]
+    flows: list[OAuth2Flow] = Field(min_items=1)
 
 
 class BearerAuth(BaseModel):
