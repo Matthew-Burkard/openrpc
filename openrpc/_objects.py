@@ -304,6 +304,7 @@ class OAuth2(BaseModel):
 
     type: Literal["oauth2"]
     flows: list[OAuth2Flow] = Field(min_items=1)
+    description: Optional[str] = None
 
 
 class BearerAuth(BaseModel):
@@ -311,6 +312,7 @@ class BearerAuth(BaseModel):
 
     type: Literal["bearer"]
     in_: str = Field(default="header", alias="in")
+    description: Optional[str] = None
 
 
 class APIKeyAuth(BaseModel):
@@ -318,6 +320,7 @@ class APIKeyAuth(BaseModel):
 
     type: Literal["apikey"]
     in_: str = Field(default="header", alias="in")
+    description: Optional[str] = None
 
 
 class RPCPermissionError(JSONRPCError):
