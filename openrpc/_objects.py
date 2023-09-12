@@ -24,7 +24,7 @@ __all__ = (
 )
 
 from enum import Enum
-from typing import Any, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -229,6 +229,9 @@ class Components(BaseModel):
         default=None, alias="examplePairingObjects"
     )
     tags: Optional[dict[str, Tag]] = None
+    x_security_schemes: Optional[
+        dict[str, Union[OAuth2, BearerAuth, APIKeyAuth]]
+    ] = Field(default=None, alias="x-securitySchemes")
 
 
 class Tag(BaseModel):
@@ -240,6 +243,7 @@ class Tag(BaseModel):
     external_docs: Optional[ExternalDocumentation] = Field(
         default=None, alias="externalDocs"
     )
+    x_security: Optional[dict[str, list[str]]] = Field(default=None, alias="x-security")
 
 
 class ExternalDocumentation(BaseModel):
@@ -266,6 +270,29 @@ class OpenRPC(BaseModel):
     external_docs: Optional[ExternalDocumentation] = Field(
         default=None, alias="externalDocs"
     )
+
+
+class OAuth2(BaseModel):
+    """Describes OAuth 2.0 security scheme used by an API."""
+
+    type: Literal["oauth2"]
+    authorization_url: str = Field(alias="authorizationUrl")
+    token_url: str = Field(alias="tokenUrl")
+    scopes: dict[str, str]
+
+
+class BearerAuth(BaseModel):
+    """Describes Bearer security scheme used by an API."""
+
+    type: Literal["bearer"]
+    in_: str = Field(default="header", alias="in")
+
+
+class APIKeyAuth(BaseModel):
+    """Describes API Key security scheme used by an API."""
+
+    type: Literal["apikey"]
+    in_: str = Field(default="header", alias="in")
 
 
 Info.model_rebuild()

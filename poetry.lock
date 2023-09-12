@@ -8,7 +8,7 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "black"
-version = "23.9.0"
+version = "23.9.1"
 description = "The uncompromising code formatter."
 category = "dev"
 optional = false
@@ -229,7 +229,7 @@ testing = ["coverage (>=6.2)", "hypothesis (>=5.7.1)", "flaky (>=3.5.0)", "mypy 
 
 [[package]]
 name = "ruff"
-version = "0.0.287"
+version = "0.0.288"
 description = "An extremely fast Python linter, written in Rust."
 category = "dev"
 optional = false
@@ -254,7 +254,7 @@ python-versions = ">=3.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "d913400f17ea144e8236274a3e293e24ced365da321dd89fabcacb117bc09c08"
+content-hash = "fb17de052251069175e733cc151db574b4942301eeea777e0b0a8e6f8f5b9128"
 
 [metadata.files]
 annotated-types = []
