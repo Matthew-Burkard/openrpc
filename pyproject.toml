@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openrpc"
-version = "8.1.1"
+version = "8.2.0"
 description = "Transport agnostic framework for developing OpenRPC servers."
 readme = "README.md"
 repository = "https://gitlab.com/mburkard/openrpc"
@@ -28,10 +28,10 @@ lorem-pysum = "^1.4.3"
 [tool.poetry.dev-dependencies]
 coverage = "^7.3.1"
 mypy = "^1.0.0"
-black = "^23.1.0"
+black = "^23.9.1"
 pytest = "^7.2.1"
 pytest-asyncio = "^0.21.0"
-ruff = "^0.0.287"
+ruff = "^0.0.288"
 
 [build-system]
 

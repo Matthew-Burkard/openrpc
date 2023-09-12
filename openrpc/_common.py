@@ -37,6 +37,7 @@ class MethodMetaData(BaseModel):
     links: Optional[list[Link]] = None
     param_structure: Optional[ParamStructure] = None
     examples: Optional[list[ExamplePairing]] = None
+    security: dict[str, list[str]]
 
 
 class RPCMethod(BaseModel):

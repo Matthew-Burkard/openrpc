@@ -64,6 +64,7 @@ class MethodRegistrar:
         links: Optional[list[Link]] = None,
         param_structure: Optional[ParamStructure] = None,
         examples: Optional[list[ExamplePairing]] = None,
+        security: Optional[dict[str, list[str]]] = None,
     ) -> Union[CallableType, Callable[[DecoratedCallableType], DecoratedCallableType]]:
         """Register a method with this OpenRPC server.
 
@@ -87,6 +88,7 @@ class MethodRegistrar:
         :param links: A list of possible links from this method call.
         :param param_structure: The expected format of the parameters
         :param examples: Array of Example Pairing Objects.
+        :param security: Scheme and scopes required to call this method.
         :return: The method decorator.
         """
         tag_objects = (
@@ -111,6 +113,7 @@ class MethodRegistrar:
                 links=links,
                 param_structure=param_structure,
                 examples=examples,
+                security=security,
             )
         if self._warn:
             warnings.warn(
@@ -138,6 +141,7 @@ class MethodRegistrar:
                 links=links,
                 param_structure=param_structure,
                 examples=examples,
+                security=security or {},
             ),
         )
 

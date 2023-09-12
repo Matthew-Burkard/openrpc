@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 __all__ = (
+    "APIKeyAuth",
+    "BearerAuth",
     "Components",
     "Contact",
     "ContentDescriptor",
@@ -13,8 +15,12 @@ __all__ = (
     "License",
     "Link",
     "Method",
+    "OAuth2",
+    "OAuth2Flow",
+    "OAuth2FlowType",
     "OpenRPC",
     "ParamStructure",
+    "RPCPermissionError",
     "Reference",
     "Schema",
     "SchemaType",
@@ -24,8 +30,10 @@ __all__ = (
 )
 
 from enum import Enum
-from typing import Any, Optional, Union
+from typing import Any, Literal, Optional, Union
 
+from jsonrpcobjects.objects import Error as RPCError
+from jsonrpcobjects.errors import JSONRPCError
 from pydantic import BaseModel, Field
 
 SchemaType = Union["Schema", bool]
@@ -103,6 +111,7 @@ class Method(BaseModel):
         default=None, alias="paramStructure"
     )
     examples: Optional[list[ExamplePairing]] = None
+    x_security: Optional[dict[str, list[str]]] = Field(default=None, alias="x-security")
 
 
 class ContentDescriptor(BaseModel):
@@ -229,6 +238,9 @@ class Components(BaseModel):
         default=None, alias="examplePairingObjects"
     )
     tags: Optional[dict[str, Tag]] = None
+    x_security_schemes: Optional[
+        dict[str, Union[OAuth2, BearerAuth, APIKeyAuth]]
+    ] = Field(default=None, alias="x-securitySchemes")
 
 
 class Tag(BaseModel):
@@ -266,6 +278,57 @@ class OpenRPC(BaseModel):
     external_docs: Optional[ExternalDocumentation] = Field(
         default=None, alias="externalDocs"
     )
+
+
+class OAuth2FlowType(Enum):
+    """Types of OAuth 2.0 flows."""
+
+    AUTHORIZATION_CODE = "authorizationCode"
+    CLIENT_CREDENTIALS = "clientCredentials"
+    IMPLICIT = "implicit"
+    PASSWORD = "password"  # noqa: S105
+
+
+class OAuth2Flow(BaseModel):
+    """An OAuth 2.0 flow."""
+
+    type: OAuth2FlowType
+    authorization_url: Optional[str] = Field(alias="authorizationUrl", default=None)
+    refresh_url: Optional[str] = Field(alias="refreshUrl", default=None)
+    token_url: Optional[str] = Field(alias="tokenUrl", default=None)
+    scopes: dict[str, str] = Field(default_factory=dict)
+
+
+class OAuth2(BaseModel):
+    """Describes OAuth 2.0 security scheme used by an API."""
+
+    type: Literal["oauth2"] = "oauth2"
+    flows: list[OAuth2Flow] = Field(min_items=1)
+    description: Optional[str] = None
+
+
+class BearerAuth(BaseModel):
+    """Describes Bearer security scheme used by an API."""
+
+    type: Literal["bearer"] = "bearer"
+    in_: str = Field(default="header", alias="in")
+    description: Optional[str] = None
+
+
+class APIKeyAuth(BaseModel):
+    """Describes API Key security scheme used by an API."""
+
+    type: Literal["apikey"] = "apikey"
+    in_: str = Field(default="header", alias="in")
+    description: Optional[str] = None
+
+
+class RPCPermissionError(JSONRPCError):
+    """Error raised when method caller is missing permissions."""
+
+    def __init__(self) -> None:
+        error = RPCError(code=-32099, message="Permission error")
+        super(RPCPermissionError, self).__init__(error=error)
 
 
 Info.model_rebuild()
