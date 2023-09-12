@@ -141,7 +141,7 @@ class MethodRegistrar:
                 links=links,
                 param_structure=param_structure,
                 examples=examples,
-                security=security,
+                security=security or {},
             ),
         )
 

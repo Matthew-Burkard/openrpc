@@ -12,11 +12,14 @@ from openrpc import RPCRouter
 from openrpc._common import MethodMetaData
 from openrpc._method_registrar import CallableType, MethodRegistrar
 from openrpc._objects import (
+    APIKeyAuth,
+    BearerAuth,
     Contact,
     ContentDescriptor,
     Info,
     License,
     Method,
+    OAuth2,
     Schema,
     Server,
     Tag,
@@ -39,6 +42,9 @@ class RPCServer(MethodRegistrar):
         contact: Optional[Contact] = None,
         license_: Optional[License] = None,
         servers: Optional[Union[list[Server], Server]] = None,
+        security_schemes: Optional[
+            dict[str, Union[OAuth2, BearerAuth, APIKeyAuth]]
+        ] = None,
         *,
         debug: bool = False,
     ) -> None:
@@ -51,6 +57,7 @@ class RPCServer(MethodRegistrar):
         :param contact: Contact information.
         :param license_: App license.
         :param servers: Servers hosting this RPC API.
+        :param security_schemes: Security schemes used by this RPC API.
         :param debug: Include internal error details in responses.
         """
         super().__init__()
@@ -70,6 +77,7 @@ class RPCServer(MethodRegistrar):
         if license_ is not None:
             self._info.license_ = license_
         self._servers = servers or Server(name="default", url="localhost")
+        self.security_schemes = security_schemes
         # Register discover method.
         schema = Schema()
         schema.ref = _META_REF
@@ -275,9 +283,10 @@ class RPCServer(MethodRegistrar):
 
     def discover(self) -> dict[str, Any]:
         """Execute "rpc.discover" method defined in OpenRPC spec."""
-        return get_openrpc_doc(
-            self._info, self._rpc_methods.values(), self._servers
-        ).model_dump(by_alias=True, exclude_unset=True)
+        openrpc = get_openrpc_doc(self._info, self._rpc_methods.values(), self._servers)
+        if self.security_schemes and openrpc.components:
+            openrpc.components.x_security_schemes = self.security_schemes
+        return openrpc.model_dump(by_alias=True, exclude_unset=True)
 
     def _get_error_response(self, error: Exception) -> ErrorResponse:
         log.exception("%s:", type(error).__name__)
