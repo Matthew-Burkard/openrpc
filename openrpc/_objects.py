@@ -293,16 +293,16 @@ class OAuth2Flow(BaseModel):
     """An OAuth 2.0 flow."""
 
     type: OAuth2FlowType
-    authorization_url: str = Field(alias="authorizationUrl")
-    refresh_url: str = Field(alias="refreshUrl")
-    token_url: str = Field(alias="tokenUrl")
+    authorization_url: Optional[str] = Field(alias="authorizationUrl", default=None)
+    refresh_url: Optional[str] = Field(alias="refreshUrl", default=None)
+    token_url: Optional[str] = Field(alias="tokenUrl", default=None)
     scopes: dict[str, str] = Field(default_factory=dict)
 
 
 class OAuth2(BaseModel):
     """Describes OAuth 2.0 security scheme used by an API."""
 
-    type: Literal["oauth2"]
+    type: Literal["oauth2"] = "oauth2"
     flows: list[OAuth2Flow] = Field(min_items=1)
     description: Optional[str] = None
 
@@ -310,7 +310,7 @@ class OAuth2(BaseModel):
 class BearerAuth(BaseModel):
     """Describes Bearer security scheme used by an API."""
 
-    type: Literal["bearer"]
+    type: Literal["bearer"] = "bearer"
     in_: str = Field(default="header", alias="in")
     description: Optional[str] = None
 
@@ -318,7 +318,7 @@ class BearerAuth(BaseModel):
 class APIKeyAuth(BaseModel):
     """Describes API Key security scheme used by an API."""
 
-    type: Literal["apikey"]
+    type: Literal["apikey"] = "apikey"
     in_: str = Field(default="header", alias="in")
     description: Optional[str] = None
 
