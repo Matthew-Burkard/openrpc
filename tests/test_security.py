@@ -26,7 +26,12 @@ def permission_method() -> None:
 
 @rpc.method(security={"oauth2": ["coffee", "mocha"], "apikey": ["pickle"]})
 def multiple_schemes() -> None:
-    """Method requiring a permission."""
+    """Method requiring one of multiple permissions."""
+
+
+@rpc.method(security={"apikey": []})
+def no_scopes() -> None:
+    """Method requiring a permission with no scope."""
 
 
 def test_deny() -> None:
@@ -81,6 +86,17 @@ def test_multiple_schemes_permit() -> None:
         rpc.process_request(request, security={"oauth2": ["coffee", "mocha"]})
     )
     assert isinstance(result, ResultResponse)
+
+
+def test_no_scopes() -> None:
+    request = '{"id": 1, "method": "no_scopes", "jsonrpc": "2.0"}'
+    result = util.parse_response(
+        rpc.process_request(request, security={"apikey": [""]})
+    )
+    assert isinstance(result, ResultResponse)
+    result = util.parse_response(rpc.process_request(request))
+    assert isinstance(result, ErrorResponse)
+    assert result.error.message == "Permission error"
 
 
 def test_security_discover() -> None:
