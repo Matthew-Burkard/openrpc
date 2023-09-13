@@ -312,7 +312,7 @@ class BearerAuth(BaseModel):
 
     type: Literal["bearer"] = "bearer"
     in_: str = Field(default="header", alias="in")
-    name: str
+    name: str = "Authorization"
     description: Optional[str] = None
     scopes: dict[str, str] = Field(default_factory=dict)
 
@@ -322,7 +322,7 @@ class APIKeyAuth(BaseModel):
 
     type: Literal["apikey"] = "apikey"
     in_: str = Field(default="header", alias="in")
-    name: str
+    name: str = "api_key"
     description: Optional[str] = None
     scopes: dict[str, str] = Field(default_factory=dict)
 
