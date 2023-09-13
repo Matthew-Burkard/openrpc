@@ -190,7 +190,7 @@ class MethodProcessor:
         # If any scheme and scopes are matched, permit method call.
         for method_scheme, method_scopes in self.method.metadata.security.items():
             call_scopes = self.security.get(method_scheme)
-            if not call_scopes:
+            if call_scopes is None:
                 continue
             if all(scope in call_scopes for scope in method_scopes):
                 permit = True

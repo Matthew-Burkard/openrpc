@@ -90,9 +90,7 @@ def test_multiple_schemes_permit() -> None:
 
 def test_no_scopes() -> None:
     request = '{"id": 1, "method": "no_scopes", "jsonrpc": "2.0"}'
-    result = util.parse_response(
-        rpc.process_request(request, security={"apikey": [""]})
-    )
+    result = util.parse_response(rpc.process_request(request, security={"apikey": []}))
     assert isinstance(result, ResultResponse)
     result = util.parse_response(rpc.process_request(request))
     assert isinstance(result, ErrorResponse)
