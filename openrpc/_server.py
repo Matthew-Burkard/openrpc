@@ -290,7 +290,7 @@ class RPCServer(MethodRegistrar):
             # so the security model default values will be kept,
             # `exclude_unset=True` in doc dump would remove them.
             model_dump["components"]["x-securitySchemes"] = {
-                name: model.model_dump(exclude_none=True)
+                name: model.model_dump(exclude_none=True, by_alias=True)
                 for name, model in self.security_schemes.items()
             }
         return model_dump

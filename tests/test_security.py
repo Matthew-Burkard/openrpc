@@ -107,12 +107,12 @@ def test_security_discover() -> None:
         "oauth2": {
             "flows": [
                 {
-                    "authorization_url": "http://localhost:8000/oauth",
+                    "authorizationUrl": "http://localhost:8000/oauth",
                     "scopes": {
                         "coffee": "The coffee scope.",
                         "mocha": "The mocha scope.",
                     },
-                    "token_url": "http://localhost:8000/oauth.access",
+                    "tokenUrl": "http://localhost:8000/oauth.access",
                     "type": "authorizationCode",
                 }
             ],
