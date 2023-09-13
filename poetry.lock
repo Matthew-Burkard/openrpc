@@ -229,7 +229,7 @@ testing = ["coverage (>=6.2)", "hypothesis (>=5.7.1)", "flaky (>=3.5.0)", "mypy 
 
 [[package]]
 name = "ruff"
-version = "0.0.288"
+version = "0.0.289"
 description = "An extremely fast Python linter, written in Rust."
 category = "dev"
 optional = false
@@ -254,7 +254,7 @@ python-versions = ">=3.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "fb17de052251069175e733cc151db574b4942301eeea777e0b0a8e6f8f5b9128"
+content-hash = "e62e186f0a246fb3265370a1931dc9a9c7a7ea14201e42505b249409d3aa9cff"
 
 [metadata.files]
 annotated-types = []

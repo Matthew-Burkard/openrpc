@@ -284,9 +284,16 @@ class RPCServer(MethodRegistrar):
     def discover(self) -> dict[str, Any]:
         """Execute "rpc.discover" method defined in OpenRPC spec."""
         openrpc = get_openrpc_doc(self._info, self._rpc_methods.values(), self._servers)
+        model_dump = openrpc.model_dump(by_alias=True, exclude_unset=True)
         if self.security_schemes and openrpc.components:
-            openrpc.components.x_security_schemes = self.security_schemes
-        return openrpc.model_dump(by_alias=True, exclude_unset=True)
+            # This is done after OpenRPC model dump rather than before
+            # so the security model default values will be kept,
+            # `exclude_unset=True` in doc dump would remove them.
+            model_dump["components"]["x-securitySchemes"] = {
+                name: model.model_dump(exclude_none=True)
+                for name, model in self.security_schemes.items()
+            }
+        return model_dump
 
     def _get_error_response(self, error: Exception) -> ErrorResponse:
         log.exception("%s:", type(error).__name__)
