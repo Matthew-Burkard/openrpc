@@ -285,7 +285,6 @@ class OAuth2FlowType(Enum):
 
     AUTHORIZATION_CODE = "authorizationCode"
     CLIENT_CREDENTIALS = "clientCredentials"
-    IMPLICIT = "implicit"
     PASSWORD = "password"  # noqa: S105
 
 
