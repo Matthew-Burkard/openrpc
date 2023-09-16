@@ -152,7 +152,7 @@ class MethodProcessor:
             error_object: ErrorType = DataError(
                 code=self.uncaught_error_code,
                 message="Server error",
-                data=f"{type(error).__name__}: {error}\n{traceback_str}",
+                data=f"{type(error).__name__}\n{traceback_str}",
             )
         else:
             error_object = Error(code=self.uncaught_error_code, message="Server error")
