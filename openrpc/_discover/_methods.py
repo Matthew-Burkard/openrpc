@@ -48,6 +48,8 @@ def get_methods(rpc_methods: Iterable[RPCMethod]) -> list[Method]:
             method.links = m.metadata.links
         if m.metadata.param_structure is not None:
             method.param_structure = m.metadata.param_structure
+        if m.metadata.security is not None:
+            method.x_security = m.metadata.security
         methods.append(method)
     return methods
 

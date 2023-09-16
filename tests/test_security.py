@@ -119,3 +119,7 @@ def test_security_discover() -> None:
             "type": "oauth2",
         }
     }
+    assert result.result["methods"][1]["x-security"] == {
+        "oauth2": ["coffee", "mocha"],
+        "apikey": ["pickle"],
+    }
