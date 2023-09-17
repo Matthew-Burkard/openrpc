@@ -9,6 +9,7 @@ sidebar_position: 6
 documentation for your RPC API. Run the following code:
 
 ```python
+import uvicorn
 from openrpc import RPCServer
 import tabella
 
@@ -23,11 +24,11 @@ async def add(a: int, b: int) -> int:
 app = tabella.get_app(rpc)
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8000)
 ```
-Then open http://localhost:8000/ to see the auto generated documentation.
+Then open http://127.0.0.1:8000/ to see the auto generated documentation.
 
-![img.png](demo.png)
+![Docs Demo](demo.png)
 
 # RPC Discover
 
