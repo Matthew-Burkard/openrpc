@@ -66,8 +66,6 @@ def _get_enums_from_function(method: RPCMethod) -> list:
 
 
 def _get_enums(annotation: Optional[Type]) -> list:
-    if annotation is None:
-        return []
     enums = []
     if isinstance(annotation, Type) and issubclass(annotation, Enum):  # type: ignore
         enums.append(annotation)

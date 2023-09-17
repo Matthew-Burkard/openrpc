@@ -52,12 +52,16 @@ class RequestProcessor:
         self.methods[method_name] = function
 
     def process(
-        self, data: Union[bytes, str], depends: Optional[dict[str, Any]]
+        self,
+        data: Union[bytes, str],
+        depends: Optional[dict[str, Any]],
+        security: Optional[dict[str, list[str]]],
     ) -> Optional[str]:
         """Parse a JSON-RPC2 request and get the response.
 
         :param data: A JSON-RPC2 request.
         :param depends: Values passed to functions with dependencies.
+        :param security: Scheme and scopes of method caller.
         :return: A valid JSON-RPC2 response.
         """
         parsed_json = _get_parsed_json(data)
@@ -82,6 +86,7 @@ class RequestProcessor:
                     self.uncaught_error_code,
                     req,
                     depends,
+                    security,
                     debug=self.debug,
                 ).execute()
                 # If resp is None, request is a notification.
@@ -102,12 +107,16 @@ class RequestProcessor:
             self.uncaught_error_code,
             request,
             depends,
+            security,
             debug=self.debug,
         ).execute()
         return None if isinstance(request, NotificationTypes) else result
 
     async def process_async(
-        self, data: Union[bytes, str], depends: Optional[dict[str, Any]]
+        self,
+        data: Union[bytes, str],
+        depends: Optional[dict[str, Any]],
+        security: Optional[dict[str, list[str]]],
     ) -> Optional[str]:
         """Process a JSON-RPC2 request and get the response.
 
@@ -115,6 +124,7 @@ class RequestProcessor:
 
         :param data: A JSON-RPC2 request.
         :param depends: Values passed to functions with dependencies.
+        :param security: Scheme and scopes of method caller.
         :return: A valid JSON-RPC2 response.
         """
         parsed_json = _get_parsed_json(data)
@@ -135,18 +145,16 @@ class RequestProcessor:
                     return None
 
                 method = self.methods[request.method]
-                if isinstance(request, RequestTypes):
-                    return await MethodProcessor(
-                        method,
-                        self.uncaught_error_code,
-                        request,
-                        depends,
-                        debug=self.debug,
-                    ).execute_async()
-                # To get here, request must be a notification.
-                await MethodProcessor(
-                    method, self.uncaught_error_code, request, depends, debug=self.debug
+                method_result = await MethodProcessor(
+                    method,
+                    self.uncaught_error_code,
+                    request,
+                    depends,
+                    security,
+                    debug=self.debug,
                 ).execute_async()
+                if isinstance(request, RequestTypes):
+                    return method_result
                 return None
 
             results = await asyncio.gather(
@@ -167,6 +175,7 @@ class RequestProcessor:
             self.uncaught_error_code,
             req,
             depends,
+            security,
             debug=self.debug,
         ).execute_async()
 

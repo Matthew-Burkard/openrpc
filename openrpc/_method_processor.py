@@ -26,6 +26,7 @@ from pydantic import ValidationError
 
 from openrpc import ParamStructure
 from openrpc._common import RPCMethod
+from openrpc._objects import RPCPermissionError
 
 log = logging.getLogger("openrpc")
 by_position_error = DataError(
@@ -45,6 +46,7 @@ class MethodProcessor:
         uncaught_error_code: int,
         request: Union[RequestType, NotificationType],
         depends_values: Optional[dict[str, Any]],
+        security: Optional[dict[str, list[str]]],
         *,
         debug: bool,
     ) -> None:
@@ -54,6 +56,7 @@ class MethodProcessor:
         :param uncaught_error_code: Code for errors raised by method.
         :param request: Request to execute.
         :param depends_values: Values passed to functions with dependencies.
+        :param security: Scheme and scopes of method caller.
         :param debug: Include internal error details in responses.
         """
         self.debug = debug
@@ -61,6 +64,7 @@ class MethodProcessor:
         self.request = request
         self.uncaught_error_code = uncaught_error_code
         self.depends = depends_values or {}
+        self.security = security or {}
 
     def execute(self) -> Optional[str]:
         """Execute the method and get the JSON-RPC2 response."""
@@ -92,6 +96,9 @@ class MethodProcessor:
             return self._get_error_response(error)
 
     def _execute(self) -> Any:
+        if not self._check_permissions():
+            raise RPCPermissionError()
+        # If permissions are present, call method.
         params: Optional[Union[dict, list]]
         params_msg = ""
         missing_dependencies = [
@@ -145,7 +152,7 @@ class MethodProcessor:
             error_object: ErrorType = DataError(
                 code=self.uncaught_error_code,
                 message="Server error",
-                data=f"{type(error).__name__}: {error}\n{traceback_str}",
+                data=f"{type(error).__name__}\n{traceback_str}",
             )
         else:
             error_object = Error(code=self.uncaught_error_code, message="Server error")
@@ -176,6 +183,18 @@ class MethodProcessor:
             raise InvalidParams(
                 DataError(code=-32602, message="Invalid params", data=str(e))
             ) from e
+
+    def _check_permissions(self) -> bool:
+        # Default to permitting if no security is set for method.
+        permit = not self.method.metadata.security
+        # If any scheme and scopes are matched, permit method call.
+        for method_scheme, method_scopes in self.method.metadata.security.items():
+            call_scopes = self.security.get(method_scheme)
+            if call_scopes is None:
+                continue
+            if all(scope in call_scopes for scope in method_scopes):
+                permit = True
+        return permit
 
 
 def _get_trimmed_traceback(error: Exception) -> str:

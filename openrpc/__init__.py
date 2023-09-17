@@ -1,9 +1,12 @@
 """Provides OpenRPC objects and the RPCServer class."""
 
 __all__ = (
+    "APIKeyAuth",
+    "BearerAuth",
     "Components",
     "Contact",
     "ContentDescriptor",
+    "Depends",
     "Error",
     "Example",
     "ExamplePairing",
@@ -12,8 +15,12 @@ __all__ = (
     "License",
     "Link",
     "Method",
+    "OAuth2",
+    "OAuth2Flow",
+    "OAuth2FlowType",
     "OpenRPC",
     "ParamStructure",
+    "RPCPermissionError",
     "RPCRouter",
     "RPCServer",
     "Reference",
@@ -22,11 +29,12 @@ __all__ = (
     "Server",
     "ServerVariable",
     "Tag",
-    "Depends",
 )
 
 from openrpc._depends import Depends
 from openrpc._objects import (
+    APIKeyAuth,
+    BearerAuth,
     Components,
     Contact,
     ContentDescriptor,
@@ -38,9 +46,13 @@ from openrpc._objects import (
     License,
     Link,
     Method,
+    OAuth2,
+    OAuth2Flow,
+    OAuth2FlowType,
     OpenRPC,
     ParamStructure,
     Reference,
+    RPCPermissionError,
     Schema,
     SchemaType,
     Server,

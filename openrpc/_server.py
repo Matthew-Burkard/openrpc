@@ -12,12 +12,16 @@ from openrpc import RPCRouter
 from openrpc._common import MethodMetaData
 from openrpc._method_registrar import CallableType, MethodRegistrar
 from openrpc._objects import (
+    APIKeyAuth,
+    BearerAuth,
     Contact,
     ContentDescriptor,
     Info,
     License,
     Method,
+    OAuth2,
     Schema,
+    Server,
     Tag,
 )
 from ._discover.discover import get_openrpc_doc
@@ -37,6 +41,10 @@ class RPCServer(MethodRegistrar):
         terms_of_service: Optional[str] = None,
         contact: Optional[Contact] = None,
         license_: Optional[License] = None,
+        servers: Optional[Union[list[Server], Server]] = None,
+        security_schemes: Optional[
+            dict[str, Union[OAuth2, BearerAuth, APIKeyAuth]]
+        ] = None,
         *,
         debug: bool = False,
     ) -> None:
@@ -48,6 +56,8 @@ class RPCServer(MethodRegistrar):
         :param terms_of_service: App terms of service.
         :param contact: Contact information.
         :param license_: App license.
+        :param servers: Servers hosting this RPC API.
+        :param security_schemes: Security schemes used by this RPC API.
         :param debug: Include internal error details in responses.
         """
         super().__init__()
@@ -66,6 +76,8 @@ class RPCServer(MethodRegistrar):
             self._info.contact = contact
         if license_ is not None:
             self._info.license_ = license_
+        self._servers = servers or Server(name="default", url="localhost")
+        self.security_schemes = security_schemes
         # Register discover method.
         schema = Schema()
         schema.ref = _META_REF
@@ -130,6 +142,15 @@ class RPCServer(MethodRegistrar):
         self._info.license_ = license_
 
     @property
+    def servers(self) -> Union[list[Server], Server]:
+        """Server Objects, which provide connectivity information to a target server."""
+        return self._servers
+
+    @servers.setter
+    def servers(self, servers: Union[list[Server], Server]) -> None:
+        self._servers = servers
+
+    @property
     def default_error_code(self) -> int:
         """JSON-RPC error code used when a method raises an error."""
         return self._request_processor.uncaught_error_code
@@ -141,7 +162,9 @@ class RPCServer(MethodRegistrar):
     @property
     def methods(self) -> list[Method]:
         """Get all methods of this server."""
-        return get_openrpc_doc(self._info, self._rpc_methods.values()).methods
+        return get_openrpc_doc(
+            self._info, self._rpc_methods.values(), self._servers
+        ).methods
 
     @property
     def debug(self) -> bool:
@@ -205,7 +228,10 @@ class RPCServer(MethodRegistrar):
         self._routers.append(router)
 
     def process_request(
-        self, data: Union[bytes, str], depends: Optional[dict[str, Any]] = None
+        self,
+        data: Union[bytes, str],
+        depends: Optional[dict[str, Any]] = None,
+        security: Optional[dict[str, list[str]]] = None,
     ) -> Optional[str]:
         """Process a JSON-RPC2 request and get the response.
 
@@ -213,12 +239,13 @@ class RPCServer(MethodRegistrar):
         :param depends: Values passed to functions with dependencies.
             Values will be passed if the keyname matches the arg name
             that is a dependency.
+        :param security: Scheme and scopes of method caller.
         :return: A JSON-RPC2 response or None if the request was a
             notification.
         """
         try:
             log.debug("Processing request: %s", data)
-            resp = self._request_processor.process(data, depends)
+            resp = self._request_processor.process(data, depends, security)
             if resp:
                 log.debug("Responding: %s", resp)
         except Exception as error:
@@ -227,7 +254,10 @@ class RPCServer(MethodRegistrar):
             return resp
 
     async def process_request_async(
-        self, data: Union[bytes, str], depends: Optional[dict[str, Any]] = None
+        self,
+        data: Union[bytes, str],
+        depends: Optional[dict[str, Any]] = None,
+        security: Optional[dict[str, list[str]]] = None,
     ) -> Optional[str]:
         """Process a JSON-RPC2 request and get the response.
 
@@ -237,12 +267,13 @@ class RPCServer(MethodRegistrar):
         :param depends: Values passed to functions with dependencies.
             Values will be passed if the keyname matches the arg name
             that is a dependency.
+        :param security: Scheme and scopes of method caller.
         :return: A JSON-RPC2 response or None if the request was a
             notification.
         """
         try:
             log.debug("Processing request: %s", data)
-            resp = await self._request_processor.process_async(data, depends)
+            resp = await self._request_processor.process_async(data, depends, security)
             if resp:
                 log.debug("Responding: %s", resp)
         except Exception as error:
@@ -252,9 +283,17 @@ class RPCServer(MethodRegistrar):
 
     def discover(self) -> dict[str, Any]:
         """Execute "rpc.discover" method defined in OpenRPC spec."""
-        return get_openrpc_doc(self._info, self._rpc_methods.values()).model_dump(
-            by_alias=True, exclude_unset=True
-        )
+        openrpc = get_openrpc_doc(self._info, self._rpc_methods.values(), self._servers)
+        model_dump = openrpc.model_dump(by_alias=True, exclude_unset=True)
+        if self.security_schemes and openrpc.components:
+            # This is done after OpenRPC model dump rather than before
+            # so the security model default values will be kept,
+            # `exclude_unset=True` in doc dump would remove them.
+            model_dump["components"]["x-securitySchemes"] = {
+                name: model.model_dump(exclude_none=True, by_alias=True)
+                for name, model in self.security_schemes.items()
+            }
+        return model_dump
 
     def _get_error_response(self, error: Exception) -> ErrorResponse:
         log.exception("%s:", type(error).__name__)

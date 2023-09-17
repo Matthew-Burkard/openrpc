@@ -37,16 +37,14 @@ poetry add openrpc
 
 ## Example
 
-This is a minimal OpenRPC server using a [Sanic](https://sanic.dev/en/) websocket server
-as the transport method.
+This is a minimal OpenRPC server hosted over HTTP and WebSockets
+using [Tabella](https://gitlab.com/mburkard/tabella)
+and [uvicorn](https://www.uvicorn.org/).
 
 ```python
-import asyncio
-
 from openrpc import RPCServer
-from sanic import Request, Sanic, Websocket
+import tabella
 
-app = Sanic("DemoServer")
 rpc = RPCServer(title="DemoServer", version="1.0.0")
 
 
@@ -55,19 +53,10 @@ async def add(a: int, b: int) -> int:
     return a + b
 
 
-@app.websocket("/api/v1/")
-async def ws_process_rpc(_request: Request, ws: Websocket) -> None:
-    async def _process_rpc(request: str) -> None:
-        json_rpc_response = await rpc.process_request_async(request)
-        if json_rpc_response is not None:
-            await ws.send(json_rpc_response)
-
-    async for msg in ws:
-        asyncio.create_task(_process_rpc(msg))
-
+app = tabella.get_app(rpc)
 
 if __name__ == "__main__":
-    app.run()
+    uvicorn.run(app, host="0.0.0.0", port=8080)
 ```
 
 Example In
@@ -96,8 +85,8 @@ Example Result Out
 
 ## Template App
 
-You can bootstrap your OpenRPC server by cloning the
-[template app](https://gitlab.com/mburkard/openrpc-app-template).
+A [template app](https://gitlab.com/mburkard/openrpc-app-template) is available as an
+example or to clone to bootstrap your RPC server.
 
 ## Support the Developer
 

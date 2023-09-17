@@ -43,7 +43,7 @@ def test_method_errors_debug() -> None:
     error = (
         inspect.cleandoc(
             f"""
-            ValueError: {error_message}-{line}
+            ValueError
               File "{absolute_path}", line {line}, in method_with_error
                 raise ValueError(f"{{error_message}}-{{current_frame.f_lineno}}")
             ValueError: Custom error message-{line}
