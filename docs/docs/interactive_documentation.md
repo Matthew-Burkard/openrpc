@@ -1,9 +1,35 @@
 ---
-slug: /interactive_docs
+slug: /interactive_documentation
 sidebar_position: 6
 ---
 
-# RPC Discover and Docs
+# Interactive Documentation
+
+[Tabella](https://gitlab.com/mburkard/tabella) provides generated interactive
+documentation for your RPC API. Run the following code:
+
+```python
+from openrpc import RPCServer
+import tabella
+
+rpc = RPCServer(title="DemoServer", version="1.0.0")
+
+
+@rpc.method()
+async def add(a: int, b: int) -> int:
+    return a + b
+
+
+app = tabella.get_app(rpc)
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+```
+Then open http://localhost:8000/ to see the auto generated documentation.
+
+![img.png](demo.png)
+
+# RPC Discover
 
 The [OpenRPC spec](https://spec.open-rpc.org/) defines a method called `rpc.discover`,
 which returns an [OpenRPC Document](https://spec.open-rpc.org/#openrpc-document)
@@ -75,8 +101,3 @@ Will print the following OpenRPC document.
   "jsonrpc": "2.0"
 }
 ```
-
-## Interactive Documentation
-
-The [OpenRPC Playground](https://github.com/open-rpc/playground) can be used as
-interactive docs for your OpenRPC server.

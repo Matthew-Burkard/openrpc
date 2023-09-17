@@ -42,8 +42,6 @@ using [Tabella](https://gitlab.com/mburkard/tabella)
 and [uvicorn](https://www.uvicorn.org/).
 
 ```python
-import asyncio
-
 from openrpc import RPCServer
 import tabella
 
