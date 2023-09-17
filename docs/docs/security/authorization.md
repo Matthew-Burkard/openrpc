@@ -1,6 +1,6 @@
 ---
 slug: /security/authorization
-sidebar_position: 2
+sidebar_position: 4
 ---
 
 # Authorization
@@ -14,72 +14,15 @@ sidebar_position: 2
 
 ## Authorization Tutorial
 
-Now that users are authenticated, we want to authorize method access based on user
-permissions.
+Now that users are authenticated, we want to authorize method access.
 
-### Dependent Arguments
-
-It's possible to supply additional values from the framework to a function when an RPC
-method is called. We're going to supply a method with user data to determine if a user
-can call that method.
-
-Dependent arguments must be supplied to the `process_request` or `process_request_async`
-methods in a dictionary. The dictionary will be a map of dependent argument name to
-value with the name as a string.
-
-In order to access a dependent argument from a function add a parameter to the function
-with a name matching the key from the dictionary and a default value of `Depends`
-from `openrpc`.
+Create an `RPCServer` with a security scheme and add our `sign_in` and `sign_up`
+functions from the `authentication` guide as OpenRPC methods.
 
 ```python
-from openrpc import Depends, RPCServer
+from openrpc import BearerAuth, RPCServer
 
-rpc = RPCServer(title="RPCServer", version="1.0.0", debug=True)
-
-
-@rpc.method()
-def add(a: int, b: int, user: dict = Depends) -> int:
-    if "add" not in user["permissions"]:
-        raise PermissionError('The "add" permission is required to call this method.')
-    return a + b
-
-
-user = {"email": "email@test.com", "permissions": ["add"]}
-request = '{"id": 1, "method": "add", "params": [1, 3], "jsonrpc": "2.0"}'
-json_rpc_response = rpc.process_request(request, depends={"user": user})
-```
-
-Before Python OpenRPC calls a function it checks for any arguments in that function with
-a default value of `Depends`. If it finds any such arguments, it uses the argument name
-to find the value with that key name in the `depends` dictionary passed to
-`process_request`.
-
-It's important to note that any `Depends` arguments are not exposed to the OpenRPC API,
-the `add` method above still only expects two integer parameters.
-
-### Adding Methods with Permissions
-
-Now that we can use a `Depends` argument to supply user information to a function, lets
-tie that together with what we learned in the previous section to create a basic app
-with authentication and authorization.
-
-Going back to the example on authentication, lets add a new field to our `User` object
-to store user permissions. We will have it default to a single permission of "add".
-
-```python
-class User(BaseModel):
-    username: str
-    hashed_password: str
-    permissions: list[str] = Field(default_factory=lambda: ["add"])
-```
-
-Next we'll create an `RPCServer` and add our `sign_in` and `sign_up` functions as
-OpenRPC methods.
-
-```python
-from openrpc import Depends, RPCServer
-
-rpc = RPCServer(title="RPCServer", version="1.0.0", debug=True)
+rpc = RPCServer(security_schemes={"bearer": BearerAuth()}, debug=True)
 
 
 @rpc.method()
@@ -92,22 +35,12 @@ def sign_in(username: str, password: str) -> Token:
     ...
 ```
 
-Now we create two new methods using our `User` object to check if that user has
-permission to call the method.
+Now we create a method with security requirements and a `Depends` argument.
 
 ```python
-@rpc.method()
-def add(a: int, b: int, user: User = Depends) -> int:
-    if "add" not in user.permissions:
-        raise PermissionError('Permission "add" is required to call this method.')
-    return a + b
-
-
-@rpc.method()
-def divide(a: int, b: int, user: User = Depends) -> float:
-    if "divide" not in user.permissions:
-        raise PermissionError('Permission "divide" is required to call this method.')
-    return a / b
+@rpc.method(security={"bearer": []})
+def require_token(user: User = Depends) -> User:
+    return user
 ```
 
 ### Getting User Data from JWTs
@@ -116,18 +49,25 @@ Using Sanic, we're going pull access tokens from request headers, decode them, a
 the decoded information to find the user that made the request and pass that information
 to `process_request_async` calls so the framework can supply that data to our functions.
 
-First is the function to get user data from the `Authorization` header of a request:
+We'll use the following function to get `depends` arguments and `security` from request
+headers to be passed to `rpc.process_request_async`.
 
 ```python
-def _get_user(auth: str | None) -> User | None:
+def get_depends_and_security(
+    headers: dict[str, str]
+) -> tuple[User | None, dict | None]:
+    # Get bearer token from headers.
+    auth = headers.get("Authorization")
     if auth is None:
-        return None
-    token = auth.split()[1]
-    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    return db[payload["username"]]
+        return None, None
+    # If token is present use it to get user data.
+    auth = auth.removeprefix("Bearer ")
+    payload = jwt.decode(auth, SECRET_KEY, algorithms=[ALGORITHM])
+    return {"user": db[payload["username"]]}, {"bearer": []}
 ```
 
-Then we use that to get user data from request `Authorization` headers.
+Now we call this function passing it request headers from WbSocket connection or HTTP
+request.
 
 ```python
 import asyncio
@@ -138,12 +78,12 @@ from sanic import HTTPResponse, Request, Sanic, text, Websocket
 @app.websocket("/api/v1/")
 async def ws_process_rpc(request: Request, ws: Websocket) -> None:
     """Process RPC requests through websocket."""
-    user = get_user(request.headers.get("Authorization"))
+    depends, security = get_depends_and_security(request.headers.get("Authorization"))
 
     async def _process_rpc(rpc_req: str) -> None:
-        json_rpc_response = await rpc.process_request_async(rpc_req, {"user": user})
-        if json_rpc_response is not None:
-            await ws.send(json_rpc_response)
+        response = await rpc.process_request_async(rpc_req, depends, security)
+        if response is not None:
+            await ws.send(response)
 
     async for msg in ws:
         asyncio.create_task(_process_rpc(msg))
@@ -153,9 +93,9 @@ async def ws_process_rpc(request: Request, ws: Websocket) -> None:
 @app.post("/api/v1/")
 async def http_process_rpc(request: Request) -> HTTPResponse:
     """Process RPC request through HTTP server."""
-    user = _get_user(request.headers.get("Authorization"))
-    json_rpc_response = await rpc.process_request_async(request.body, {"user": user})
-    return text(json_rpc_response, headers={"Content-Type": "application/json"})
+    depends, security = get_depends_and_security(request.headers.get("Authorization"))
+    response = await rpc.process_request_async(request.body, depends, security)
+    return text(response, headers={"Content-Type": "application/json"})
 
 
 if __name__ == "__main__":
@@ -172,9 +112,9 @@ import asyncio
 from datetime import datetime, timedelta
 
 from jose import jwt
-from openrpc import Depends, RPCServer
+from openrpc import BearerAuth, Depends, RPCServer
 from passlib.context import CryptContext
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from sanic import HTTPResponse, Request, Sanic, text, Websocket
 
 # openssl rand -hex 32
@@ -184,13 +124,12 @@ pwd_context = CryptContext(schemes=["scrypt"])
 db = {}
 
 app = Sanic("RPCServer")
-rpc = RPCServer(title="RPCServer", version="1.0.0", debug=True)
+rpc = RPCServer(security_schemes={"bearer": BearerAuth()}, debug=True)
 
 
 class User(BaseModel):
     username: str
     hashed_password: str
-    permissions: list[str] = Field(default_factory=lambda: ["add"])
 
 
 class Token(BaseModel):
@@ -219,37 +158,33 @@ def sign_in(username: str, password: str) -> Token:
     return Token(access_token=token, token_type="bearer")
 
 
-@rpc.method()
-def add(a: int, b: int, user: User = Depends) -> int:
-    if "add" not in user.permissions:
-        raise PermissionError('Permission "add" is required to call this method.')
-    return a + b
+@rpc.method(security={"bearer": []})
+def require_token(user: User = Depends) -> User:
+    return user
 
 
-@rpc.method()
-def divide(a: int, b: int, user: User = Depends) -> float:
-    if "divide" not in user.permissions:
-        raise PermissionError('Permission "divide" is required to call this method.')
-    return a / b
-
-
-def get_user(auth: str | None) -> User | None:
+def get_depends_and_security(
+    headers: dict[str, str]
+) -> tuple[dict[str, User] | None, dict[str : list[str]] | None]:
+    # Get bearer token from headers.
+    auth = headers.get("Authorization")
     if auth is None:
-        return None
-    token = auth.split()[1]
-    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    return db[payload["username"]]
+        return None, None
+    # If token is present use it to get user data.
+    auth = auth.removeprefix("Bearer ")
+    payload = jwt.decode(auth, SECRET_KEY, algorithms=[ALGORITHM])
+    return {"user": db[payload["username"]]}, {"bearer": []}
 
 
 @app.websocket("/api/v1/")
 async def ws_process_rpc(request: Request, ws: Websocket) -> None:
     """Process RPC requests through websocket."""
-    user = get_user(request.headers.get("Authorization"))
+    depends, security = get_depends_and_security(request.headers)
 
     async def _process_rpc(rpc_req: str) -> None:
-        json_rpc_response = await rpc.process_request_async(rpc_req, {"user": user})
-        if json_rpc_response is not None:
-            await ws.send(json_rpc_response)
+        response = await rpc.process_request_async(rpc_req, depends, security)
+        if response is not None:
+            await ws.send(response)
 
     async for msg in ws:
         asyncio.create_task(_process_rpc(msg))
@@ -259,9 +194,9 @@ async def ws_process_rpc(request: Request, ws: Websocket) -> None:
 @app.post("/api/v1/")
 async def http_process_rpc(request: Request) -> HTTPResponse:
     """Process RPC request through HTTP server."""
-    user = get_user(request.headers.get("Authorization"))
-    json_rpc_response = await rpc.process_request_async(request.body, {"user": user})
-    return text(json_rpc_response, headers={"Content-Type": "application/json"})
+    depends, security = get_depends_and_security(request.headers)
+    response = await rpc.process_request_async(request.body, depends, security)
+    return text(response, headers={"Content-Type": "application/json"})
 
 
 if __name__ == "__main__":
@@ -297,19 +232,8 @@ def call(method: str, params: list[Any], headers: dict[str, Any] | None = None) 
 
 
 if __name__ == "__main__":
-    call("sign_up", ["email@tesst.com", "password"])
-    token = call("sign_in", ["email@tesst.com", "password"])["access_token"]
+    call("sign_up", ["email@test.com", "password"])
+    token = call("sign_in", ["email@test.com", "password"])["access_token"]
     token_header = {"Authorization": f"Bearer {token}"}
-    assert call("add", [11, 13], token_header) == 24
-    error = 'PermissionError: Permission "divide" is required to call this method.'
-    assert call("divide", [11, 13], token_header)["data"] == error
+    assert call("require_token", [], token_header)["username"] == "email@test.com"
 ```
-
-## Abstracting the Permission Check
-
-If your authorization process is like the one in this example it can be made simpler.
-For clean and easy permission checking as seen here in the
-[Python OpenRPC App Template](https://gitlab.com/mburkard/openrpc-app-template/-/blob/main/openrpc_app_template/api/math.py?ref_type=heads),
-the following
-[custom RPCRouter](https://gitlab.com/mburkard/openrpc-app-template/-/blob/main/openrpc_app_template/common.py?ref_type=heads)
-can be used.

@@ -1,6 +1,6 @@
 ---
 slug: /security/authentication
-sidebar_position: 1
+sidebar_position: 3
 ---
 
 # Authentication
