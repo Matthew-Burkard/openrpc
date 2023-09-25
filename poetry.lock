@@ -168,7 +168,7 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "pydantic"
-version = "2.3.0"
+version = "2.4.0"
 description = "Data validation using Python type hints"
 category = "main"
 optional = false
@@ -176,7 +176,7 @@ python-versions = ">=3.7"
 
 [package.dependencies]
 annotated-types = ">=0.4.0"
-pydantic-core = "2.6.3"
+pydantic-core = "2.10.0"
 typing-extensions = ">=4.6.1"
 
 [package.extras]
@@ -184,7 +184,7 @@ email = ["email-validator (>=2.0.0)"]
 
 [[package]]
 name = "pydantic-core"
-version = "2.6.3"
+version = "2.10.0"
 description = ""
 category = "main"
 optional = false
@@ -254,7 +254,7 @@ python-versions = ">=3.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "e59ff3945106084488e20e8ee68f786c57cb4b14e44f6d1945c32b1acd4d5ece"
+content-hash = "2a0dd1b1332143ab4019d118347f235c364fa1500e18590a946342a5f4a6aa7e"
 
 [metadata.files]
 annotated-types = []

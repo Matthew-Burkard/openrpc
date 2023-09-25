@@ -332,22 +332,3 @@ class RPCPermissionError(JSONRPCError):
     def __init__(self) -> None:
         error = RPCError(code=-32099, message="Permission error")
         super(RPCPermissionError, self).__init__(error=error)
-
-
-Info.model_rebuild()
-Contact.model_rebuild()
-License.model_rebuild()
-Server.model_rebuild()
-ServerVariable.model_rebuild()
-Method.model_rebuild()
-ContentDescriptor.model_rebuild()
-Schema.model_rebuild()
-ExamplePairing.model_rebuild()
-Example.model_rebuild()
-Link.model_rebuild()
-Error.model_rebuild()
-Components.model_rebuild()
-Tag.model_rebuild()
-ExternalDocumentation.model_rebuild()
-OpenRPC.model_rebuild()
-Reference.model_rebuild()
