@@ -168,7 +168,7 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "pydantic"
-version = "2.3.0"
+version = "2.4.0"
 description = "Data validation using Python type hints"
 category = "main"
 optional = false
@@ -176,7 +176,7 @@ python-versions = ">=3.7"
 
 [package.dependencies]
 annotated-types = ">=0.4.0"
-pydantic-core = "2.6.3"
+pydantic-core = "2.10.0"
 typing-extensions = ">=4.6.1"
 
 [package.extras]
@@ -184,7 +184,7 @@ email = ["email-validator (>=2.0.0)"]
 
 [[package]]
 name = "pydantic-core"
-version = "2.6.3"
+version = "2.10.0"
 description = ""
 category = "main"
 optional = false
@@ -229,7 +229,7 @@ testing = ["coverage (>=6.2)", "hypothesis (>=5.7.1)", "flaky (>=3.5.0)", "mypy 
 
 [[package]]
 name = "ruff"
-version = "0.0.290"
+version = "0.0.291"
 description = "An extremely fast Python linter, written in Rust."
 category = "dev"
 optional = false
@@ -254,7 +254,7 @@ python-versions = ">=3.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "6c8f156075c973f19ce4fae3c2f16e6b2ab2a2699dc27e61a6c3e4ba932169a8"
+content-hash = "2a0dd1b1332143ab4019d118347f235c364fa1500e18590a946342a5f4a6aa7e"
 
 [metadata.files]
 annotated-types = []
