@@ -1,6 +1,7 @@
 """Module for generating OpenRPC document methods."""
 __all__ = ("get_methods",)
 
+import re
 from typing import get_args, Iterable, Optional
 
 import lorem_pysum
@@ -10,6 +11,7 @@ from openrpc import ContentDescriptor, Example, ExamplePairing, Method, Schema
 from openrpc._common import RPCMethod
 
 NoneType = type(None)
+param_pattern = re.compile(r" *:param (.*?): (.*?)(?=:\w|$)")
 
 
 def get_methods(rpc_methods: Iterable[RPCMethod]) -> list[Method]:
@@ -64,16 +66,25 @@ def _get_result(rpc_method: RPCMethod) -> ContentDescriptor:
 
 
 def _get_params(rpc_method: RPCMethod) -> list[ContentDescriptor]:
-    return [
-        ContentDescriptor(
+    param_descriptions = {
+        group[0]: group[1].strip()
+        for group in re.findall(
+            param_pattern, re.sub(r"\n +", " ", rpc_method.function.__doc__ or "")
+        )
+    }
+    descriptors = []
+    params_schema_properties = rpc_method.params_model.model_json_schema()["properties"]
+    for name, field in rpc_method.params_model.model_fields.items():
+        descriptor = ContentDescriptor(
             name=name,
-            schema=Schema(
-                **rpc_method.params_model.model_json_schema()["properties"][name]
-            ),
+            schema=Schema(**params_schema_properties[name]),
             required=field.default is PydanticUndefined,
         )
-        for name, field in rpc_method.params_model.model_fields.items()
-    ]
+        if description := param_descriptions.get(name):
+            descriptor.description = description
+        descriptors.append(descriptor)
+
+    return descriptors
 
 
 def _get_example(rpc_method: RPCMethod) -> ExamplePairing:

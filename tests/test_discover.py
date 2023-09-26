@@ -692,6 +692,18 @@ def test_recursive_schemas() -> None:
     }
 
 
+def test_param_descriptions() -> None:
+    for method in [param_descriptions, param_description_no_return]:
+        rpc = _rpc()
+        rpc.method()(method)
+        doc = rpc.discover()
+        assert doc["methods"][0]["params"][0]["description"] == (
+            "First param, it has a long description that spans more than one line."
+        )
+        assert doc["methods"][0]["params"][1]["description"] == "Second param."
+        assert doc["methods"][0]["params"][2]["description"] == "Third param."
+
+
 def _rpc() -> RPCServer:
     return RPCServer(title="Test OpenRPC", version="1.0.0", debug=True)
 
@@ -820,3 +832,26 @@ def method_using_collections(
 def method_union_model() -> Union[ComplexObjects, CollectionsModel, None]:
     """Method with union model."""
     return None
+
+
+def param_descriptions(a: int, b: int, c: int) -> tuple[int, int, int]:
+    """Method with param descriptions.
+
+    :param a: First param, it has a long description that spans more
+        than one line.
+    :param b: Second param.
+    :param c: Third param.
+    :return: The params.
+    """
+    return a, b, c
+
+
+def param_description_no_return(a: int, b: int, c: int) -> tuple[int, int, int]:
+    """Method with param descriptions.
+
+    :param a: First param, it has a long description that spans more
+        than one line.
+    :param b: Second param.
+    :param c: Third param.
+    """
+    return a, b, c
