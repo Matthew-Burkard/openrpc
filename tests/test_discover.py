@@ -693,6 +693,7 @@ def test_recursive_schemas() -> None:
 
 
 def test_param_descriptions() -> None:
+    result_descriptions = [None, "The params."]
     for method in [param_descriptions, param_description_no_return]:
         rpc = _rpc()
         rpc.method()(method)
@@ -702,6 +703,9 @@ def test_param_descriptions() -> None:
         )
         assert doc["methods"][0]["params"][1]["description"] == "Second param."
         assert doc["methods"][0]["params"][2]["description"] == "Third param."
+        assert (
+            doc["methods"][0]["result"].get("description") == result_descriptions.pop()
+        )
 
 
 def _rpc() -> RPCServer:
