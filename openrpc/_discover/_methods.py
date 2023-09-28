@@ -12,6 +12,7 @@ from openrpc._common import RPCMethod
 
 NoneType = type(None)
 param_pattern = re.compile(r" *:param (.*?): (.*?)(?=:\w|$)")
+return_pattern = re.compile(r" *:return: (.*?)(?=:\w|$)")
 
 
 def get_methods(rpc_methods: Iterable[RPCMethod]) -> list[Method]:
@@ -58,11 +59,17 @@ def get_methods(rpc_methods: Iterable[RPCMethod]) -> list[Method]:
 
 def _get_result(rpc_method: RPCMethod) -> ContentDescriptor:
     result_field = rpc_method.result_model.model_fields["result"]
-    return ContentDescriptor(
+    result_description = re.findall(
+        return_pattern, re.sub(r"\n +", " ", rpc_method.function.__doc__ or "")
+    )
+    descriptor = ContentDescriptor(
         name="result",
         schema=rpc_method.result_model.model_json_schema()["properties"]["result"],
         required=NoneType not in get_args(result_field),
     )
+    if result_description:
+        descriptor.description = result_description[0].strip()
+    return descriptor
 
 
 def _get_params(rpc_method: RPCMethod) -> list[ContentDescriptor]:

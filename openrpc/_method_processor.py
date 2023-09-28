@@ -178,7 +178,11 @@ class MethodProcessor:
 
     def _get_dict_params(self, params: dict[str, Any]) -> dict[str, Any]:
         try:
-            return self.method.params_model(**params).model_dump()
+            params_model = self.method.params_model(**params)
+            return {
+                field: getattr(params_model, field)
+                for field in params_model.model_fields
+            }
         except ValidationError as e:
             raise InvalidParams(
                 DataError(code=-32602, message="Invalid params", data=str(e))

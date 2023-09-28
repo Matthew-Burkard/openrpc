@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openrpc"
-version = "8.3.0"
+version = "8.4.1"
 description = "Transport agnostic framework for developing OpenRPC servers."
 readme = "README.md"
 repository = "https://gitlab.com/mburkard/openrpc"
@@ -21,7 +21,7 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.9"
-pydantic = "^2.4.0"
+pydantic = "^2.4.2"
 jsonrpc2-objects = "^3.0.0"
 lorem-pysum = "^1.4.3"
 
