@@ -21,7 +21,7 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.9"
-pydantic = "^2.4.1"
+pydantic = "^2.4.2"
 jsonrpc2-objects = "^3.0.0"
 lorem-pysum = "^1.4.3"
 
