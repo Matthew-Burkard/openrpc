@@ -6,7 +6,24 @@ sidebar_position: 6
 # Interactive Documentation
 
 [Tabella](https://gitlab.com/mburkard/tabella) provides generated interactive
-documentation for your RPC API. Run the following code:
+documentation for your RPC API.
+
+A live demo is available [here](https://tabella.burkard.cloud/).
+
+## Using Tabella
+
+First, install Tabella and uvicorn.
+
+Pip
+```shell
+pip install tabella uvicorn
+````
+Poetry
+```shell
+poetry add tabella uvicorn
+```
+
+Run:
 
 ```python
 import uvicorn
