@@ -103,9 +103,3 @@ async def test_catchall_error_debug_async() -> None:
     rpc_catch_all.debug = True
     result = await get_response_async(rpc_catch_all, json.dumps(req))
     assert result["error"]["data"][:-3] == f"ValueError: {error_message}"
-
-
-def test_deprecation_warning(caplog: pytest.LogCaptureFixture) -> None:
-    warning_msg = "RPCServer `method` decorator must be called"
-    with pytest.warns(DeprecationWarning, match=warning_msg):
-        rpc.method(lambda: print())

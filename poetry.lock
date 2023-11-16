@@ -1,14 +1,14 @@
 [[package]]
 name = "annotated-types"
-version = "0.5.0"
+version = "0.6.0"
 description = "Reusable constraint types to use with typing.Annotated"
 category = "main"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 
 [[package]]
 name = "black"
-version = "23.9.1"
+version = "23.11.0"
 description = "The uncompromising code formatter."
 category = "dev"
 optional = false
@@ -50,7 +50,7 @@ python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,>=2.7
 
 [[package]]
 name = "coverage"
-version = "7.3.1"
+version = "7.3.2"
 description = "Code coverage measurement for Python"
 category = "dev"
 optional = false
@@ -80,14 +80,14 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "jsonrpc2-objects"
-version = "3.0.0"
+version = "4.0.0"
 description = "A collection of objects for use in JSON-RPC 2.0 implementations."
 category = "main"
 optional = false
 python-versions = ">=3.9,<4.0"
 
 [package.dependencies]
-pydantic = ">=2.0,<3.0"
+pydantic = ">=2.5.1,<3.0.0"
 
 [[package]]
 name = "lorem-pysum"
@@ -102,7 +102,7 @@ pydantic = ">=2.3.0,<3.0.0"
 
 [[package]]
 name = "mypy"
-version = "1.5.1"
+version = "1.7.0"
 description = "Optional static typing for Python"
 category = "dev"
 optional = false
@@ -116,6 +116,7 @@ typing-extensions = ">=4.1.0"
 [package.extras]
 dmypy = ["psutil (>=4.0)"]
 install-types = ["pip"]
+mypyc = ["setuptools (>=50)"]
 reports = ["lxml"]
 
 [[package]]
@@ -128,7 +129,7 @@ python-versions = ">=3.5"
 
 [[package]]
 name = "packaging"
-version = "23.1"
+version = "23.2"
 description = "Core utilities for Python packages"
 category = "dev"
 optional = false
@@ -144,7 +145,7 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "platformdirs"
-version = "3.10.0"
+version = "4.0.0"
 description = "A small Python package for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
 category = "dev"
 optional = false
@@ -168,7 +169,7 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "pydantic"
-version = "2.4.2"
+version = "2.5.1"
 description = "Data validation using Python type hints"
 category = "main"
 optional = false
@@ -176,7 +177,7 @@ python-versions = ">=3.7"
 
 [package.dependencies]
 annotated-types = ">=0.4.0"
-pydantic-core = "2.10.1"
+pydantic-core = "2.14.3"
 typing-extensions = ">=4.6.1"
 
 [package.extras]
@@ -184,7 +185,7 @@ email = ["email-validator (>=2.0.0)"]
 
 [[package]]
 name = "pydantic-core"
-version = "2.10.1"
+version = "2.14.3"
 description = ""
 category = "main"
 optional = false
@@ -195,7 +196,7 @@ typing-extensions = ">=4.6.0,<4.7.0 || >4.7.0"
 
 [[package]]
 name = "pytest"
-version = "7.4.2"
+version = "7.4.3"
 description = "pytest: simple powerful testing with Python"
 category = "dev"
 optional = false
@@ -214,11 +215,11 @@ testing = ["argcomplete", "attrs (>=19.2.0)", "hypothesis (>=3.56)", "mock", "no
 
 [[package]]
 name = "pytest-asyncio"
-version = "0.21.1"
+version = "0.22.0"
 description = "Pytest support for asyncio"
 category = "dev"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 
 [package.dependencies]
 pytest = ">=7.0.0"
@@ -229,8 +230,8 @@ testing = ["coverage (>=6.2)", "hypothesis (>=5.7.1)", "flaky (>=3.5.0)", "mypy 
 
 [[package]]
 name = "ruff"
-version = "0.0.291"
-description = "An extremely fast Python linter, written in Rust."
+version = "0.1.5"
+description = "An extremely fast Python linter and code formatter, written in Rust."
 category = "dev"
 optional = false
 python-versions = ">=3.7"
@@ -254,7 +255,7 @@ python-versions = ">=3.8"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "c02e25bbef8a683e53ca2cae46948729b05e92e1152d930de4f675202bd0f7e0"
+content-hash = "31ae0547f545a2178700ee17af12bbeeec399b29a74a298e19a0278f367d1251"
 
 [metadata.files]
 annotated-types = []
