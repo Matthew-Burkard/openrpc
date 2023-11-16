@@ -302,7 +302,7 @@ class OAuth2(BaseModel):
     """Describes OAuth 2.0 security scheme used by an API."""
 
     type: Literal["oauth2"] = "oauth2"
-    flows: list[OAuth2Flow] = Field(min_items=1)
+    flows: list[OAuth2Flow] = Field(min_length=1)
     description: Optional[str] = None
 
 

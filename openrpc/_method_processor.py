@@ -29,12 +29,6 @@ from openrpc._common import RPCMethod
 from openrpc._objects import RPCPermissionError
 
 log = logging.getLogger("openrpc")
-by_position_error = DataError(
-    code=-32602, message="Invalid params", data="Params must be passed by position."
-)
-by_name_error = DataError(
-    code=-32602, message="Invalid params", data="Params must be passed by name."
-)
 
 
 class MethodProcessor:
@@ -78,7 +72,7 @@ class MethodProcessor:
         except Exception as error:
             return self._get_error_response(error)
 
-    async def execute_async(self) -> Any:
+    async def execute_async(self) -> Optional[str]:
         """Execute the method and get the JSON-RPC2 response.
 
         If the method is an async method it will be awaited.
@@ -115,13 +109,15 @@ class MethodProcessor:
             result = self.method.function(**dependencies)
         elif isinstance(self.request.params, list):
             if self.method.metadata.param_structure == ParamStructure.BY_NAME:
-                raise InvalidParams(by_name_error)
+                msg = "Params must be passed by name."
+                raise InvalidParams(msg)
             params = self._get_list_params(self.request.params)
             result = self.method.function(*params, **dependencies)
             params_msg = ", ".join(str(p) for p in params)
         else:
             if self.method.metadata.param_structure == ParamStructure.BY_POSITION:
-                raise InvalidParams(by_position_error)
+                msg = "Params must be passed by position."
+                raise InvalidParams(msg)
             params = self._get_dict_params(self.request.params)
             result = self.method.function(**params, **dependencies)
             params_msg = ", ".join(f"{k}={v}" for k, v in params.items())
@@ -172,9 +168,7 @@ class MethodProcessor:
                 for field_name in validated_params.model_fields
             ]
         except ValidationError as e:
-            raise InvalidParams(
-                DataError(code=-32602, message="Invalid params", data=str(e))
-            ) from e
+            raise InvalidParams(str(e)) from e
 
     def _get_dict_params(self, params: dict[str, Any]) -> dict[str, Any]:
         try:
@@ -184,9 +178,7 @@ class MethodProcessor:
                 for field in params_model.model_fields
             }
         except ValidationError as e:
-            raise InvalidParams(
-                DataError(code=-32602, message="Invalid params", data=str(e))
-            ) from e
+            raise InvalidParams(data=str(e)) from e
 
     def _check_permissions(self) -> bool:
         # Default to permitting if no security is set for method.

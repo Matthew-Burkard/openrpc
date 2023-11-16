@@ -4,8 +4,6 @@ __all__ = ("MethodRegistrar", "CallableType")
 
 import inspect
 import logging
-import warnings
-from functools import partial
 from typing import Callable, Optional, TypeVar, Union
 
 from pydantic import create_model
@@ -27,7 +25,6 @@ from openrpc._request_processor import RequestProcessor
 log = logging.getLogger("openrpc")
 
 CallableType = TypeVar("CallableType", bound=Callable)
-DecoratedCallableType = TypeVar("DecoratedCallableType", bound=Callable)
 
 
 class MethodRegistrar:
@@ -50,7 +47,6 @@ class MethodRegistrar:
 
     def method(
         self,
-        *args: CallableType,
         name: Optional[str] = None,
         params: Optional[list[ContentDescriptor]] = None,
         result: Optional[ContentDescriptor] = None,
@@ -65,10 +61,9 @@ class MethodRegistrar:
         param_structure: Optional[ParamStructure] = None,
         examples: Optional[list[ExamplePairing]] = None,
         security: Optional[dict[str, list[str]]] = None,
-    ) -> Union[CallableType, Callable[[DecoratedCallableType], DecoratedCallableType]]:
+    ) -> Callable[[CallableType], CallableType]:
         """Register a method with this OpenRPC server.
 
-        :param args: The method if this is used as a plain decorator.
         :param name: The canonical name for the method.
         :param params: A list of parameters that are applicable for this
             method.
@@ -96,54 +91,29 @@ class MethodRegistrar:
             if tags is not None
             else None
         )
-        if not args:
-            self._warn = False
-            return partial(  # type: ignore
-                self.method,
-                name=name,
-                params=params,
-                result=result,
-                tags=tag_objects,
-                summary=summary,
-                description=description,
-                external_docs=external_docs,
-                deprecated=deprecated,
-                servers=servers,
-                errors=errors,
-                links=links,
-                param_structure=param_structure,
-                examples=examples,
-                security=security,
+
+        def _decorator(function: CallableType) -> CallableType:
+            return self._method(
+                function,
+                MethodMetaData(
+                    name=name or function.__name__,
+                    params=params,
+                    result=result,
+                    tags=tag_objects,
+                    summary=summary,
+                    description=description,
+                    external_docs=external_docs,
+                    deprecated=deprecated,
+                    servers=servers,
+                    errors=errors,
+                    links=links,
+                    param_structure=param_structure,
+                    examples=examples,
+                    security=security or {},
+                ),
             )
-        if self._warn:
-            warnings.warn(
-                "RPCServer `method` decorator must be called in future releases, use"
-                " `method()` instead.",
-                category=DeprecationWarning,
-                stacklevel=2,
-            )
-        self._warn = True
-        func = args[0]
-        name = name or func.__name__
-        return self._method(
-            func,
-            MethodMetaData(
-                name=name,
-                params=params,
-                result=result,
-                tags=tag_objects,
-                summary=summary,
-                description=description,
-                external_docs=external_docs,
-                deprecated=deprecated,
-                servers=servers,
-                errors=errors,
-                links=links,
-                param_structure=param_structure,
-                examples=examples,
-                security=security or {},
-            ),
-        )
+
+        return _decorator
 
     def remove(self, method: str) -> None:
         """Remove a method from this server by name.

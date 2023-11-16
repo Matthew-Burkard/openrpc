@@ -3,12 +3,10 @@
 __all__ = ("RequestProcessor",)
 
 import asyncio
-import json
 import logging
-from json import JSONDecodeError
 from typing import Any, Optional, Union
 
-from jsonrpcobjects.errors import INVALID_REQUEST, METHOD_NOT_FOUND, PARSE_ERROR
+from jsonrpcobjects.errors import METHOD_NOT_FOUND
 from jsonrpcobjects.objects import (
     DataError,
     ErrorResponse,
@@ -19,7 +17,7 @@ from jsonrpcobjects.objects import (
     Request,
     RequestType,
 )
-from pydantic import ValidationError
+from jsonrpcobjects.parse import parse_request
 
 from openrpc._common import RPCMethod
 from openrpc._method_processor import MethodProcessor
@@ -64,15 +62,14 @@ class RequestProcessor:
         :param security: Scheme and scopes of method caller.
         :return: A valid JSON-RPC2 response.
         """
-        parsed_json = _get_parsed_json(data)
-        if isinstance(parsed_json, ErrorResponse):
-            return parsed_json.model_dump_json()
+        request = parse_request(data, debug=self.debug)
+        if isinstance(request, ErrorResponse):
+            return request.model_dump_json()
 
         # Batch
-        if isinstance(parsed_json, list):
-            requests = [_get_request_object(it) for it in parsed_json]
+        if isinstance(request, list):
             results: list[str] = []
-            for req in requests:
+            for req in request:
                 if isinstance(req, ErrorResponse):
                     results.append(req.model_dump_json())
                     continue
@@ -95,7 +92,6 @@ class RequestProcessor:
             return f"[{','.join(results)}]"
 
         # Single Request
-        request = _get_request_object(parsed_json)
         if isinstance(request, ErrorResponse):
             return request.model_dump_json()
         if request.method not in self.methods:
@@ -127,12 +123,12 @@ class RequestProcessor:
         :param security: Scheme and scopes of method caller.
         :return: A valid JSON-RPC2 response.
         """
-        parsed_json = _get_parsed_json(data)
-        if isinstance(parsed_json, ErrorResponse):
-            return parsed_json.model_dump_json()
+        parsed_request = parse_request(data, debug=self.debug)
+        if isinstance(parsed_request, ErrorResponse):
+            return parsed_request.model_dump_json()
 
         # Batch
-        if isinstance(parsed_json, list):
+        if isinstance(parsed_request, list):
 
             async def _process_request(
                 request: Union[ErrorResponse, NotificationType, RequestType]
@@ -158,63 +154,35 @@ class RequestProcessor:
                 return None
 
             results = await asyncio.gather(
-                *[_process_request(_get_request_object(it)) for it in parsed_json]
+                *[_process_request(it) for it in parsed_request]
             )
             return f"[{','.join(str(r) for r in results if r is not None)}]"
 
         # Single Request
-        req = _get_request_object(parsed_json)
-        if isinstance(req, ErrorResponse):
-            return req.model_dump_json()
-        if req.method not in self.methods:
-            if isinstance(req, (Request, ParamsRequest)):
-                return _get_method_not_found_error(req)
+        if isinstance(parsed_request, ErrorResponse):
+            return parsed_request.model_dump_json()
+        if parsed_request.method not in self.methods:
+            if isinstance(parsed_request, (Request, ParamsRequest)):
+                return _get_method_not_found_error(parsed_request)
             return None
         result = await MethodProcessor(
-            self.methods[req.method],
+            self.methods[parsed_request.method],
             self.uncaught_error_code,
-            req,
+            parsed_request,
             depends,
             security,
             debug=self.debug,
         ).execute_async()
 
-        return None if isinstance(req, NotificationTypes) else result
+        return None if isinstance(parsed_request, NotificationTypes) else result
 
 
 def _get_method_not_found_error(req: Union[NotificationType, RequestType]) -> str:
     return ErrorResponse(
         id=None if isinstance(req, NotificationTypes) else req.id,
-        error=DataError(**{**METHOD_NOT_FOUND.model_dump(), **{"data": req.method}}),
+        error=DataError(
+            code=METHOD_NOT_FOUND.code,
+            message=METHOD_NOT_FOUND.message,
+            data=req.method,
+        ),
     ).model_dump_json()
-
-
-def _get_parsed_json(data: Union[bytes, str]) -> Union[ErrorResponse, dict, list]:
-    try:
-        parsed_json = json.loads(data)
-    except (TypeError, JSONDecodeError) as error:
-        log.exception("%s:", type(error).__name__)
-        return ErrorResponse(id=None, error=PARSE_ERROR)
-    return parsed_json
-
-
-def _get_request_object(
-    data: Any,
-) -> Union[ErrorResponse, NotificationType, RequestType]:
-    try:
-        is_request = data.get("id") is not None
-        has_params = data.get("params") is not None
-        if is_request:
-            return ParamsRequest(**data) if has_params else Request(**data)
-        return ParamsNotification(**data) if has_params else Notification(**data)
-    except (TypeError, ValidationError) as error:
-        log.exception("%s:", type(error).__name__)
-        return ErrorResponse(
-            id=data.get("id"),
-            error=DataError(**{**INVALID_REQUEST.model_dump(), **{"data": data}}),
-        )
-    except AttributeError:
-        return ErrorResponse(
-            id=None,
-            error=DataError(**{**INVALID_REQUEST.model_dump(), **{"data": data}}),
-        )
