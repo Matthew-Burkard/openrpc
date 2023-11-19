@@ -1,5 +1,5 @@
 """Provides classes for storing RPC method data."""
-__all__ = ("MethodMetaData", "RPCMethod", "resolved_annotation")
+__all__ = ("MethodMetaData", "RPCMethod", "SecurityFunction", "resolved_annotation")
 
 import inspect
 from typing import Any, Callable, ForwardRef, Optional, Type
@@ -9,6 +9,7 @@ from pydantic import BaseModel
 # noinspection PyProtectedMember
 from pydantic.v1.typing import evaluate_forwardref
 
+from openrpc._depends import DependsModel
 from openrpc._objects import (
     ContentDescriptor,
     Error,
@@ -19,6 +20,8 @@ from openrpc._objects import (
     Server,
     Tag,
 )
+
+SecurityFunction = Callable[[Any], dict[str, list[str]]]
 
 
 class MethodMetaData(BaseModel):
@@ -45,7 +48,7 @@ class RPCMethod(BaseModel):
 
     function: Callable
     metadata: MethodMetaData
-    depends_params: list[str]
+    depends: dict[str, DependsModel]
     params_model: Type[BaseModel]
     result_model: Type[BaseModel]
 

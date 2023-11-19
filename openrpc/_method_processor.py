@@ -25,7 +25,7 @@ from jsonrpcobjects.objects import (
 from pydantic import ValidationError
 
 from openrpc import ParamStructure
-from openrpc._common import RPCMethod
+from openrpc._common import RPCMethod, SecurityFunction
 from openrpc._objects import RPCPermissionError
 
 log = logging.getLogger("openrpc")
@@ -39,8 +39,8 @@ class MethodProcessor:
         method: RPCMethod,
         uncaught_error_code: int,
         request: Union[RequestType, NotificationType],
-        depends_values: Optional[dict[str, Any]],
-        security: Optional[dict[str, list[str]]],
+        middleware_args: Optional[Any],
+        security: Optional[SecurityFunction],
         *,
         debug: bool,
     ) -> None:
@@ -49,16 +49,17 @@ class MethodProcessor:
         :param method: The Python callable.
         :param uncaught_error_code: Code for errors raised by method.
         :param request: Request to execute.
-        :param depends_values: Values passed to functions with dependencies.
-        :param security: Scheme and scopes of method caller.
+        :param middleware_args: Values passed to functions with
+            dependencies and security functions.
+        :param security: Function to get active security scheme.
         :param debug: Include internal error details in responses.
         """
         self.debug = debug
         self.method = method
         self.request = request
         self.uncaught_error_code = uncaught_error_code
-        self.depends = depends_values or {}
-        self.security = security or {}
+        self.middleware_args = middleware_args
+        self.security = security
 
     def execute(self) -> Optional[str]:
         """Execute the method and get the JSON-RPC2 response."""
@@ -95,15 +96,9 @@ class MethodProcessor:
         # If permissions are present, call method.
         params: Optional[Union[dict, list]]
         params_msg = ""
-        missing_dependencies = [
-            k for k in self.method.depends_params if k not in self.depends
-        ]
-        if missing_dependencies:
-            raise AttributeError(
-                "Missing dependent values %s for method [%s]"
-                % (missing_dependencies, self.method.metadata.name)
-            )
-        dependencies = {k: self.depends.get(k) for k in self.method.depends_params}
+        dependencies = {
+            k: v.function(self.middleware_args) for k, v in self.method.depends.items()
+        }
         # Call method.
         if isinstance(self.request, (Request, Notification)):
             result = self.method.function(**dependencies)
@@ -183,9 +178,14 @@ class MethodProcessor:
     def _check_permissions(self) -> bool:
         # Default to permitting if no security is set for method.
         permit = not self.method.metadata.security
+        if permit:
+            return permit
+        if self.security is None:
+            return False
+        active_scheme = self.security(self.middleware_args)
         # If any scheme and scopes are matched, permit method call.
         for method_scheme, method_scopes in self.method.metadata.security.items():
-            call_scopes = self.security.get(method_scheme)
+            call_scopes = active_scheme.get(method_scheme)
             if call_scopes is None:
                 continue
             if all(scope in call_scopes for scope in method_scopes):

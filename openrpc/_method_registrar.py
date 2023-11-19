@@ -8,8 +8,8 @@ from typing import Callable, Optional, TypeVar, Union
 
 from pydantic import create_model
 
-from openrpc import Depends
 from openrpc._common import MethodMetaData, resolved_annotation, RPCMethod
+from openrpc._depends import DependsModel
 from openrpc._objects import (
     ContentDescriptor,
     Error,
@@ -126,7 +126,11 @@ class MethodRegistrar:
 
     def _method(self, function: CallableType, metadata: MethodMetaData) -> CallableType:
         signature = inspect.signature(function)
-        depends = [k for k, v in signature.parameters.items() if v.default is Depends]
+        depends = {
+            k: v.default
+            for k, v in signature.parameters.items()
+            if isinstance(v.default, DependsModel)
+        }
 
         # Params model.
         param_model = create_model(  # type: ignore
@@ -151,7 +155,7 @@ class MethodRegistrar:
         rpc_method = RPCMethod(
             function=function,
             metadata=metadata,
-            depends_params=depends,
+            depends=depends,
             params_model=param_model,
             result_model=result_model,
         )

@@ -19,7 +19,7 @@ from jsonrpcobjects.objects import (
 )
 from jsonrpcobjects.parse import parse_request
 
-from openrpc._common import RPCMethod
+from openrpc._common import RPCMethod, SecurityFunction
 from openrpc._method_processor import MethodProcessor
 
 log = logging.getLogger("openrpc")
@@ -52,24 +52,25 @@ class RequestProcessor:
     def process(
         self,
         data: Union[bytes, str],
-        depends: Optional[dict[str, Any]],
-        security: Optional[dict[str, list[str]]],
+        middleware_args: Optional[Any],
+        security: Optional[SecurityFunction],
     ) -> Optional[str]:
         """Parse a JSON-RPC2 request and get the response.
 
         :param data: A JSON-RPC2 request.
-        :param depends: Values passed to functions with dependencies.
-        :param security: Scheme and scopes of method caller.
+        :param middleware_args: Values passed to functions with
+            dependencies and security functions.
+        :param security: Function to get active security scheme.
         :return: A valid JSON-RPC2 response.
         """
-        request = parse_request(data, debug=self.debug)
-        if isinstance(request, ErrorResponse):
-            return request.model_dump_json()
+        parsed_request = parse_request(data, debug=self.debug)
+        if isinstance(parsed_request, ErrorResponse):
+            return parsed_request.model_dump_json()
 
         # Batch
-        if isinstance(request, list):
+        if isinstance(parsed_request, list):
             results: list[str] = []
-            for req in request:
+            for req in parsed_request:
                 if isinstance(req, ErrorResponse):
                     results.append(req.model_dump_json())
                     continue
@@ -82,7 +83,7 @@ class RequestProcessor:
                     self.methods[req.method],
                     self.uncaught_error_code,
                     req,
-                    depends,
+                    middleware_args,
                     security,
                     debug=self.debug,
                 ).execute()
@@ -92,35 +93,34 @@ class RequestProcessor:
             return f"[{','.join(results)}]"
 
         # Single Request
-        if isinstance(request, ErrorResponse):
-            return request.model_dump_json()
-        if request.method not in self.methods:
-            if isinstance(request, (Request, ParamsRequest)):
-                return _get_method_not_found_error(request)
+        if parsed_request.method not in self.methods:
+            if isinstance(parsed_request, (Request, ParamsRequest)):
+                return _get_method_not_found_error(parsed_request)
             return None
         result = MethodProcessor(
-            self.methods[request.method],
+            self.methods[parsed_request.method],
             self.uncaught_error_code,
-            request,
-            depends,
+            parsed_request,
+            middleware_args,
             security,
             debug=self.debug,
         ).execute()
-        return None if isinstance(request, NotificationTypes) else result
+        return None if isinstance(parsed_request, NotificationTypes) else result
 
     async def process_async(
         self,
         data: Union[bytes, str],
-        depends: Optional[dict[str, Any]],
-        security: Optional[dict[str, list[str]]],
+        middleware_args: Optional[Any],
+        security: Optional[SecurityFunction],
     ) -> Optional[str]:
         """Process a JSON-RPC2 request and get the response.
 
         If the method called by the request is async it will be awaited.
 
         :param data: A JSON-RPC2 request.
-        :param depends: Values passed to functions with dependencies.
-        :param security: Scheme and scopes of method caller.
+        :param middleware_args: Values passed to functions with
+            dependencies and security functions.
+        :param security: Function to get active security scheme.
         :return: A valid JSON-RPC2 response.
         """
         parsed_request = parse_request(data, debug=self.debug)
@@ -145,7 +145,7 @@ class RequestProcessor:
                     method,
                     self.uncaught_error_code,
                     request,
-                    depends,
+                    middleware_args,
                     security,
                     debug=self.debug,
                 ).execute_async()
@@ -159,8 +159,6 @@ class RequestProcessor:
             return f"[{','.join(str(r) for r in results if r is not None)}]"
 
         # Single Request
-        if isinstance(parsed_request, ErrorResponse):
-            return parsed_request.model_dump_json()
         if parsed_request.method not in self.methods:
             if isinstance(parsed_request, (Request, ParamsRequest)):
                 return _get_method_not_found_error(parsed_request)
@@ -169,7 +167,7 @@ class RequestProcessor:
             self.methods[parsed_request.method],
             self.uncaught_error_code,
             parsed_request,
-            depends,
+            middleware_args,
             security,
             debug=self.debug,
         ).execute_async()

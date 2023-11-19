@@ -1,9 +1,17 @@
 """Module providing class to handle middleware dependencies."""
-from typing import Any
+from typing import Callable
+
+from pydantic import BaseModel
 
 
-class _Depends:
-    """Used to identify a param as a dependency."""
+class DependsModel(BaseModel):
+    """Supply with function used to return a dependent argument."""
+
+    function: Callable
 
 
-Depends: Any = _Depends
+def _depends(function: Callable) -> DependsModel:
+    return DependsModel(function=function)
+
+
+Depends = _depends
