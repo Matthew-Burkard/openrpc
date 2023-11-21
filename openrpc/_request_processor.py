@@ -19,7 +19,7 @@ from jsonrpcobjects.objects import (
 )
 from jsonrpcobjects.parse import parse_request
 
-from openrpc._common import RPCMethod, SecurityFunction
+from openrpc._common import RPCMethod, SecurityFunctionDetails
 from openrpc._method_processor import MethodProcessor
 
 log = logging.getLogger("openrpc")
@@ -53,14 +53,14 @@ class RequestProcessor:
         self,
         data: Union[bytes, str],
         middleware_args: Optional[Any],
-        security: Optional[SecurityFunction],
+        security: Optional[SecurityFunctionDetails],
     ) -> Optional[str]:
         """Parse a JSON-RPC2 request and get the response.
 
         :param data: A JSON-RPC2 request.
         :param middleware_args: Values passed to functions with
             dependencies and security functions.
-        :param security: Function to get active security scheme.
+        :param security: Server security function details.
         :return: A valid JSON-RPC2 response.
         """
         parsed_request = parse_request(data, debug=self.debug)
@@ -111,7 +111,7 @@ class RequestProcessor:
         self,
         data: Union[bytes, str],
         middleware_args: Optional[Any],
-        security: Optional[SecurityFunction],
+        security: Optional[SecurityFunctionDetails],
     ) -> Optional[str]:
         """Process a JSON-RPC2 request and get the response.
 
@@ -120,7 +120,7 @@ class RequestProcessor:
         :param data: A JSON-RPC2 request.
         :param middleware_args: Values passed to functions with
             dependencies and security functions.
-        :param security: Function to get active security scheme.
+        :param security: Server security function details.
         :return: A valid JSON-RPC2 response.
         """
         parsed_request = parse_request(data, debug=self.debug)

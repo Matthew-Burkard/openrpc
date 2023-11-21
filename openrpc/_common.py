@@ -1,5 +1,11 @@
 """Provides classes for storing RPC method data."""
-__all__ = ("MethodMetaData", "RPCMethod", "SecurityFunction", "resolved_annotation")
+__all__ = (
+    "MethodMetaData",
+    "RPCMethod",
+    "SecurityFunction",
+    "SecurityFunctionDetails",
+    "resolved_annotation",
+)
 
 import inspect
 from typing import Any, Callable, ForwardRef, Optional, Type
@@ -21,7 +27,7 @@ from openrpc._objects import (
     Tag,
 )
 
-SecurityFunction = Callable[[Any], dict[str, list[str]]]
+SecurityFunction = Callable[..., dict[str, list[str]]]
 
 
 class MethodMetaData(BaseModel):
@@ -51,6 +57,13 @@ class RPCMethod(BaseModel):
     depends: dict[str, DependsModel]
     params_model: Type[BaseModel]
     result_model: Type[BaseModel]
+
+
+class SecurityFunctionDetails(BaseModel):
+    """Hold information about the security function."""
+
+    function: SecurityFunction
+    depends_params: dict[str, DependsModel]
 
 
 def resolved_annotation(annotation: Any, function: Callable) -> Any:

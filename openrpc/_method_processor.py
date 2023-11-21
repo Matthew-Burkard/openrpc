@@ -25,7 +25,7 @@ from jsonrpcobjects.objects import (
 from pydantic import ValidationError
 
 from openrpc import ParamStructure
-from openrpc._common import RPCMethod, SecurityFunction
+from openrpc._common import RPCMethod, SecurityFunctionDetails
 from openrpc._objects import RPCPermissionError
 
 log = logging.getLogger("openrpc")
@@ -40,7 +40,7 @@ class MethodProcessor:
         uncaught_error_code: int,
         request: Union[RequestType, NotificationType],
         middleware_args: Optional[Any],
-        security: Optional[SecurityFunction],
+        security: Optional[SecurityFunctionDetails],
         *,
         debug: bool,
     ) -> None:
@@ -51,7 +51,7 @@ class MethodProcessor:
         :param request: Request to execute.
         :param middleware_args: Values passed to functions with
             dependencies and security functions.
-        :param security: Function to get active security scheme.
+        :param security: Server security function details.
         :param debug: Include internal error details in responses.
         """
         self.debug = debug
@@ -91,14 +91,14 @@ class MethodProcessor:
             return self._get_error_response(error)
 
     def _execute(self) -> Any:
-        if not self._check_permissions():
+        dependencies = {
+            k: v.function(self.middleware_args) for k, v in self.method.depends.items()
+        }
+        if not self._check_permissions(dependencies):
             raise RPCPermissionError()
         # If permissions are present, call method.
         params: Optional[Union[dict, list]]
         params_msg = ""
-        dependencies = {
-            k: v.function(self.middleware_args) for k, v in self.method.depends.items()
-        }
         # Call method.
         if isinstance(self.request, (Request, Notification)):
             result = self.method.function(**dependencies)
@@ -175,14 +175,38 @@ class MethodProcessor:
         except ValidationError as e:
             raise InvalidParams(data=str(e)) from e
 
-    def _check_permissions(self) -> bool:
+    def _check_permissions(self, method_dependencies: dict[str, Any]) -> bool:
         # Default to permitting if no security is set for method.
         permit = not self.method.metadata.security
         if permit:
             return permit
         if self.security is None:
             return False
-        active_scheme = self.security(self.middleware_args)
+
+        # Get security function depends values.
+        security_dependencies = {}
+        if self.security.depends_params:
+            # Check for overlapping method and security dependencies.
+            shared_depends = {
+                security_k: method_k
+                for method_k, method_v in self.method.depends.items()
+                for security_k, security_v in self.security.depends_params.items()
+                if method_v == security_v
+            }
+            security_dependencies = {
+                k: method_dependencies[shared_depends[k]]
+                if k in shared_depends
+                else v.function(self.middleware_args)
+                for k, v in self.security.depends_params.items()
+            }
+
+        # Get active security scheme.
+        active_scheme = self.security.function(
+            self.middleware_args, **security_dependencies
+        )
+        if not active_scheme:
+            return False
+
         # If any scheme and scopes are matched, permit method call.
         for method_scheme, method_scopes in self.method.metadata.security.items():
             call_scopes = active_scheme.get(method_scheme)

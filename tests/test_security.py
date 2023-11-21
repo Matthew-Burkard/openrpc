@@ -1,7 +1,8 @@
 """Unit tests for permissions."""
+
 from jsonrpcobjects.objects import ErrorResponse, ResultResponse
 
-from openrpc import OAuth2, OAuth2Flow, OAuth2FlowType, RPCServer
+from openrpc import Depends, OAuth2, OAuth2Flow, OAuth2FlowType, RPCServer
 from tests import util
 
 security = {
@@ -16,7 +17,7 @@ security = {
         ]
     )
 }
-rpc = RPCServer(security_schemes=security, debug=True)
+rpc = RPCServer(security_schemes=security, security_function=lambda x: x, debug=True)
 
 
 @rpc.method(security={"oauth2": ["coffee", "mocha"]})
@@ -34,13 +35,45 @@ def no_scopes() -> None:
     """Method requiring a permission with no scope."""
 
 
+def test_security_depends() -> None:
+    counter = 0
+
+    def middleware(headers: dict[str, str]) -> str:
+        """Middleware function."""
+        nonlocal counter
+        counter += 1
+        return headers["user"]
+
+    def security_function(
+        _headers: dict[str, str], user=Depends(middleware)
+    ) -> dict[str, list[str]]:
+        """Typical security function."""
+        return {"pizza": {"oauth2": ["coffee", "mocha"]}}[user]
+
+    security_rpc = RPCServer(
+        security_schemes=security, security_function=security_function, debug=True
+    )
+
+    @security_rpc.method(security={"oauth2": ["coffee", "mocha"]})
+    def permission_method_with_depends(user: str = Depends(middleware)) -> str:
+        """Method requiring a permission with `Depends`."""
+        return user
+
+    request = '{"id": 1, "method": "permission_method_with_depends", "jsonrpc": "2.0"}'
+    response = util.parse_response(
+        security_rpc.process_request(request, {"user": "pizza"})
+    )
+    assert response.result == "pizza"
+    assert counter == 1
+
+
 def test_deny() -> None:
     request = '{"id": 1, "method": "permission_method", "jsonrpc": "2.0"}'
     result = util.parse_response(rpc.process_request(request))
     assert isinstance(result, ErrorResponse)
     assert result.error.message == "Permission error"
     result = util.parse_response(
-        rpc.process_request(request, security=lambda x: {"oauth2": ["coffee"]})
+        rpc.process_request(request, middleware_args={"oauth2": ["coffee"]})
     )
     assert isinstance(result, ErrorResponse)
     assert result.error.message == "Permission error"
@@ -49,7 +82,7 @@ def test_deny() -> None:
 def test_permit() -> None:
     request = '{"id": 1, "method": "permission_method", "jsonrpc": "2.0"}'
     result = util.parse_response(
-        rpc.process_request(request, security=lambda x: {"oauth2": ["coffee", "mocha"]})
+        rpc.process_request(request, middleware_args={"oauth2": ["coffee", "mocha"]})
     )
 
     assert isinstance(result, ResultResponse)
@@ -61,17 +94,17 @@ def test_multiple_schemes_deny() -> None:
     assert isinstance(result, ErrorResponse)
     assert result.error.message == "Permission error"
     result = util.parse_response(
-        rpc.process_request(request, security=lambda x: {"oauth2": ["coffee"]})
+        rpc.process_request(request, middleware_args={"oauth2": ["coffee"]})
     )
     assert isinstance(result, ErrorResponse)
     assert result.error.message == "Permission error"
     result = util.parse_response(
-        rpc.process_request(request, security=lambda x: {"oauth2": ["pickle"]})
+        rpc.process_request(request, middleware_args={"oauth2": ["pickle"]})
     )
     assert isinstance(result, ErrorResponse)
     assert result.error.message == "Permission error"
     result = util.parse_response(
-        rpc.process_request(request, security=lambda x: {"apikey": ["coffee", "mocha"]})
+        rpc.process_request(request, middleware_args={"apikey": ["coffee", "mocha"]})
     )
     assert isinstance(result, ErrorResponse)
     assert result.error.message == "Permission error"
@@ -80,11 +113,11 @@ def test_multiple_schemes_deny() -> None:
 def test_multiple_schemes_permit() -> None:
     request = '{"id": 1, "method": "multiple_schemes", "jsonrpc": "2.0"}'
     result = util.parse_response(
-        rpc.process_request(request, security=lambda x: {"apikey": ["pickle"]})
+        rpc.process_request(request, middleware_args={"apikey": ["pickle"]})
     )
     assert isinstance(result, ResultResponse)
     result = util.parse_response(
-        rpc.process_request(request, security=lambda x: {"oauth2": ["coffee", "mocha"]})
+        rpc.process_request(request, middleware_args={"oauth2": ["coffee", "mocha"]})
     )
     assert isinstance(result, ResultResponse)
 
@@ -92,7 +125,7 @@ def test_multiple_schemes_permit() -> None:
 def test_no_scopes() -> None:
     request = '{"id": 1, "method": "no_scopes", "jsonrpc": "2.0"}'
     result = util.parse_response(
-        rpc.process_request(request, security=lambda x: {"apikey": []})
+        rpc.process_request(request, middleware_args={"apikey": []})
     )
     assert isinstance(result, ResultResponse)
     result = util.parse_response(rpc.process_request(request))
@@ -103,7 +136,7 @@ def test_no_scopes() -> None:
 def test_security_discover() -> None:
     request = '{"id": 1, "method": "rpc.discover", "jsonrpc": "2.0"}'
     result = util.parse_response(
-        rpc.process_request(request, security=lambda x: {"apikey": ["pickle"]})
+        rpc.process_request(request, middleware_args={"apikey": ["pickle"]})
     )
     assert isinstance(result, ResultResponse)
     assert result.result["components"]["x-securitySchemes"] == {
