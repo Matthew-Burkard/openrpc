@@ -6,41 +6,48 @@ sidebar_position: 2
 # Depends Arguments
 
 Your methods may need to use request headers or connection details to determine the user
-calling a method.
+calling a method. It's possible to supply additional values from the framework to a
+function when an RPC method is called using `Depends` arguments.
 
-It's possible to supply additional values from the framework to a function when an RPC
-method is called. We're going to supply a method with user data to determine if a user
-can call that method.
+The headers need to be passed to `process_request` or `process_request_async` as
+`middleware_args` to be accessed from a method. The method calls in this example will
+use a hard-coded dictionary in place of request headers to remain transport agnostic.
 
-Dependent arguments must be supplied to the process_request or process_request_async
-methods in a dictionary. The dictionary will be a map of dependent argument name to
-value with the name as a string.
+In order to use the `middleware_args` write a function that accepts the middleware args
+as an argument and returns the value you want passed to an RPC method. The one in this
+example is `get_user`. Then you can use the function by making the default value of a
+method argument equal to `Depends(get_user)`.
 
-In order to access a dependent argument from a function add a parameter to the function
-with a name matching the key from the dictionary and a default value of `Depends` from
-openrpc.
+## Example of `Depends` in use.
 
 ```python
+import json
+from typing import Any
+
 from openrpc import Depends, RPCServer
 
-rpc = RPCServer(title="RPCServer", version="1.0.0", debug=True)
+rpc = RPCServer(title="DependsExample", version="1.0.0")
+
+
+def get_user(middleware_args: dict) -> dict[str, Any]:
+    """Function that uses middleware args."""
+    token = middleware_args["Authorization"].removeprefix("Bearer ")
+    # In production this would be replaced with logic to decode the
+    # token and get the user from a database.
+    return {
+        "eyJhbGciJIUzI1NiIsICI6IkpXVCJ9": {"id": "14ac680e-ecec-42a7-8cad-c1d2ec58b491"}
+    }[token]
 
 
 @rpc.method()
-def add(a: int, b: int, user: dict = Depends) -> int:
-    if "add" not in user["permissions"]:
-        raise PermissionError('The "add" permission is required to call this method.')
-    return a + b
+def get_user_id(user: dict[str, Any] = Depends(get_user)) -> str:
+    """RPC method that gets a value from a `Depends` function."""
+    return user["id"]
 
 
-user = {"email": "email@test.com", "permissions": ["add"]}
-request = '{"id": 1, "method": "add", "params": [1, 3], "jsonrpc": "2.0"}'
-json_rpc_response = rpc.process_request(request, depends={"user": user})
+if __name__ == "__main__":
+    headers = {"Authorization": "Bearer eyJhbGciJIUzI1NiIsICI6IkpXVCJ9"}
+    request = '{"id": 1, "method": "get_user_id", "jsonrpc": "2.0"}'
+    resp = json.loads(rpc.process_request(request, headers))
+    assert resp["result"] == "14ac680e-ecec-42a7-8cad-c1d2ec58b491"
 ```
-
-Before Python OpenRPC calls a function it checks for any arguments in that function with
-a default value of Depends. If it finds any such arguments, it uses the argument name to
-find the value with that key name in the `depends` dictionary passed to process_request.
-
-It's important to note that any `Depends` arguments are not exposed to the OpenRPC API,
-the add method above still only expects two integer parameters.
