@@ -92,8 +92,6 @@ class RequestProcessor:
             return f"[{','.join(results)}]"
 
         # Single Request
-        if isinstance(request, ErrorResponse):
-            return request.model_dump_json()
         if request.method not in self.methods:
             if isinstance(request, (Request, ParamsRequest)):
                 return _get_method_not_found_error(request)
@@ -159,8 +157,6 @@ class RequestProcessor:
             return f"[{','.join(str(r) for r in results if r is not None)}]"
 
         # Single Request
-        if isinstance(parsed_request, ErrorResponse):
-            return parsed_request.model_dump_json()
         if parsed_request.method not in self.methods:
             if isinstance(parsed_request, (Request, ParamsRequest)):
                 return _get_method_not_found_error(parsed_request)

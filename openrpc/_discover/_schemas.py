@@ -59,16 +59,11 @@ def _get_models(annotation: Optional[Type]) -> list[ModelType]:
 def _get_enums_from_function(method: RPCMethod) -> list:
     enums = []
     for field_info in method.params_model.model_fields.values():
-        enums.extend(_get_enums(field_info.annotation))
+        if _is_enum(field_info.annotation):
+            enums.append(field_info.annotation)
     for field_info in method.result_model.model_fields.values():
-        enums.extend(_get_enums(field_info.annotation))
-    return enums
-
-
-def _get_enums(annotation: Optional[Type]) -> list:
-    enums = []
-    if isinstance(annotation, Type) and issubclass(annotation, Enum):  # type: ignore
-        enums.append(annotation)
+        if _is_enum(field_info.annotation):
+            enums.append(field_info.annotation)
     return enums
 
 
@@ -95,6 +90,12 @@ def _get_model_schemas(
                     )
                     types += child_types
                     schemas = {**schemas, **child_schemas}
+                if _is_enum(arg):
+                    schemas[arg] = Schema(
+                        title=arg.__name__,
+                        enum=[it.value for it in arg],
+                        description=arg.__doc__ or None,
+                    )
 
         # If field is a model get schemas from that model.
         elif _is_model(field.annotation) and field.annotation is not None:
@@ -128,6 +129,10 @@ def _is_model(type_: Any) -> bool:
     # Type checkers are wrong about use of `Type` here.
     # noinspection PydanticTypeChecker
     return isinstance(type_, Type) and issubclass(type_, BaseModel)  # type: ignore
+
+
+def _is_enum(type_: Any) -> bool:
+    return isinstance(type_, Type) and issubclass(type_, Enum)  # type: ignore
 
 
 def _get_flattened_schemas(
