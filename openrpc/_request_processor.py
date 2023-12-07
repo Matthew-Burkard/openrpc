@@ -59,7 +59,7 @@ class RequestProcessor:
 
         :param data: A JSON-RPC2 request.
         :param middleware_args: Values passed to functions with
-            dependencies and security functions.
+            dependencies and security schemes.
         :param security: Server security function details.
         :return: A valid JSON-RPC2 response.
         """
@@ -119,7 +119,7 @@ class RequestProcessor:
 
         :param data: A JSON-RPC2 request.
         :param middleware_args: Values passed to functions with
-            dependencies and security functions.
+            dependencies and security schemes.
         :param security: Server security function details.
         :return: A valid JSON-RPC2 response.
         """

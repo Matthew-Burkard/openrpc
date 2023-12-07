@@ -248,12 +248,12 @@ class RPCServer(MethodRegistrar):
         self._routers.append(router)
 
     def process_request(
-        self, data: Union[bytes, str], middleware_args: Optional[Any] = None
+        self, data: Union[bytes, str], caller_details: Optional[Any] = None
     ) -> Optional[str]:
         """Process a JSON-RPC2 request and get the response.
 
         :param data: A JSON-RPC2 request.
-        :param middleware_args: Values passed to `Depends` and security
+        :param caller_details: Values passed to `Depends` and security
             functions.
         :return: A JSON-RPC2 response or None if the request was a
             notification.
@@ -261,7 +261,7 @@ class RPCServer(MethodRegistrar):
         try:
             log.debug("Processing request: %s", data)
             resp = self._request_processor.process(
-                data, middleware_args, self.security_function_details
+                data, caller_details, self.security_function_details
             )
             if resp:
                 log.debug("Responding: %s", resp)
@@ -271,14 +271,14 @@ class RPCServer(MethodRegistrar):
             return resp
 
     async def process_request_async(
-        self, data: Union[bytes, str], middleware_args: Optional[Any] = None
+        self, data: Union[bytes, str], caller_details: Optional[Any] = None
     ) -> Optional[str]:
         """Process a JSON-RPC2 request and get the response.
 
         If the method called by the request is async it will be awaited.
 
         :param data: A JSON-RPC2 request.
-        :param middleware_args: Values passed to `Depends` and security
+        :param caller_details: Values passed to `Depends` and security
             functions.
         :return: A JSON-RPC2 response or None if the request was a
             notification.
@@ -286,7 +286,7 @@ class RPCServer(MethodRegistrar):
         try:
             log.debug("Processing request: %s", data)
             resp = await self._request_processor.process_async(
-                data, middleware_args, self.security_function_details
+                data, caller_details, self.security_function_details
             )
             if resp:
                 log.debug("Responding: %s", resp)
