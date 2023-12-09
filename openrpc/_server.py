@@ -86,17 +86,9 @@ class RPCServer(MethodRegistrar):
         self.security_schemes = security_schemes
 
         # Security function.
-        self.security_function_details: Optional[SecurityFunctionDetails] = None
-        if security_function:
-            signature = inspect.signature(security_function)
-            security_depends_params = {
-                k: v.default
-                for k, v in signature.parameters.items()
-                if isinstance(v.default, DependsModel)
-            }
-            self.security_function_details = SecurityFunctionDetails(
-                function=security_function, depends_params=security_depends_params
-            )
+        self._security_function_details: Optional[SecurityFunctionDetails] = None
+        # Type ignore because mypy is wrong again.
+        self.security_function = security_function  # type: ignore
 
         # Register discover method.
         schema = Schema()
@@ -198,6 +190,25 @@ class RPCServer(MethodRegistrar):
         for router in self._routers:
             router.debug = debug
 
+    @property
+    def security_function(self) -> None:
+        """Function that accepts caller details and returns security schemes."""
+        return
+
+    @security_function.setter
+    def security_function(self, value: Optional[SecurityFunction]) -> None:
+        if value is None:
+            return
+        signature = inspect.signature(value)
+        security_depends_params = {
+            k: v.default
+            for k, v in signature.parameters.items()
+            if isinstance(v.default, DependsModel)
+        }
+        self._security_function_details = SecurityFunctionDetails(
+            function=value, depends_params=security_depends_params
+        )
+
     def include_router(
         self,
         router: RPCRouter,
@@ -261,7 +272,7 @@ class RPCServer(MethodRegistrar):
         try:
             log.debug("Processing request: %s", data)
             resp = self._request_processor.process(
-                data, caller_details, self.security_function_details
+                data, caller_details, self._security_function_details
             )
             if resp:
                 log.debug("Responding: %s", resp)
@@ -286,7 +297,7 @@ class RPCServer(MethodRegistrar):
         try:
             log.debug("Processing request: %s", data)
             resp = await self._request_processor.process_async(
-                data, caller_details, self.security_function_details
+                data, caller_details, self._security_function_details
             )
             if resp:
                 log.debug("Responding: %s", resp)
