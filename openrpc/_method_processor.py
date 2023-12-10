@@ -95,7 +95,7 @@ class MethodProcessor:
             k: v.function(self.middleware_args) for k, v in self.method.depends.items()
         }
         if error := self._get_permission_error(dependencies):
-            raise RPCPermissionError(error)
+            raise RPCPermissionError(error if self.debug else None)
 
         # If permissions are present, call method.
         params: Optional[Union[dict, list]]
