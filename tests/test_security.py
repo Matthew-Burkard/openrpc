@@ -104,7 +104,9 @@ def test_multiple_schemes_deny() -> None:
     assert isinstance(result, ErrorResponse)
     assert result.error.message == "Permission error"
     result = util.parse_response(
-        rpc.process_request(request, caller_details={"apikey": ["coffee", "mocha"]})
+        rpc.process_request(
+            request, caller_details={"apikey": ["apple"], "oauth2": ["mocha"]}
+        )
     )
     assert isinstance(result, ErrorResponse)
     assert result.error.message == "Permission error"

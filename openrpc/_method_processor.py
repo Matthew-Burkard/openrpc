@@ -94,11 +94,13 @@ class MethodProcessor:
         dependencies = {
             k: v.function(self.middleware_args) for k, v in self.method.depends.items()
         }
-        if not self._check_permissions(dependencies):
-            raise RPCPermissionError()
+        if error := self._get_permission_error(dependencies):
+            raise RPCPermissionError(error)
+
         # If permissions are present, call method.
         params: Optional[Union[dict, list]]
         params_msg = ""
+
         # Call method.
         if isinstance(self.request, (Request, Notification)):
             result = self.method.function(**dependencies)
@@ -175,13 +177,15 @@ class MethodProcessor:
         except ValidationError as e:
             raise InvalidParams(data=str(e)) from e
 
-    def _check_permissions(self, method_dependencies: dict[str, Any]) -> bool:
+    def _get_permission_error(
+        self, method_dependencies: dict[str, Any]
+    ) -> Optional[str]:
         # Default to permitting if no security is set for method.
         permit = not self.method.metadata.security
         if permit:
-            return permit
+            return None
         if self.security is None:
-            return False
+            return "No security function has been set for the RPC Server."
 
         # Get security function depends values.
         security_dependencies = {}
@@ -205,16 +209,27 @@ class MethodProcessor:
             self.middleware_args, **security_dependencies
         )
         if not active_scheme:
-            return False
+            return "No active security schemes for caller."
 
+        missing_scopes = {}
         # If any scheme and scopes are matched, permit method call.
         for method_scheme, method_scopes in self.method.metadata.security.items():
             call_scopes = active_scheme.get(method_scheme)
             if call_scopes is None:
+                missing_scopes[method_scheme] = method_scopes
                 continue
-            if all(scope in call_scopes for scope in method_scopes):
-                permit = True
-        return permit
+            missing_scopes[method_scheme] = [
+                scope for scope in method_scopes if scope not in call_scopes
+            ]
+            if not missing_scopes[method_scheme]:
+                return None
+
+        # Get string describing missing scopes.
+        details = "\n\t".join(
+            f"{scheme}: {scopes}" for scheme, scopes in missing_scopes.items()
+        )
+
+        return f"No scheme had all scopes met by caller.\nMissing scopes:\n\t{details}"
 
 
 def _get_trimmed_traceback(error: Exception) -> str:
