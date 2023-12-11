@@ -200,13 +200,17 @@ class RPCServer(MethodRegistrar):
         if value is None:
             return
         signature = inspect.signature(value)
-        security_depends_params = {
+        depends_params = {
             k: v.default
             for k, v in signature.parameters.items()
             if isinstance(v.default, DependsModel)
         }
+        # If len params equals len `Depends` params, no other params accepted.
+        accepts_caller_details = len(signature.parameters) != len(depends_params)
         self._security_function_details = SecurityFunctionDetails(
-            function=value, depends_params=security_depends_params
+            function=value,
+            depends_params=depends_params,
+            accepts_caller_details=accepts_caller_details,
         )
 
     def include_router(

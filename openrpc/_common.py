@@ -64,6 +64,7 @@ class SecurityFunctionDetails(BaseModel):
 
     function: SecurityFunction
     depends_params: dict[str, DependsModel]
+    accepts_caller_details: bool
 
 
 def resolved_annotation(annotation: Any, function: Callable) -> Any:

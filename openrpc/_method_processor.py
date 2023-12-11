@@ -39,7 +39,7 @@ class MethodProcessor:
         method: RPCMethod,
         uncaught_error_code: int,
         request: Union[RequestType, NotificationType],
-        middleware_args: Optional[Any],
+        caller_details: Optional[Any],
         security: Optional[SecurityFunctionDetails],
         *,
         debug: bool,
@@ -49,7 +49,7 @@ class MethodProcessor:
         :param method: The Python callable.
         :param uncaught_error_code: Code for errors raised by method.
         :param request: Request to execute.
-        :param middleware_args: Values passed to functions with
+        :param caller_details: Values passed to functions with
             dependencies and security functions.
         :param security: Server security function details.
         :param debug: Include internal error details in responses.
@@ -58,7 +58,7 @@ class MethodProcessor:
         self.method = method
         self.request = request
         self.uncaught_error_code = uncaught_error_code
-        self.middleware_args = middleware_args
+        self.caller_details = caller_details
         self.security = security
 
     def execute(self) -> Optional[str]:
@@ -92,7 +92,7 @@ class MethodProcessor:
 
     def _execute(self) -> Any:
         dependencies = {
-            k: v.function(self.middleware_args) for k, v in self.method.depends.items()
+            k: v.function(self.caller_details) for k, v in self.method.depends.items()
         }
         if error := self._get_permission_error(dependencies):
             raise RPCPermissionError(error if self.debug else None)
@@ -198,16 +198,19 @@ class MethodProcessor:
                 if method_v == security_v
             }
             security_dependencies = {
-                k: method_dependencies[shared_depends[k]]
-                if k in shared_depends
-                else v.function(self.middleware_args)
-                for k, v in self.security.depends_params.items()
+                depends_param: method_dependencies[shared_depends[depends_param]]
+                if depends_param in shared_depends
+                else depends.function(self.caller_details)
+                for depends_param, depends in self.security.depends_params.items()
             }
 
         # Get active security scheme.
-        active_scheme = self.security.function(
-            self.middleware_args, **security_dependencies
-        )
+        if self.security.accepts_caller_details:
+            active_scheme = self.security.function(
+                self.caller_details, **security_dependencies
+            )
+        else:
+            active_scheme = self.security.function(**security_dependencies)
         if not active_scheme:
             return "No active security schemes for caller."
 

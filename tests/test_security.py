@@ -137,11 +137,11 @@ def test_no_scopes() -> None:
 
 def test_security_discover() -> None:
     request = '{"id": 1, "method": "rpc.discover", "jsonrpc": "2.0"}'
-    result = util.parse_response(
+    response = util.parse_response(
         rpc.process_request(request, caller_details={"apikey": ["pickle"]})
     )
-    assert isinstance(result, ResultResponse)
-    assert result.result["components"]["x-securitySchemes"] == {
+    assert isinstance(response, ResultResponse)
+    assert response.result["components"]["x-securitySchemes"] == {
         "oauth2": {
             "flows": [
                 {
@@ -157,7 +157,46 @@ def test_security_discover() -> None:
             "type": "oauth2",
         }
     }
-    assert result.result["methods"][1]["x-security"] == {
+    assert response.result["methods"][1]["x-security"] == {
         "oauth2": ["coffee", "mocha"],
         "apikey": ["pickle"],
     }
+
+
+def test_security_no_caller_details() -> None:
+    def _security_function() -> dict[str, list[str]]:
+        return {"apikey": ["pickle"]}
+
+    def add(a: int, b: int) -> int:
+        """Add two integers."""
+        return a + b
+
+    no_cd_rpc = RPCServer(
+        security_schemes=security, security_function=_security_function, debug=True
+    )
+    no_cd_rpc.method(security={"apikey": ["pickle"]})(add)
+    request = '{"id": 1, "method": "add", "params": [2, 2], "jsonrpc": "2.0"}'
+    response = util.parse_response(no_cd_rpc.process_request(request))
+    assert response.result == 4
+
+
+def test_security_only_depends() -> None:
+    def _depends() -> dict[str, list[str]]:
+        return {"apikey": ["pickle"]}
+
+    def _security(
+        depends: dict[str, list[str]] = Depends(_depends)
+    ) -> dict[str, list[str]]:
+        return depends
+
+    def add(a: int, b: int) -> int:
+        """Add two integers."""
+        return a + b
+
+    only_depends_rpc = RPCServer(
+        security_schemes=security, security_function=_security, debug=True
+    )
+    only_depends_rpc.method(security={"apikey": ["pickle"]})(add)
+    request = '{"id": 1, "method": "add", "params": [2, 2], "jsonrpc": "2.0"}'
+    response = util.parse_response(only_depends_rpc.process_request(request))
+    assert response == 4

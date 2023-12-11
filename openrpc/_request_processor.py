@@ -52,13 +52,13 @@ class RequestProcessor:
     def process(
         self,
         data: Union[bytes, str],
-        middleware_args: Optional[Any],
+        caller_details: Optional[Any],
         security: Optional[SecurityFunctionDetails],
     ) -> Optional[str]:
         """Parse a JSON-RPC2 request and get the response.
 
         :param data: A JSON-RPC2 request.
-        :param middleware_args: Values passed to functions with
+        :param caller_details: Values passed to functions with
             dependencies and security schemes.
         :param security: Server security function details.
         :return: A valid JSON-RPC2 response.
@@ -83,7 +83,7 @@ class RequestProcessor:
                     self.methods[req.method],
                     self.uncaught_error_code,
                     req,
-                    middleware_args,
+                    caller_details,
                     security,
                     debug=self.debug,
                 ).execute()
@@ -101,7 +101,7 @@ class RequestProcessor:
             self.methods[parsed_request.method],
             self.uncaught_error_code,
             parsed_request,
-            middleware_args,
+            caller_details,
             security,
             debug=self.debug,
         ).execute()
@@ -110,7 +110,7 @@ class RequestProcessor:
     async def process_async(
         self,
         data: Union[bytes, str],
-        middleware_args: Optional[Any],
+        caller_details: Optional[Any],
         security: Optional[SecurityFunctionDetails],
     ) -> Optional[str]:
         """Process a JSON-RPC2 request and get the response.
@@ -118,7 +118,7 @@ class RequestProcessor:
         If the method called by the request is async it will be awaited.
 
         :param data: A JSON-RPC2 request.
-        :param middleware_args: Values passed to functions with
+        :param caller_details: Values passed to functions with
             dependencies and security schemes.
         :param security: Server security function details.
         :return: A valid JSON-RPC2 response.
@@ -145,7 +145,7 @@ class RequestProcessor:
                     method,
                     self.uncaught_error_code,
                     request,
-                    middleware_args,
+                    caller_details,
                     security,
                     debug=self.debug,
                 ).execute_async()
@@ -167,7 +167,7 @@ class RequestProcessor:
             self.methods[parsed_request.method],
             self.uncaught_error_code,
             parsed_request,
-            middleware_args,
+            caller_details,
             security,
             debug=self.debug,
         ).execute_async()
