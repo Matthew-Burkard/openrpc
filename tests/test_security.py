@@ -200,3 +200,25 @@ def test_security_only_depends() -> None:
     request = '{"id": 1, "method": "add", "params": [2, 2], "jsonrpc": "2.0"}'
     response = util.parse_response(only_depends_rpc.process_request(request))
     assert response.result == 4
+
+
+def test_nested_depends() -> None:
+    counter = 0
+
+    def _depends_a() -> int:
+        nonlocal counter
+        counter += 1
+        return 5
+
+    def _depends_b(a: int = Depends(_depends_a)) -> int:
+        return a * 2
+
+    def _rpc_method(b: int = Depends(_depends_b)) -> int:
+        return b
+
+    nested_depends_rpc = RPCServer(debug=True)
+    nested_depends_rpc.method()(_rpc_method)
+    request = '{"id": 1, "method": "_rpc_method", "jsonrpc": "2.0"}'
+    response = util.parse_response(nested_depends_rpc.process_request(request))
+    assert counter == 1
+    assert response.result == 10

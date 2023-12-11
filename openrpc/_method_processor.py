@@ -6,7 +6,7 @@ import inspect
 import logging
 import traceback
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 from jsonrpcobjects.errors import InvalidParams, JSONRPCError
 from jsonrpcobjects.objects import (
@@ -26,6 +26,7 @@ from pydantic import ValidationError
 
 from openrpc import ParamStructure
 from openrpc._common import RPCMethod, SecurityFunctionDetails
+from openrpc._depends import DependsModel
 from openrpc._objects import RPCPermissionError
 
 log = logging.getLogger("openrpc")
@@ -60,6 +61,7 @@ class MethodProcessor:
         self.uncaught_error_code = uncaught_error_code
         self.caller_details = caller_details
         self.security = security
+        self._depends: dict[Callable, Any] = {}
 
     def execute(self) -> Optional[str]:
         """Execute the method and get the JSON-RPC2 response."""
@@ -92,15 +94,12 @@ class MethodProcessor:
 
     def _execute(self) -> Any:
         # Get depends values from `Depends` functions.
-        dependencies = {
-            depend_param: depend.function(self.caller_details)
-            if depend.accepts_caller_details
-            else depend.function()
-            for depend_param, depend in self.method.depends.items()
-        }
+        dependencies = self._resolve_depends_params(
+            self.method.depends, self.caller_details
+        )
 
         # Raise permission error if any problems with `security_scheme`.
-        if error := self._get_permission_error(dependencies):
+        if error := self._get_permission_error():
             raise RPCPermissionError(error if self.debug else None)
 
         # If permissions are present, call method.
@@ -183,9 +182,7 @@ class MethodProcessor:
         except ValidationError as e:
             raise InvalidParams(data=str(e)) from e
 
-    def _get_permission_error(
-        self, method_dependencies: dict[str, Any]
-    ) -> Optional[str]:
+    def _get_permission_error(self) -> Optional[str]:
         # Default to permitting if no security is set for method.
         permit = not self.method.metadata.security
         if permit:
@@ -194,25 +191,9 @@ class MethodProcessor:
             return "No security function has been set for the RPC Server."
 
         # Get security function depends values.
-        security_dependencies = {}
-        if self.security.depends_params:
-            # Check for overlapping method and security dependencies.
-            shared_depends = {
-                security_k: method_k
-                for method_k, method_v in self.method.depends.items()
-                for security_k, security_v in self.security.depends_params.items()
-                if method_v == security_v
-            }
-            security_dependencies = {
-                depends_param: method_dependencies[shared_depends[depends_param]]
-                if depends_param in shared_depends
-                else (
-                    depend.function(self.caller_details)
-                    if depend.accepts_caller_details
-                    else depend.function()
-                )
-                for depends_param, depend in self.security.depends_params.items()
-            }
+        security_dependencies = self._resolve_depends_params(
+            self.security.depends_params, self.caller_details
+        )
 
         # Get active security scheme.
         if self.security.accepts_caller_details:
@@ -243,6 +224,36 @@ class MethodProcessor:
         )
 
         return f"No scheme had all scopes met by caller.\nMissing scopes:\n\t{details}"
+
+    def _resolve_depends_params(
+        self, depends_params: dict[str, DependsModel], caller_details: Any
+    ) -> dict[str, Any]:
+        # Resolve values of nested `Depends` parameters.
+        for nested_dep in depends_params.values():
+            # If this dependency value is already resolved, continue.
+            if self._depends.get(nested_dep.function):
+                continue
+            # Resolve nested dependencies of nested dependency.
+            dependency_dependencies = {}
+            if nested_dep.depends_params:
+                dependency_dependencies = self._resolve_depends_params(
+                    nested_dep.depends_params, caller_details
+                )
+            # Resolve nested dependency.
+            if nested_dep.accepts_caller_details:
+                self._depends[nested_dep.function] = nested_dep.function(
+                    caller_details, **dependency_dependencies
+                )
+            else:
+                self._depends[nested_dep.function] = nested_dep.function(
+                    **dependency_dependencies
+                )
+
+        # Return values requested now that all values needed are resoled.
+        return {
+            param_name: self._depends[dep.function]
+            for param_name, dep in depends_params.items()
+        }
 
 
 def _get_trimmed_traceback(error: Exception) -> str:
