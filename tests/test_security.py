@@ -199,4 +199,4 @@ def test_security_only_depends() -> None:
     only_depends_rpc.method(security={"apikey": ["pickle"]})(add)
     request = '{"id": 1, "method": "add", "params": [2, 2], "jsonrpc": "2.0"}'
     response = util.parse_response(only_depends_rpc.process_request(request))
-    assert response == 4
+    assert response.result == 4

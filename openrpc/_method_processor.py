@@ -91,9 +91,15 @@ class MethodProcessor:
             return self._get_error_response(error)
 
     def _execute(self) -> Any:
+        # Get depends values from `Depends` functions.
         dependencies = {
-            k: v.function(self.caller_details) for k, v in self.method.depends.items()
+            depend_param: depend.function(self.caller_details)
+            if depend.accepts_caller_details
+            else depend.function()
+            for depend_param, depend in self.method.depends.items()
         }
+
+        # Raise permission error if any problems with `security_scheme`.
         if error := self._get_permission_error(dependencies):
             raise RPCPermissionError(error if self.debug else None)
 
@@ -200,8 +206,12 @@ class MethodProcessor:
             security_dependencies = {
                 depends_param: method_dependencies[shared_depends[depends_param]]
                 if depends_param in shared_depends
-                else depends.function(self.caller_details)
-                for depends_param, depends in self.security.depends_params.items()
+                else (
+                    depend.function(self.caller_details)
+                    if depend.accepts_caller_details
+                    else depend.function()
+                )
+                for depends_param, depend in self.security.depends_params.items()
             }
 
         # Get active security scheme.
