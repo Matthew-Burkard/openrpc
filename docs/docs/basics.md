@@ -7,7 +7,7 @@ sidebar_position: 2
 
 ## Built on Specifications
 
-Python OpenRPC is built on a couple of specifications.
+Python OpenRPC is built on multiple specifications.
 
 ### JSON-RPC 2.0
 
@@ -92,7 +92,11 @@ class Vector3(BaseModel):
 
 @rpc.method()
 def get_distance(a: Vector3, b: Vector3) -> Vector3:
-    return Vector3(x=a.x - b.x, y=a.y - b.y, z=a.z - b.z)
+    return Vector3(
+        x=a.x - b.x,
+        y=a.y - b.y,
+        z=a.z - b.z,
+    )
 
 
 req = """

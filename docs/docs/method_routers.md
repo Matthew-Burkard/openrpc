@@ -8,7 +8,8 @@ sidebar_position: 3
 For larger APIs you may want to organize your methods into different categories with
 a common prefix. There's a tool for this in the form of the `RPCRouter`. This can be
 used to register functions as RPC methods, then the router can be included in an
-`RPCServer` with an optional method name prefix for methods of that router.
+`RPCServer`. When a router is included in an `RPCServer`, `tags` and/or a `prefix` can
+be provided for each method in that router.
 
 ```python
 from openrpc import RPCRouter, RPCServer
@@ -29,7 +30,7 @@ def concat(a: str, b: str) -> str:
     return a + b
 
 
-rpc.include_router(math_router, prefix="math.")
+rpc.include_router(math_router, prefix="math.", tags=["Math"])
 rpc.include_router(string_router, prefix="string.")
 
 req = '{"id": 1, "method": "math.add", "params": [17, 27], "jsonrpc": "2.0"}'
