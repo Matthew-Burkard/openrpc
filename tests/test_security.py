@@ -213,12 +213,12 @@ def test_nested_depends() -> None:
     def _depends_b(a: int = Depends(_depends_a)) -> int:
         return a * 2
 
-    def _rpc_method(b: int = Depends(_depends_b)) -> int:
-        return b
+    def _rpc_method(a: int = Depends(_depends_a), b: int = Depends(_depends_b)) -> int:
+        return a + b
 
     nested_depends_rpc = RPCServer(debug=True)
     nested_depends_rpc.method()(_rpc_method)
     request = '{"id": 1, "method": "_rpc_method", "jsonrpc": "2.0"}'
     response = util.parse_response(nested_depends_rpc.process_request(request))
     assert counter == 1
-    assert response.result == 10
+    assert response.result == 15
