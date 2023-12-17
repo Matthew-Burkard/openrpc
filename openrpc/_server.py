@@ -2,6 +2,7 @@
 
 __all__ = ("RPCServer",)
 
+import inspect
 import logging
 from typing import Any, Callable, Optional, Union
 
@@ -9,7 +10,7 @@ from jsonrpcobjects.errors import INTERNAL_ERROR
 from jsonrpcobjects.objects import DataError, Error, ErrorResponse
 
 from openrpc import RPCRouter
-from openrpc._common import MethodMetaData
+from openrpc._common import MethodMetaData, SecurityFunction, SecurityFunctionDetails
 from openrpc._method_registrar import CallableType, MethodRegistrar
 from openrpc._objects import (
     APIKeyAuth,
@@ -24,6 +25,7 @@ from openrpc._objects import (
     Server,
     Tag,
 )
+from ._depends import DependsModel
 from ._discover.discover import get_openrpc_doc
 
 log = logging.getLogger("openrpc")
@@ -45,6 +47,7 @@ class RPCServer(MethodRegistrar):
         security_schemes: Optional[
             dict[str, Union[OAuth2, BearerAuth, APIKeyAuth]]
         ] = None,
+        security_function: Optional[SecurityFunction] = None,
         *,
         debug: bool = False,
     ) -> None:
@@ -58,7 +61,10 @@ class RPCServer(MethodRegistrar):
         :param license_: App license.
         :param servers: Servers hosting this RPC API.
         :param security_schemes: Security schemes used by this RPC API.
-        :param debug: Include internal error details in responses.
+        :param security_function: Function to get active security scheme
+            of a method call. This function should accept middleware
+            arguments as a parameter and can use `Depends` params.
+        :param debug: Include internal error details in error responses.
         """
         super().__init__()
         self._routers: list[MethodRegistrar] = []
@@ -78,6 +84,12 @@ class RPCServer(MethodRegistrar):
             self._info.license_ = license_
         self._servers = servers or Server(name="default", url="localhost")
         self.security_schemes = security_schemes
+
+        # Security function.
+        self._security_function_details: Optional[SecurityFunctionDetails] = None
+        # Type ignore because mypy is wrong again.
+        self.security_function = security_function  # type: ignore
+
         # Register discover method.
         schema = Schema()
         schema.ref = _META_REF
@@ -178,6 +190,29 @@ class RPCServer(MethodRegistrar):
         for router in self._routers:
             router.debug = debug
 
+    @property
+    def security_function(self) -> None:
+        """Function that accepts caller details and returns security schemes."""
+        return
+
+    @security_function.setter
+    def security_function(self, value: Optional[SecurityFunction]) -> None:
+        if value is None:
+            return
+        signature = inspect.signature(value)
+        depends_params = {
+            k: v.default
+            for k, v in signature.parameters.items()
+            if isinstance(v.default, DependsModel)
+        }
+        # If len params equals len `Depends` params, no other params accepted.
+        accepts_caller_details = len(signature.parameters) != len(depends_params)
+        self._security_function_details = SecurityFunctionDetails(
+            function=value,
+            depends_params=depends_params,
+            accepts_caller_details=accepts_caller_details,
+        )
+
     def include_router(
         self,
         router: RPCRouter,
@@ -228,24 +263,21 @@ class RPCServer(MethodRegistrar):
         self._routers.append(router)
 
     def process_request(
-        self,
-        data: Union[bytes, str],
-        depends: Optional[dict[str, Any]] = None,
-        security: Optional[dict[str, list[str]]] = None,
+        self, data: Union[bytes, str], caller_details: Optional[Any] = None
     ) -> Optional[str]:
         """Process a JSON-RPC2 request and get the response.
 
         :param data: A JSON-RPC2 request.
-        :param depends: Values passed to functions with dependencies.
-            Values will be passed if the keyname matches the arg name
-            that is a dependency.
-        :param security: Scheme and scopes of method caller.
+        :param caller_details: Values passed to `Depends` and security
+            functions.
         :return: A JSON-RPC2 response or None if the request was a
             notification.
         """
         try:
             log.debug("Processing request: %s", data)
-            resp = self._request_processor.process(data, depends, security)
+            resp = self._request_processor.process(
+                data, caller_details, self._security_function_details
+            )
             if resp:
                 log.debug("Responding: %s", resp)
         except Exception as error:
@@ -254,26 +286,23 @@ class RPCServer(MethodRegistrar):
             return resp
 
     async def process_request_async(
-        self,
-        data: Union[bytes, str],
-        depends: Optional[dict[str, Any]] = None,
-        security: Optional[dict[str, list[str]]] = None,
+        self, data: Union[bytes, str], caller_details: Optional[Any] = None
     ) -> Optional[str]:
         """Process a JSON-RPC2 request and get the response.
 
         If the method called by the request is async it will be awaited.
 
         :param data: A JSON-RPC2 request.
-        :param depends: Values passed to functions with dependencies.
-            Values will be passed if the keyname matches the arg name
-            that is a dependency.
-        :param security: Scheme and scopes of method caller.
+        :param caller_details: Values passed to `Depends` and security
+            functions.
         :return: A JSON-RPC2 response or None if the request was a
             notification.
         """
         try:
             log.debug("Processing request: %s", data)
-            resp = await self._request_processor.process_async(data, depends, security)
+            resp = await self._request_processor.process_async(
+                data, caller_details, self._security_function_details
+            )
             if resp:
                 log.debug("Responding: %s", resp)
         except Exception as error:

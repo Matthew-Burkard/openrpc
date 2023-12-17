@@ -734,7 +734,7 @@ def return_none(optional_param: Optional[str]) -> None:
     return None
 
 
-def take_any_get_any(any_param: Any, dep: str = Depends) -> Any:
+def take_any_get_any(any_param: Any, dep: str = Depends(lambda x: x)) -> Any:
     """Function that takes and returns any type, uses Dep argument."""
     return any_param + dep
 
