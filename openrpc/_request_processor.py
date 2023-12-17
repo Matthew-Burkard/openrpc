@@ -93,9 +93,9 @@ class RequestProcessor:
             return f"[{','.join(results)}]"
 
         # Single Request
-        if parsed_request.method not in self.methods:
-            if isinstance(parsed_request, (Request, ParamsRequest)):
-                return _get_method_not_found_error(parsed_request)
+        if request.method not in self.methods:
+            if isinstance(request, (Request, ParamsRequest)):
+                return _get_method_not_found_error(request)
             return None
         result = MethodProcessor(
             self.methods[parsed_request.method],
