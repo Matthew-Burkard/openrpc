@@ -7,8 +7,17 @@ __all__ = (
     "resolved_annotation",
 )
 
+import dataclasses
 import inspect
-from typing import Any, Callable, ForwardRef, Optional, Type
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    ForwardRef,
+    Optional,
+    Type,
+    Union,
+)
 
 from pydantic import BaseModel
 
@@ -27,7 +36,9 @@ from openrpc._objects import (
     Tag,
 )
 
-SecurityFunction = Callable[..., dict[str, list[str]]]
+SecurityFunction = Union[
+    Callable[..., dict[str, list[str]]], Callable[..., Awaitable[dict[str, list[str]]]]
+]
 
 
 class MethodMetaData(BaseModel):
@@ -59,7 +70,8 @@ class RPCMethod(BaseModel):
     result_model: Type[BaseModel]
 
 
-class SecurityFunctionDetails(BaseModel):
+@dataclasses.dataclass
+class SecurityFunctionDetails:
     """Hold information about the security function."""
 
     function: SecurityFunction

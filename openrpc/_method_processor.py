@@ -8,7 +8,7 @@ import traceback
 from pathlib import Path
 from typing import Any, Callable, Optional, Union
 
-from jsonrpcobjects.errors import InvalidParams, JSONRPCError
+from jsonrpcobjects.errors import InternalError, InvalidParams, JSONRPCError
 from jsonrpcobjects.objects import (
     DataError,
     Error,
@@ -66,7 +66,15 @@ class MethodProcessor:
     def execute(self) -> Optional[str]:
         """Execute the method and get the JSON-RPC2 response."""
         try:
-            result = self._execute()
+            # Get depends values from `Depends` functions.
+            dependencies = self._resolve_depends_params(
+                self.method.depends, self.caller_details
+            )
+            # Raise permission error if any problems with `security_scheme`.
+            self._check_permissions()
+
+            # Get result.
+            result = self._execute(dependencies)
             if isinstance(self.request, (Notification, ParamsNotification)):
                 # If request was notification, return nothing.
                 return None
@@ -81,7 +89,15 @@ class MethodProcessor:
         If the method is an async method it will be awaited.
         """
         try:
-            result = self._execute()
+            # Get depends values from `Depends` functions.
+            dependencies = await self._resolve_depends_params_async(
+                self.method.depends, self.caller_details
+            )
+            # Raise permission error if any problems with `security_scheme`.
+            await self._check_permissions_async()
+
+            # Get result.
+            result = self._execute(dependencies)
             if inspect.isawaitable(result):
                 result = await result
             if isinstance(self.request, (Notification, ParamsNotification)):
@@ -92,18 +108,8 @@ class MethodProcessor:
         except Exception as error:
             return self._get_error_response(error)
 
-    def _execute(self) -> Any:
-        # Get depends values from `Depends` functions.
-        dependencies = self._resolve_depends_params(
-            self.method.depends, self.caller_details
-        )
-
-        # Raise permission error if any problems with `security_scheme`.
-        if error := self._get_permission_error():
-            raise RPCPermissionError(error if self.debug else None)
-
+    def _execute(self, dependencies: dict[str, Any]) -> Any:
         # If permissions are present, call method.
-        params: Optional[Union[dict, list]]
         params_msg = ""
 
         # Call method.
@@ -113,16 +119,16 @@ class MethodProcessor:
             if self.method.metadata.param_structure == ParamStructure.BY_NAME:
                 msg = "Params must be passed by name."
                 raise InvalidParams(msg)
-            params = self._get_list_params(self.request.params)
-            result = self.method.function(*params, **dependencies)
-            params_msg = ", ".join(str(p) for p in params)
+            list_params = self._get_list_params(self.request.params)
+            result = self.method.function(*list_params, **dependencies)
+            params_msg = ", ".join(str(p) for p in list_params)
         else:
             if self.method.metadata.param_structure == ParamStructure.BY_POSITION:
                 msg = "Params must be passed by position."
                 raise InvalidParams(msg)
-            params = self._get_dict_params(self.request.params)
-            result = self.method.function(**params, **dependencies)
-            params_msg = ", ".join(f"{k}={v}" for k, v in params.items())
+            dict_params = self._get_dict_params(self.request.params)
+            result = self.method.function(**dict_params, **dependencies)
+            params_msg = ", ".join(f"{k}={v}" for k, v in dict_params.items())
 
         # Logging
         id_msg = "None"
@@ -182,7 +188,7 @@ class MethodProcessor:
         except ValidationError as e:
             raise InvalidParams(data=str(e)) from e
 
-    def _get_permission_error(self) -> Optional[str]:
+    def _check_permissions(self) -> Optional[str]:
         # Default to permitting if no security is set for method.
         permit = not self.method.metadata.security
         if permit:
@@ -202,6 +208,48 @@ class MethodProcessor:
             )
         else:
             active_scheme = self.security.function(**security_dependencies)
+
+        if inspect.isawaitable(active_scheme):
+            msg = "Must use `process_request_async` if security function is async."
+            raise InternalError(data=msg)
+
+        # MyPy fails to understand `inspect.isawaitable(active_scheme)`.
+        error = self._get_permission_error_from_scheme(active_scheme)  # type: ignore
+        if error:
+            raise RPCPermissionError(error if self.debug else None)
+        return None
+
+    async def _check_permissions_async(self) -> Optional[str]:
+        # Default to permitting if no security is set for method.
+        permit = not self.method.metadata.security
+        if permit:
+            return None
+        if self.security is None:
+            return "No security function has been set for the RPC Server."
+
+        # Get security function depends values.
+        security_dependencies = await self._resolve_depends_params_async(
+            self.security.depends_params, self.caller_details
+        )
+
+        # Get active security scheme.
+        if self.security.accepts_caller_details:
+            result = self.security.function(
+                self.caller_details, **security_dependencies
+            )
+        else:
+            result = self.security.function(**security_dependencies)
+        # Await result if security function is async.
+        active_scheme = await result if inspect.isawaitable(result) else result
+
+        error = self._get_permission_error_from_scheme(active_scheme)
+        if error:
+            raise RPCPermissionError(error if self.debug else None)
+        return None
+
+    def _get_permission_error_from_scheme(
+        self, active_scheme: Optional[dict[str, list[str]]]
+    ) -> Optional[str]:
         if not active_scheme:
             return "No active security schemes for caller."
 
@@ -248,6 +296,37 @@ class MethodProcessor:
                 self._depends[nested_dep.function] = nested_dep.function(
                     **dependency_dependencies
                 )
+
+        # Return values requested now that all values needed are resoled.
+        return {
+            param_name: self._depends[dep.function]
+            for param_name, dep in depends_params.items()
+        }
+
+    async def _resolve_depends_params_async(
+        self, depends_params: dict[str, DependsModel], caller_details: Any
+    ) -> dict[str, Any]:
+        # Resolve values of nested `Depends` parameters.
+        for nested_dep in depends_params.values():
+            # If this dependency value is already resolved, continue.
+            if self._depends.get(nested_dep.function):
+                continue
+            # Resolve nested dependencies of nested dependency.
+            dependency_dependencies = {}
+            if nested_dep.depends_params:
+                dependency_dependencies = self._resolve_depends_params(
+                    nested_dep.depends_params, caller_details
+                )
+            # Resolve nested dependency.
+            if nested_dep.accepts_caller_details:
+                result = nested_dep.function(caller_details, **dependency_dependencies)
+            else:
+                result = nested_dep.function(**dependency_dependencies)
+
+            # Await result if `Depends` function is async.
+            self._depends[nested_dep.function] = (
+                await result if inspect.isawaitable(result) else result
+            )
 
         # Return values requested now that all values needed are resoled.
         return {

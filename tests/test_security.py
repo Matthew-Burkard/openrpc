@@ -1,5 +1,5 @@
 """Unit tests for permissions."""
-
+import pytest
 from jsonrpcobjects.objects import ErrorResponse, ResultResponse
 
 from openrpc import Depends, OAuth2, OAuth2Flow, OAuth2FlowType, RPCServer
@@ -220,5 +220,57 @@ def test_nested_depends() -> None:
     nested_depends_rpc.method()(_rpc_method)
     request = '{"id": 1, "method": "_rpc_method", "jsonrpc": "2.0"}'
     response = util.parse_response(nested_depends_rpc.process_request(request))
+    assert counter == 1
+    assert response.result == 15
+
+
+@pytest.mark.asyncio
+async def test_async_security_function() -> None:
+    async def awaitable_security(
+        caller_details: dict[str, list[str]]
+    ) -> dict[str, list[str]]:
+        """Return details given."""
+        return caller_details
+
+    async_rpc = RPCServer(
+        security_schemes=security, security_function=awaitable_security, debug=True
+    )
+
+    @async_rpc.method(security={"mocha": []})
+    def add(a: int, b: int) -> int:
+        """Add two integers."""
+        return a + b
+
+    request = '{"id": 1, "method": "add", "params": [2, 2], "jsonrpc": "2.0"}'
+    response = util.parse_response(
+        await async_rpc.process_request_async(request, caller_details={"mocha": []})
+    )
+    print(response)
+    assert response.result == 4
+
+
+@pytest.mark.asyncio
+async def test_nested_depends_async() -> None:
+    counter = 0
+
+    async def _depends_a() -> int:
+        nonlocal counter
+        counter += 1
+        return 5
+
+    async def _depends_b(a: int = Depends(_depends_a)) -> int:
+        return a * 2
+
+    async def _rpc_method(
+        a: int = Depends(_depends_a), b: int = Depends(_depends_b)
+    ) -> int:
+        return a + b
+
+    nested_depends_rpc = RPCServer(debug=True)
+    nested_depends_rpc.method()(_rpc_method)
+    request = '{"id": 1, "method": "_rpc_method", "jsonrpc": "2.0"}'
+    response = util.parse_response(
+        await nested_depends_rpc.process_request_async(request)
+    )
     assert counter == 1
     assert response.result == 15

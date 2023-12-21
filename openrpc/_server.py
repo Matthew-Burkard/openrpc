@@ -191,9 +191,11 @@ class RPCServer(MethodRegistrar):
             router.debug = debug
 
     @property
-    def security_function(self) -> None:
+    def security_function(self) -> Optional[SecurityFunction]:
         """Function that accepts caller details and returns security schemes."""
-        return
+        if self._security_function_details:
+            return self._security_function_details.function
+        return None
 
     @security_function.setter
     def security_function(self, value: Optional[SecurityFunction]) -> None:
