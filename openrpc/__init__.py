@@ -27,10 +27,12 @@ __all__ = (
     "Schema",
     "SchemaType",
     "Server",
+    "SecurityFunction",
     "ServerVariable",
     "Tag",
 )
 
+from openrpc._common import SecurityFunction
 from openrpc._depends import Depends
 from openrpc._objects import (
     APIKeyAuth,
