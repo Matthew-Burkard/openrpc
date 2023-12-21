@@ -259,6 +259,20 @@ async def test_async_security_function() -> None:
 
 
 @pytest.mark.asyncio
+async def test_async_no_caller() -> None:
+    async def _awaitable_security() -> dict[str, list[str]]:
+        return {"a": []}
+
+    async_rpc = RPCServer(
+        security_schemes=security, security_function=_awaitable_security, debug=True
+    )
+    async_rpc.method(security={"a": []})(add)
+    request = '{"id": 1, "method": "add", "params": [2, 2], "jsonrpc": "2.0"}'
+    response = util.parse_response(await async_rpc.process_request_async(request))
+    assert response.result == 4
+
+
+@pytest.mark.asyncio
 async def test_nested_depends_async() -> None:
     counter = 0
 

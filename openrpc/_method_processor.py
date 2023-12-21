@@ -279,23 +279,23 @@ class MethodProcessor:
         self, depends_params: dict[str, DependsModel], caller_details: Any
     ) -> dict[str, Any]:
         # Resolve values of nested `Depends` parameters.
-        for nested_dep in depends_params.values():
+        for dependency in depends_params.values():
             # If this dependency value is already resolved, continue.
-            if self._depends.get(nested_dep.function):
+            if self._depends.get(dependency.function):
                 continue
             # Resolve nested dependencies of nested dependency.
             dependency_dependencies = {}
-            if nested_dep.depends_params:
+            if dependency.depends_params:
                 dependency_dependencies = self._resolve_depends_params(
-                    nested_dep.depends_params, caller_details
+                    dependency.depends_params, caller_details
                 )
             # Resolve nested dependency.
-            if nested_dep.accepts_caller_details:
-                self._depends[nested_dep.function] = nested_dep.function(
+            if dependency.accepts_caller_details:
+                self._depends[dependency.function] = dependency.function(
                     caller_details, **dependency_dependencies
                 )
             else:
-                self._depends[nested_dep.function] = nested_dep.function(
+                self._depends[dependency.function] = dependency.function(
                     **dependency_dependencies
                 )
 
@@ -309,24 +309,24 @@ class MethodProcessor:
         self, depends_params: dict[str, DependsModel], caller_details: Any
     ) -> dict[str, Any]:
         # Resolve values of nested `Depends` parameters.
-        for nested_dep in depends_params.values():
+        for dependency in depends_params.values():
             # If this dependency value is already resolved, continue.
-            if self._depends.get(nested_dep.function):
+            if self._depends.get(dependency.function):
                 continue
             # Resolve nested dependencies of nested dependency.
             dependency_dependencies = {}
-            if nested_dep.depends_params:
-                dependency_dependencies = self._resolve_depends_params(
-                    nested_dep.depends_params, caller_details
+            if dependency.depends_params:
+                dependency_dependencies = await self._resolve_depends_params_async(
+                    dependency.depends_params, caller_details
                 )
             # Resolve nested dependency.
-            if nested_dep.accepts_caller_details:
-                result = nested_dep.function(caller_details, **dependency_dependencies)
+            if dependency.accepts_caller_details:
+                result = dependency.function(caller_details, **dependency_dependencies)
             else:
-                result = nested_dep.function(**dependency_dependencies)
+                result = dependency.function(**dependency_dependencies)
 
             # Await result if `Depends` function is async.
-            self._depends[nested_dep.function] = (
+            self._depends[dependency.function] = (
                 await result if inspect.isawaitable(result) else result
             )
 
