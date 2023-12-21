@@ -194,7 +194,8 @@ class MethodProcessor:
         if permit:
             return None
         if self.security is None:
-            return "No security function has been set for the RPC Server."
+            msg = "No security function has been set for the RPC Server."
+            raise RPCPermissionError(msg if self.debug else None)
 
         # Get security function depends values.
         security_dependencies = self._resolve_depends_params(
@@ -225,7 +226,8 @@ class MethodProcessor:
         if permit:
             return None
         if self.security is None:
-            return "No security function has been set for the RPC Server."
+            msg = "No security function has been set for the RPC Server."
+            raise RPCPermissionError(msg if self.debug else None)
 
         # Get security function depends values.
         security_dependencies = await self._resolve_depends_params_async(

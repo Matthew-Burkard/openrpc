@@ -171,12 +171,18 @@ def test_security_no_caller_details() -> None:
         """Add two integers."""
         return a + b
 
-    no_cd_rpc = RPCServer(
-        security_schemes=security, security_function=_security_function, debug=True
-    )
+    no_cd_rpc = RPCServer(security_schemes=security)
     no_cd_rpc.method(security={"apikey": ["pickle"]})(add)
     request = '{"id": 1, "method": "add", "params": [2, 2], "jsonrpc": "2.0"}'
     response = util.parse_response(no_cd_rpc.process_request(request))
+    assert no_cd_rpc.security_function is None
+    assert isinstance(response, ErrorResponse)
+    assert response.error.message == "Permission error"
+
+    no_cd_rpc.security_function = _security_function
+    request = '{"id": 1, "method": "add", "params": [2, 2], "jsonrpc": "2.0"}'
+    response = util.parse_response(no_cd_rpc.process_request(request))
+    assert no_cd_rpc.security_function is not None
     assert response.result == 4
 
 
@@ -245,7 +251,6 @@ async def test_async_security_function() -> None:
     response = util.parse_response(
         await async_rpc.process_request_async(request, caller_details={"mocha": []})
     )
-    print(response)
     assert response.result == 4
 
 
