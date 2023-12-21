@@ -20,6 +20,11 @@ security = {
 rpc = RPCServer(security_schemes=security, security_function=lambda x: x, debug=True)
 
 
+def add(a: int, b: int) -> int:
+    """Add two integers."""
+    return a + b
+
+
 @rpc.method(security={"oauth2": ["coffee", "mocha"]})
 def permission_method() -> None:
     """Method requiring a permission."""
@@ -167,10 +172,6 @@ def test_security_no_caller_details() -> None:
     def _security_function() -> dict[str, list[str]]:
         return {"apikey": ["pickle"]}
 
-    def add(a: int, b: int) -> int:
-        """Add two integers."""
-        return a + b
-
     no_cd_rpc = RPCServer(security_schemes=security)
     no_cd_rpc.method(security={"apikey": ["pickle"]})(add)
     request = '{"id": 1, "method": "add", "params": [2, 2], "jsonrpc": "2.0"}'
@@ -194,10 +195,6 @@ def test_security_only_depends() -> None:
         depends: dict[str, list[str]] = Depends(_depends)
     ) -> dict[str, list[str]]:
         return depends
-
-    def add(a: int, b: int) -> int:
-        """Add two integers."""
-        return a + b
 
     only_depends_rpc = RPCServer(
         security_schemes=security, security_function=_security, debug=True
@@ -232,20 +229,27 @@ def test_nested_depends() -> None:
 
 @pytest.mark.asyncio
 async def test_async_security_function() -> None:
-    async def awaitable_security(
+    async def _awaitable_security(
         caller_details: dict[str, list[str]]
     ) -> dict[str, list[str]]:
-        """Return details given."""
         return caller_details
 
-    async_rpc = RPCServer(
-        security_schemes=security, security_function=awaitable_security, debug=True
-    )
+    async_rpc = RPCServer(security_schemes=security, debug=True)
+    async_rpc.method(security={"mocha": []})(add)
 
-    @async_rpc.method(security={"mocha": []})
-    def add(a: int, b: int) -> int:
-        """Add two integers."""
-        return a + b
+    request = '{"id": 1, "method": "add", "params": [2, 2], "jsonrpc": "2.0"}'
+    response = util.parse_response(await async_rpc.process_request_async(request))
+    assert isinstance(response, ErrorResponse)
+    assert response.error.message == "Permission error"
+
+    async_rpc.security_function = _awaitable_security
+
+    request = '{"id": 1, "method": "add", "params": [2, 2], "jsonrpc": "2.0"}'
+    response = util.parse_response(
+        await async_rpc.process_request_async(request, caller_details={"coffee": []})
+    )
+    assert isinstance(response, ErrorResponse)
+    assert response.error.message == "Permission error"
 
     request = '{"id": 1, "method": "add", "params": [2, 2], "jsonrpc": "2.0"}'
     response = util.parse_response(
@@ -279,3 +283,15 @@ async def test_nested_depends_async() -> None:
     )
     assert counter == 1
     assert response.result == 15
+
+
+def test_async_security_error() -> None:
+    async def _security() -> dict[str, list[str]]:
+        return {"a": []}
+
+    async_error_rpc = RPCServer(security_function=_security, debug=True)
+    async_error_rpc.method(security={"a": []})(add)
+    request = '{"id": 1, "method": "add", "params": [2, 2], "jsonrpc": "2.0"}'
+    response = util.parse_response(async_error_rpc.process_request(request))
+    assert isinstance(response, ErrorResponse)
+    assert response.error.message == "Internal error"
