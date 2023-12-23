@@ -66,12 +66,12 @@ class MethodProcessor:
     def execute(self) -> Optional[str]:
         """Execute the method and get the JSON-RPC2 response."""
         try:
+            # Raise permission error if any problems with `security_scheme`.
+            self._check_permissions()
             # Get depends values from `Depends` functions.
             dependencies = self._resolve_depends_params(
                 self.method.depends, self.caller_details
             )
-            # Raise permission error if any problems with `security_scheme`.
-            self._check_permissions()
 
             # Get result.
             result = self._execute(dependencies)
@@ -89,12 +89,12 @@ class MethodProcessor:
         If the method is an async method it will be awaited.
         """
         try:
+            # Raise permission error if any problems with `security_scheme`.
+            await self._check_permissions_async()
             # Get depends values from `Depends` functions.
             dependencies = await self._resolve_depends_params_async(
                 self.method.depends, self.caller_details
             )
-            # Raise permission error if any problems with `security_scheme`.
-            await self._check_permissions_async()
 
             # Get result.
             result = self._execute(dependencies)
