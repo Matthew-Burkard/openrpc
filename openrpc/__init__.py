@@ -30,9 +30,10 @@ __all__ = (
     "SecurityFunction",
     "ServerVariable",
     "Tag",
+    "Undefined",
 )
 
-from openrpc._common import SecurityFunction
+from openrpc._common import SecurityFunction, Undefined
 from openrpc._depends import Depends
 from openrpc._objects import (
     APIKeyAuth,

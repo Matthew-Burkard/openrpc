@@ -5,7 +5,6 @@ import re
 from typing import get_args, Iterable, Optional
 
 import lorem_pysum
-from pydantic_core import PydanticUndefined
 
 from openrpc import ContentDescriptor, Example, ExamplePairing, Method, Schema
 from openrpc._common import RPCMethod
@@ -81,11 +80,11 @@ def _get_params(rpc_method: RPCMethod) -> list[ContentDescriptor]:
     }
     descriptors = []
     params_schema_properties = rpc_method.params_model.model_json_schema()["properties"]
-    for name, field in rpc_method.params_model.model_fields.items():
+    for name in rpc_method.params_model.model_fields:
         descriptor = ContentDescriptor(
             name=name,
             schema=Schema(**params_schema_properties[name]),
-            required=field.default is PydanticUndefined,
+            required=name in rpc_method.required,
         )
         if description := param_descriptions.get(name):
             descriptor.description = description

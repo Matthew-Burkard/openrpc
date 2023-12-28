@@ -4,6 +4,7 @@ __all__ = (
     "RPCMethod",
     "SecurityFunction",
     "SecurityFunctionDetails",
+    "Undefined",
     "resolved_annotation",
 )
 
@@ -68,6 +69,7 @@ class RPCMethod(BaseModel):
     depends: dict[str, DependsModel]
     params_model: Type[BaseModel]
     result_model: Type[BaseModel]
+    required: list[str]
 
 
 @dataclasses.dataclass
@@ -88,3 +90,13 @@ def resolved_annotation(annotation: Any, function: Callable) -> Any:
         annotation = ForwardRef(annotation)
         annotation = evaluate_forwardref(annotation, globalns, globalns)
     return type(None) if annotation is None else annotation
+
+
+class _Undefined:
+    """Undefined type."""
+
+    def __bool__(self) -> bool:
+        return False
+
+
+Undefined = _Undefined()
