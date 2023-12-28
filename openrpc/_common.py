@@ -99,4 +99,4 @@ class _Undefined:
         return False
 
 
-Undefined = _Undefined()
+Undefined: Any = _Undefined()
