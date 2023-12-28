@@ -56,6 +56,5 @@ def test_future() -> None:
     # Result
     assert method["result"] == {
         "name": "result",
-        "required": True,
         "schema": {"items": {"type": "string"}, "type": "array", "title": "Result"},
     }

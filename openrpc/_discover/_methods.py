@@ -2,7 +2,7 @@
 __all__ = ("get_methods",)
 
 import re
-from typing import get_args, Iterable, Optional
+from typing import Iterable, Optional
 
 import lorem_pysum
 
@@ -57,14 +57,12 @@ def get_methods(rpc_methods: Iterable[RPCMethod]) -> list[Method]:
 
 
 def _get_result(rpc_method: RPCMethod) -> ContentDescriptor:
-    result_field = rpc_method.result_model.model_fields["result"]
     result_description = re.findall(
         return_pattern, re.sub(r"\n +", " ", rpc_method.function.__doc__ or "")
     )
     descriptor = ContentDescriptor(
         name="result",
         schema=rpc_method.result_model.model_json_schema()["properties"]["result"],
-        required=NoneType not in get_args(result_field),
     )
     if result_description:
         descriptor.description = result_description[0].strip()
