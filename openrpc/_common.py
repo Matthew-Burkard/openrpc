@@ -95,8 +95,18 @@ def resolved_annotation(annotation: Any, function: Callable) -> Any:
 class _Undefined:
     """Undefined type."""
 
+    __instance: Optional["_Undefined"] = None
+
     def __bool__(self) -> bool:
         return False
 
+    @staticmethod
+    def _get_instance() -> "_Undefined":
+        """Get the instance of _Undefined."""
+        if _Undefined.__instance is None:
+            _Undefined.__instance = _Undefined()
+        return _Undefined.__instance
 
-Undefined: Any = _Undefined()
+
+# noinspection PyProtectedMember
+Undefined: Any = _Undefined._get_instance()

@@ -153,7 +153,7 @@ class MethodRegistrar:
             )
 
         # Params model.
-        param_model = create_model(f"{metadata.name}Params", **fields)
+        param_model = create_model(f"{metadata.name}Params", **fields)  # type: ignore
 
         # Result Model
         result_model = create_model(
