@@ -1,6 +1,6 @@
 """Module providing class to handle middleware dependencies."""
 import inspect
-from typing import Callable
+from typing import Any, Callable
 
 from pydantic import BaseModel
 
@@ -13,7 +13,7 @@ class DependsModel(BaseModel):
     accepts_caller_details: bool
 
 
-def _depends(function: Callable) -> DependsModel:
+def _depends(function: Callable) -> DependsModel | Any:
     signature = inspect.signature(function)
     depends_params = {
         k: v.default
