@@ -47,3 +47,10 @@ async def get_response_async(
     resp = await rpc.process_request_async(request, middleware_args)
     assert resp is not None
     return json.loads(resp)
+
+
+def get_request(method: str, params: Optional[str] = None) -> str:
+    """Get a request string."""
+    if params is None:
+        return f'{{"id": 1, "method": "{method}", "jsonrpc": "2.0"}}'
+    return f'{{"id": 1, "method": "{method}", "params": {params}, "jsonrpc": "2.0"}}'

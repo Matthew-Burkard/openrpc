@@ -77,8 +77,10 @@ def _get_params(rpc_method: RPCMethod) -> list[ContentDescriptor]:
         )
     }
     descriptors = []
-    params_schema_properties = rpc_method.params_model.model_json_schema()["properties"]
-    for name in rpc_method.params_model.model_fields:
+    params_schema_properties = rpc_method.params_schema_model.model_json_schema()[
+        "properties"
+    ]
+    for name in rpc_method.params_schema_model.model_fields:
         descriptor = ContentDescriptor(
             name=name,
             schema=Schema(**params_schema_properties[name]),
@@ -92,7 +94,9 @@ def _get_params(rpc_method: RPCMethod) -> list[ContentDescriptor]:
 
 
 def _get_example(rpc_method: RPCMethod) -> ExamplePairing:
-    param_values = lorem_pysum.generate(rpc_method.params_model, explicit_default=True)
+    param_values = lorem_pysum.generate(
+        rpc_method.params_schema_model, explicit_default=True
+    )
     params = [
         Example(name=name, value=getattr(param_values, name))
         for name in param_values.model_fields

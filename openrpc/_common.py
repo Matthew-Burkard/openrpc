@@ -67,6 +67,8 @@ class RPCMethod(BaseModel):
     function: Callable
     metadata: MethodMetaData
     depends: dict[str, DependsModel]
+    # Schema model needed to support Undefined.
+    params_schema_model: Type[BaseModel]
     params_model: Type[BaseModel]
     result_model: Type[BaseModel]
     required: list[str]

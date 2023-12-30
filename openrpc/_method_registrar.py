@@ -132,10 +132,11 @@ class MethodRegistrar:
     def _method(self, function: CallableType, metadata: MethodMetaData) -> CallableType:
         signature = inspect.signature(function)
 
+        # Get field information from each method parameter.
         depends = {}
         fields = {}
+        schema_fields = {}
         required = []
-
         for param_name, param in signature.parameters.items():
             if isinstance(param.default, DependsModel):
                 depends[param_name] = param.default
@@ -143,17 +144,28 @@ class MethodRegistrar:
             if param.default is inspect.Signature.empty:
                 required.append(param_name)
                 default = ...
+                schema_default = ...
             elif param.default is Undefined:
-                default = ...
+                default = Undefined
+                schema_default = ...
             else:
                 default = param.default
+                schema_default = param.default
             fields[param_name] = (
                 resolved_annotation(param.annotation, function),
                 default,
             )
+            schema_fields[param_name] = (
+                resolved_annotation(param.annotation, function),
+                schema_default,
+            )
 
         # Params model.
         param_model = create_model(f"{metadata.name}Params", **fields)  # type: ignore
+        # Params model.
+        param_schema_model = create_model(  # type: ignore
+            f"{metadata.name}Params", **schema_fields
+        )
 
         # Result Model
         result_model = create_model(
@@ -167,6 +179,7 @@ class MethodRegistrar:
             metadata=metadata,
             depends=depends,
             params_model=param_model,
+            params_schema_model=param_schema_model,
             result_model=result_model,
             required=required,
         )
