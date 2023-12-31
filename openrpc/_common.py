@@ -1,14 +1,31 @@
 """Provides classes for storing RPC method data."""
-__all__ = ("MethodMetaData", "RPCMethod", "resolved_annotation")
+__all__ = (
+    "MethodMetaData",
+    "RPCMethod",
+    "SecurityFunction",
+    "SecurityFunctionDetails",
+    "Undefined",
+    "resolved_annotation",
+)
 
+import dataclasses
 import inspect
-from typing import Any, Callable, ForwardRef, Optional, Type
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    ForwardRef,
+    Optional,
+    Type,
+    Union,
+)
 
 from pydantic import BaseModel
 
 # noinspection PyProtectedMember
 from pydantic.v1.typing import evaluate_forwardref
 
+from openrpc._depends import DependsModel
 from openrpc._objects import (
     ContentDescriptor,
     Error,
@@ -19,6 +36,10 @@ from openrpc._objects import (
     Server,
     Tag,
 )
+
+SecurityFunction = Union[
+    Callable[..., dict[str, list[str]]], Callable[..., Awaitable[dict[str, list[str]]]]
+]
 
 
 class MethodMetaData(BaseModel):
@@ -45,9 +66,21 @@ class RPCMethod(BaseModel):
 
     function: Callable
     metadata: MethodMetaData
-    depends_params: list[str]
+    depends: dict[str, DependsModel]
+    # Schema model needed to support Undefined.
+    params_schema_model: Type[BaseModel]
     params_model: Type[BaseModel]
     result_model: Type[BaseModel]
+    required: list[str]
+
+
+@dataclasses.dataclass
+class SecurityFunctionDetails:
+    """Hold information about the security function."""
+
+    function: SecurityFunction
+    depends_params: dict[str, DependsModel]
+    accepts_caller_details: bool
 
 
 def resolved_annotation(annotation: Any, function: Callable) -> Any:
@@ -59,3 +92,23 @@ def resolved_annotation(annotation: Any, function: Callable) -> Any:
         annotation = ForwardRef(annotation)
         annotation = evaluate_forwardref(annotation, globalns, globalns)
     return type(None) if annotation is None else annotation
+
+
+class _Undefined:
+    """Undefined type."""
+
+    __instance: Optional["_Undefined"] = None
+
+    def __bool__(self) -> bool:
+        return False
+
+    @staticmethod
+    def _get_instance() -> "_Undefined":
+        """Get the instance of _Undefined."""
+        if _Undefined.__instance is None:
+            _Undefined.__instance = _Undefined()
+        return _Undefined.__instance
+
+
+# noinspection PyProtectedMember
+Undefined: Any = _Undefined._get_instance()

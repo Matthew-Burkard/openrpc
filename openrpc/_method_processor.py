@@ -6,9 +6,9 @@ import inspect
 import logging
 import traceback
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Callable, Optional, Union
 
-from jsonrpcobjects.errors import InvalidParams, JSONRPCError
+from jsonrpcobjects.errors import InternalError, InvalidParams, JSONRPCError
 from jsonrpcobjects.objects import (
     DataError,
     Error,
@@ -25,7 +25,8 @@ from jsonrpcobjects.objects import (
 from pydantic import ValidationError
 
 from openrpc import ParamStructure
-from openrpc._common import RPCMethod
+from openrpc._common import RPCMethod, SecurityFunctionDetails
+from openrpc._depends import DependsModel
 from openrpc._objects import RPCPermissionError
 
 log = logging.getLogger("openrpc")
@@ -39,8 +40,8 @@ class MethodProcessor:
         method: RPCMethod,
         uncaught_error_code: int,
         request: Union[RequestType, NotificationType],
-        depends_values: Optional[dict[str, Any]],
-        security: Optional[dict[str, list[str]]],
+        caller_details: Optional[Any],
+        security: Optional[SecurityFunctionDetails],
         *,
         debug: bool,
     ) -> None:
@@ -49,21 +50,31 @@ class MethodProcessor:
         :param method: The Python callable.
         :param uncaught_error_code: Code for errors raised by method.
         :param request: Request to execute.
-        :param depends_values: Values passed to functions with dependencies.
-        :param security: Scheme and scopes of method caller.
+        :param caller_details: Values passed to functions with
+            dependencies and security functions.
+        :param security: Server security function details.
         :param debug: Include internal error details in responses.
         """
         self.debug = debug
         self.method = method
         self.request = request
         self.uncaught_error_code = uncaught_error_code
-        self.depends = depends_values or {}
-        self.security = security or {}
+        self.caller_details = caller_details
+        self.security = security
+        self._depends: dict[Callable, Any] = {}
 
     def execute(self) -> Optional[str]:
         """Execute the method and get the JSON-RPC2 response."""
         try:
-            result = self._execute()
+            # Raise permission error if any problems with `security_scheme`.
+            self._check_permissions()
+            # Get depends values from `Depends` functions.
+            dependencies = self._resolve_depends_params(
+                self.method.depends, self.caller_details
+            )
+
+            # Get result.
+            result = self._execute(dependencies)
             if isinstance(self.request, (Notification, ParamsNotification)):
                 # If request was notification, return nothing.
                 return None
@@ -78,7 +89,15 @@ class MethodProcessor:
         If the method is an async method it will be awaited.
         """
         try:
-            result = self._execute()
+            # Raise permission error if any problems with `security_scheme`.
+            await self._check_permissions_async()
+            # Get depends values from `Depends` functions.
+            dependencies = await self._resolve_depends_params_async(
+                self.method.depends, self.caller_details
+            )
+
+            # Get result.
+            result = self._execute(dependencies)
             if inspect.isawaitable(result):
                 result = await result
             if isinstance(self.request, (Notification, ParamsNotification)):
@@ -89,21 +108,10 @@ class MethodProcessor:
         except Exception as error:
             return self._get_error_response(error)
 
-    def _execute(self) -> Any:
-        if not self._check_permissions():
-            raise RPCPermissionError()
+    def _execute(self, dependencies: dict[str, Any]) -> Any:
         # If permissions are present, call method.
-        params: Optional[Union[dict, list]]
         params_msg = ""
-        missing_dependencies = [
-            k for k in self.method.depends_params if k not in self.depends
-        ]
-        if missing_dependencies:
-            raise AttributeError(
-                "Missing dependent values %s for method [%s]"
-                % (missing_dependencies, self.method.metadata.name)
-            )
-        dependencies = {k: self.depends.get(k) for k in self.method.depends_params}
+
         # Call method.
         if isinstance(self.request, (Request, Notification)):
             result = self.method.function(**dependencies)
@@ -111,16 +119,16 @@ class MethodProcessor:
             if self.method.metadata.param_structure == ParamStructure.BY_NAME:
                 msg = "Params must be passed by name."
                 raise InvalidParams(msg)
-            params = self._get_list_params(self.request.params)
-            result = self.method.function(*params, **dependencies)
-            params_msg = ", ".join(str(p) for p in params)
+            list_params = self._get_list_params(self.request.params)
+            result = self.method.function(*list_params, **dependencies)
+            params_msg = ", ".join(str(p) for p in list_params)
         else:
             if self.method.metadata.param_structure == ParamStructure.BY_POSITION:
                 msg = "Params must be passed by position."
                 raise InvalidParams(msg)
-            params = self._get_dict_params(self.request.params)
-            result = self.method.function(**params, **dependencies)
-            params_msg = ", ".join(f"{k}={v}" for k, v in params.items())
+            dict_params = self._get_dict_params(self.request.params)
+            result = self.method.function(**dict_params, **dependencies)
+            params_msg = ", ".join(f"{k}={v}" for k, v in dict_params.items())
 
         # Logging
         id_msg = "None"
@@ -180,17 +188,153 @@ class MethodProcessor:
         except ValidationError as e:
             raise InvalidParams(data=str(e)) from e
 
-    def _check_permissions(self) -> bool:
+    def _check_permissions(self) -> Optional[str]:
         # Default to permitting if no security is set for method.
         permit = not self.method.metadata.security
+        if permit:
+            return None
+        if self.security is None:
+            msg = "No security function has been set for the RPC Server."
+            raise RPCPermissionError(msg if self.debug else None)
+
+        # Get security function depends values.
+        security_dependencies = self._resolve_depends_params(
+            self.security.depends_params, self.caller_details
+        )
+
+        # Get active security scheme.
+        if self.security.accepts_caller_details:
+            active_scheme = self.security.function(
+                self.caller_details, **security_dependencies
+            )
+        else:
+            active_scheme = self.security.function(**security_dependencies)
+
+        if inspect.isawaitable(active_scheme):
+            msg = "Must use `process_request_async` if security function is async."
+            raise InternalError(data=msg)
+
+        # MyPy fails to understand `inspect.isawaitable(active_scheme)`.
+        error = self._get_permission_error_from_scheme(active_scheme)  # type: ignore
+        if error:
+            raise RPCPermissionError(error if self.debug else None)
+        return None
+
+    async def _check_permissions_async(self) -> Optional[str]:
+        # Default to permitting if no security is set for method.
+        permit = not self.method.metadata.security
+        if permit:
+            return None
+        if self.security is None:
+            msg = "No security function has been set for the RPC Server."
+            raise RPCPermissionError(msg if self.debug else None)
+
+        # Get security function depends values.
+        security_dependencies = await self._resolve_depends_params_async(
+            self.security.depends_params, self.caller_details
+        )
+
+        # Get active security scheme.
+        if self.security.accepts_caller_details:
+            result = self.security.function(
+                self.caller_details, **security_dependencies
+            )
+        else:
+            result = self.security.function(**security_dependencies)
+        # Await result if security function is async.
+        active_scheme = await result if inspect.isawaitable(result) else result
+
+        error = self._get_permission_error_from_scheme(active_scheme)
+        if error:
+            raise RPCPermissionError(error if self.debug else None)
+        return None
+
+    def _get_permission_error_from_scheme(
+        self, active_scheme: Optional[dict[str, list[str]]]
+    ) -> Optional[str]:
+        if not active_scheme:
+            return "No active security schemes for caller."
+
+        missing_scopes = {}
         # If any scheme and scopes are matched, permit method call.
         for method_scheme, method_scopes in self.method.metadata.security.items():
-            call_scopes = self.security.get(method_scheme)
+            call_scopes = active_scheme.get(method_scheme)
             if call_scopes is None:
+                missing_scopes[method_scheme] = method_scopes
                 continue
-            if all(scope in call_scopes for scope in method_scopes):
-                permit = True
-        return permit
+            missing_scopes[method_scheme] = [
+                scope for scope in method_scopes if scope not in call_scopes
+            ]
+            if not missing_scopes[method_scheme]:
+                return None
+
+        # Get string describing missing scopes.
+        details = "\n\t".join(
+            f"{scheme}: {scopes}" for scheme, scopes in missing_scopes.items()
+        )
+
+        return f"No scheme had all scopes met by caller.\nMissing scopes:\n\t{details}"
+
+    def _resolve_depends_params(
+        self, depends_params: dict[str, DependsModel], caller_details: Any
+    ) -> dict[str, Any]:
+        # Resolve values of nested `Depends` parameters.
+        for dependency in depends_params.values():
+            # If this dependency value is already resolved, continue.
+            if self._depends.get(dependency.function):
+                continue
+            # Resolve nested dependencies of nested dependency.
+            dependency_dependencies = {}
+            if dependency.depends_params:
+                dependency_dependencies = self._resolve_depends_params(
+                    dependency.depends_params, caller_details
+                )
+            # Resolve nested dependency.
+            if dependency.accepts_caller_details:
+                self._depends[dependency.function] = dependency.function(
+                    caller_details, **dependency_dependencies
+                )
+            else:
+                self._depends[dependency.function] = dependency.function(
+                    **dependency_dependencies
+                )
+
+        # Return values requested now that all values needed are resoled.
+        return {
+            param_name: self._depends[dep.function]
+            for param_name, dep in depends_params.items()
+        }
+
+    async def _resolve_depends_params_async(
+        self, depends_params: dict[str, DependsModel], caller_details: Any
+    ) -> dict[str, Any]:
+        # Resolve values of nested `Depends` parameters.
+        for dependency in depends_params.values():
+            # If this dependency value is already resolved, continue.
+            if self._depends.get(dependency.function):
+                continue
+            # Resolve nested dependencies of nested dependency.
+            dependency_dependencies = {}
+            if dependency.depends_params:
+                dependency_dependencies = await self._resolve_depends_params_async(
+                    dependency.depends_params, caller_details
+                )
+            # Resolve nested dependency.
+            if dependency.accepts_caller_details:
+                result = dependency.function(caller_details, **dependency_dependencies)
+            else:
+                result = dependency.function(**dependency_dependencies)
+
+            # Await result if `Depends` function is async.
+            self._depends[dependency.function] = (
+                await result if inspect.isawaitable(result) else result
+            )
+
+        # Return values requested now that all values needed are resoled.
+        return {
+            param_name: self._depends[dep.function]
+            for param_name, dep in depends_params.items()
+        }
 
 
 def _get_trimmed_traceback(error: Exception) -> str:

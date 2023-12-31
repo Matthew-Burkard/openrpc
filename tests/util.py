@@ -32,18 +32,25 @@ def parse_response(data: Union[bytes, str]) -> ResponseType:
 
 
 def get_response(
-    rpc: RPCServer, request: str, depends: Optional[dict[str, Any]] = None
+    rpc: RPCServer, request: str, middleware_args: Optional[Any] = None
 ) -> dict[str, Any]:
     """Process request asserting that there is a `str` response."""
-    resp = rpc.process_request(request, depends)
+    resp = rpc.process_request(request, middleware_args)
     assert resp is not None
     return json.loads(resp)
 
 
 async def get_response_async(
-    rpc: RPCServer, request: str, depends: Optional[dict[str, Any]] = None
+    rpc: RPCServer, request: str, middleware_args: Optional[Any] = None
 ) -> dict[str, Any]:
     """Process request asserting that there is a `str` response."""
-    resp = await rpc.process_request_async(request, depends)
+    resp = await rpc.process_request_async(request, middleware_args)
     assert resp is not None
     return json.loads(resp)
+
+
+def get_request(method: str, params: Optional[str] = None) -> str:
+    """Get a request string."""
+    if params is None:
+        return f'{{"id": 1, "method": "{method}", "jsonrpc": "2.0"}}'
+    return f'{{"id": 1, "method": "{method}", "params": {params}, "jsonrpc": "2.0"}}'

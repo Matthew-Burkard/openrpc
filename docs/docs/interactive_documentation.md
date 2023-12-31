@@ -16,21 +16,19 @@ First, install Tabella and uvicorn.
 
 Pip
 ```shell
-pip install tabella uvicorn
+pip install tabella
 ````
 Poetry
 ```shell
-poetry add tabella uvicorn
+poetry add tabella
 ```
 
 Run:
 
 ```python
-import uvicorn
-from openrpc import RPCServer
-import tabella
+from tabella import Tabella
 
-rpc = RPCServer(title="DemoServer", version="1.0.0")
+rpc = Tabella(title="DemoServer", version="1.0.0")
 
 
 @rpc.method()
@@ -38,10 +36,8 @@ async def add(a: int, b: int) -> int:
     return a + b
 
 
-app = tabella.get_app(rpc)
-
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    rpc.run()
 ```
 Then open http://127.0.0.1:8000/ to see the auto generated documentation.
 

@@ -55,7 +55,6 @@ def test_register_enum_using_method() -> None:
     result = {
         "name": "result",
         "schema": {"$ref": "#/components/schemas/EnumExampleWithNull"},
-        "required": True,
     }
 
     assert components["EnumExample"] == param_schema

@@ -8,8 +8,13 @@ from typing import Callable, Optional, TypeVar, Union
 
 from pydantic import create_model
 
-from openrpc import Depends
-from openrpc._common import MethodMetaData, resolved_annotation, RPCMethod
+from openrpc._common import (
+    MethodMetaData,
+    resolved_annotation,
+    RPCMethod,
+    Undefined,
+)
+from openrpc._depends import DependsModel
 from openrpc._objects import (
     ContentDescriptor,
     Error,
@@ -126,19 +131,40 @@ class MethodRegistrar:
 
     def _method(self, function: CallableType, metadata: MethodMetaData) -> CallableType:
         signature = inspect.signature(function)
-        depends = [k for k, v in signature.parameters.items() if v.default is Depends]
+
+        # Get field information from each method parameter.
+        depends = {}
+        fields = {}
+        schema_fields = {}
+        required = []
+        for param_name, param in signature.parameters.items():
+            if isinstance(param.default, DependsModel):
+                depends[param_name] = param.default
+                continue
+            if param.default is inspect.Signature.empty:
+                required.append(param_name)
+                default = ...
+                schema_default = ...
+            elif param.default is Undefined:
+                default = Undefined
+                schema_default = ...
+            else:
+                default = param.default
+                schema_default = param.default
+            fields[param_name] = (
+                resolved_annotation(param.annotation, function),
+                default,
+            )
+            schema_fields[param_name] = (
+                resolved_annotation(param.annotation, function),
+                schema_default,
+            )
 
         # Params model.
-        param_model = create_model(  # type: ignore
-            f"{metadata.name}Params",
-            **{
-                k: (
-                    resolved_annotation(v.annotation, function),
-                    v.default if v.default is not inspect.Signature.empty else ...,
-                )
-                for k, v in signature.parameters.items()
-                if k not in depends and not k.startswith("_")
-            },
+        param_model = create_model(f"{metadata.name}Params", **fields)  # type: ignore
+        # Params model.
+        param_schema_model = create_model(  # type: ignore
+            f"{metadata.name}Params", **schema_fields
         )
 
         # Result Model
@@ -151,9 +177,11 @@ class MethodRegistrar:
         rpc_method = RPCMethod(
             function=function,
             metadata=metadata,
-            depends_params=depends,
+            depends=depends,
             params_model=param_model,
+            params_schema_model=param_schema_model,
             result_model=result_model,
+            required=required,
         )
         self._rpc_methods[metadata.name] = rpc_method
         log.debug(

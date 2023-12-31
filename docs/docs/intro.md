@@ -23,13 +23,25 @@ developing [OpenRPC](https://open-rpc.org/) servers in Python.
 
 ## Installation
 
-OpenRPC is on PyPI and can be installed with:
+While Python OpenRPC is a transport agnostic framework, if you're going to expose your
+RPC API over websockets or HTTP it is recommended you
+use [Tabella](https://gitlab.com/mburkard/tabella) which wraps this framework.
+
+```shell
+pip install tabella
+```
+
+Or with [Poetry](https://python-poetry.org/)
+
+```shell
+poetry add tabella
+```
+
+Or to use the framework directly.
 
 ```shell
 pip install openrpc
 ```
-
-Or with [Poetry](https://python-poetry.org/)
 
 ```shell
 poetry add openrpc
@@ -38,14 +50,12 @@ poetry add openrpc
 ## Example
 
 This is a minimal OpenRPC server hosted over HTTP and WebSockets
-using [Tabella](https://gitlab.com/mburkard/tabella)
-and [uvicorn](https://www.uvicorn.org/).
+using [Tabella](https://gitlab.com/mburkard/tabella).
 
 ```python
-from openrpc import RPCServer
-import tabella
+from tabella import Tabella
 
-rpc = RPCServer(title="DemoServer", version="1.0.0")
+rpc = Tabella(title="DemoServer", version="1.0.0")
 
 
 @rpc.method()
@@ -53,10 +63,8 @@ async def add(a: int, b: int) -> int:
     return a + b
 
 
-app = tabella.get_app(rpc)
-
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    rpc.run()
 ```
 
 Example In

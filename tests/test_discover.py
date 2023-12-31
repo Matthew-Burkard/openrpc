@@ -182,7 +182,6 @@ def test_lists() -> None:
             "items": {"anyOf": [{"type": "integer"}, {"type": "string"}]},
             "title": "Result",
         },
-        "required": True,
     }
 
 
@@ -240,7 +239,6 @@ def test_schema_params() -> None:
     assert method["result"] == {
         "name": "result",
         "schema": {"$ref": "#/components/schemas/Vector2"},
-        "required": True,
     }
 
 
@@ -280,7 +278,6 @@ def test_defaults() -> None:
     # Result
     assert method["result"] == {
         "name": "result",
-        "required": True,
         "schema": {"title": "Result", "type": "string"},
     }
 
@@ -310,7 +307,6 @@ def test_return_none() -> None:
     # Result
     assert method["result"] == {
         "name": "result",
-        "required": True,
         "schema": {"title": "Result", "type": "null"},
     }
 
@@ -328,11 +324,7 @@ def test_any() -> None:
         {"name": "any_param", "required": True, "schema": {"title": "Any Param"}}
     ]
     # Result
-    assert method["result"] == {
-        "name": "result",
-        "required": True,
-        "schema": {"title": "Result"},
-    }
+    assert method["result"] == {"name": "result", "schema": {"title": "Result"}}
 
 
 def test_no_annotations() -> None:
@@ -355,11 +347,7 @@ def test_no_annotations() -> None:
         {"name": "b", "required": True, "schema": {"title": "B"}},
     ]
     # Result
-    assert method["result"] == {
-        "name": "result",
-        "required": True,
-        "schema": {"title": "Result"},
-    }
+    assert method["result"] == {"name": "result", "schema": {"title": "Result"}}
 
 
 def test_complex_objects() -> None:
@@ -429,7 +417,6 @@ def test_complex_objects() -> None:
     # Result
     assert method["result"] == {
         "name": "result",
-        "required": True,
         "schema": {"$ref": "#/components/schemas/ComplexObjects"},
     }
 
@@ -734,7 +721,7 @@ def return_none(optional_param: Optional[str]) -> None:
     return None
 
 
-def take_any_get_any(any_param: Any, dep: str = Depends) -> Any:
+def take_any_get_any(any_param: Any, dep: str = Depends(lambda x: x)) -> Any:
     """Function that takes and returns any type, uses Dep argument."""
     return any_param + dep
 

@@ -2,10 +2,9 @@
 __all__ = ("get_methods",)
 
 import re
-from typing import get_args, Iterable, Optional
+from typing import Iterable, Optional
 
 import lorem_pysum
-from pydantic_core import PydanticUndefined
 
 from openrpc import ContentDescriptor, Example, ExamplePairing, Method, Schema
 from openrpc._common import RPCMethod
@@ -58,14 +57,12 @@ def get_methods(rpc_methods: Iterable[RPCMethod]) -> list[Method]:
 
 
 def _get_result(rpc_method: RPCMethod) -> ContentDescriptor:
-    result_field = rpc_method.result_model.model_fields["result"]
     result_description = re.findall(
         return_pattern, re.sub(r"\n +", " ", rpc_method.function.__doc__ or "")
     )
     descriptor = ContentDescriptor(
         name="result",
         schema=rpc_method.result_model.model_json_schema()["properties"]["result"],
-        required=NoneType not in get_args(result_field),
     )
     if result_description:
         descriptor.description = result_description[0].strip()
@@ -80,12 +77,14 @@ def _get_params(rpc_method: RPCMethod) -> list[ContentDescriptor]:
         )
     }
     descriptors = []
-    params_schema_properties = rpc_method.params_model.model_json_schema()["properties"]
-    for name, field in rpc_method.params_model.model_fields.items():
+    params_schema_properties = rpc_method.params_schema_model.model_json_schema()[
+        "properties"
+    ]
+    for name in rpc_method.params_schema_model.model_fields:
         descriptor = ContentDescriptor(
             name=name,
             schema=Schema(**params_schema_properties[name]),
-            required=field.default is PydanticUndefined,
+            required=name in rpc_method.required,
         )
         if description := param_descriptions.get(name):
             descriptor.description = description
@@ -95,7 +94,9 @@ def _get_params(rpc_method: RPCMethod) -> list[ContentDescriptor]:
 
 
 def _get_example(rpc_method: RPCMethod) -> ExamplePairing:
-    param_values = lorem_pysum.generate(rpc_method.params_model, explicit_default=True)
+    param_values = lorem_pysum.generate(
+        rpc_method.params_schema_model, explicit_default=True
+    )
     params = [
         Example(name=name, value=getattr(param_values, name))
         for name in param_values.model_fields
