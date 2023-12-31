@@ -1,4 +1,6 @@
 """Tests for `Undefined` type."""
+from typing import Optional
+
 from openrpc import RPCServer, Undefined
 from tests import util
 
@@ -14,7 +16,7 @@ def method(param: str = Undefined) -> bool:
 
 # noinspection PyUnusedLocal
 @rpc.method()
-def method_two(required: str, param: str | None = Undefined) -> bool:
+def method_two(required: str, param: Optional[str] = Undefined) -> bool:
     """Method with required and non-required params."""
     return param is Undefined
 

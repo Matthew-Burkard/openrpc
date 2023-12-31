@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import sys
-from typing import Union
+from typing import Optional, Union
 
 from openrpc import RPCServer
 
@@ -12,7 +12,7 @@ def test_future() -> None:
         return None
 
     def future(
-        union_str_int: Union[str, int], list_str: list[str] | None = None
+        union_str_int: Union[str, int], list_str: Optional[list[str]] = None
     ) -> list[str]:
         """Function using future union syntax."""
         return list_str or [union_str_int if isinstance(union_str_int, str) else ""]
