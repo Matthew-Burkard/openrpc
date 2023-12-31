@@ -38,7 +38,7 @@ def get_type_to_schema_map(rpc_methods: Iterable[RPCMethod]) -> dict[Type, Schem
 
 def _get_models_from_method(method: RPCMethod) -> list[ModelType]:
     models = []
-    for field_info in method.params_model.model_fields.values():
+    for field_info in method.params_schema_model.model_fields.values():
         models.extend(_get_models(field_info.annotation))
     for field_info in method.result_model.model_fields.values():
         models.extend(_get_models(field_info.annotation))
@@ -58,9 +58,12 @@ def _get_models(annotation: Optional[Type]) -> list[ModelType]:
 
 def _get_enums_from_function(method: RPCMethod) -> list:
     enums = []
-    for field_info in method.params_model.model_fields.values():
+    for field_info in method.params_schema_model.model_fields.values():
         if _is_enum(field_info.annotation):
             enums.append(field_info.annotation)
+        for arg in get_args(field_info.annotation):
+            if isinstance(arg, Type) and issubclass(arg, Enum):  # type: ignore
+                enums.append(arg)
     for field_info in method.result_model.model_fields.values():
         if _is_enum(field_info.annotation):
             enums.append(field_info.annotation)
