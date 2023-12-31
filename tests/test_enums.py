@@ -1,21 +1,23 @@
 """Test Python enums to JSON Schema enums."""
+import enum
 import json
-from enum import Enum
+from typing import Optional
 
 from openrpc import RPCServer
+from tests import util
 from tests.util import get_response
 
 rpc = RPCServer(title="Test Enums", version="1.0.0", debug=True)
 
 
-class EnumExample(Enum):
+class EnumExample(enum.Enum):
     """Each type for options should get a JSON Schema type."""
 
     INT_OPTION = 3
     STR_OPTION = 'A string with a "'
 
 
-class EnumExampleWithNull(Enum):
+class EnumExampleWithNull(enum.Enum):
     """If any field is None, "null" should be a valid type."""
 
     STR_OPTION = r'\"\\"'
@@ -86,3 +88,22 @@ def test_calling_enums_method_with_bar_param() -> None:
         res["error"]["data"].split("\n")[0]
         == "1 validation error for enum_test_funcParams"
     )
+
+
+def test_enum_optional_param() -> None:
+    e_rpc = RPCServer(debug=True)
+
+    class EnumOnlyUsedAsParam(enum.Enum):
+        """Enum only ever used as a parameter type."""
+
+        OPTION = enum.auto()
+
+    # noinspection PyUnusedLocal
+    @e_rpc.method()
+    def method(param: Optional[EnumOnlyUsedAsParam]) -> None:
+        """Pass."""
+
+    req = util.get_request("rpc.discover")
+    resp = util.get_response(e_rpc, req)
+
+    assert "EnumOnlyUsedAsParam" in resp["result"]["components"]["schemas"]
