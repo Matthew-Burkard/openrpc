@@ -80,7 +80,7 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "jsonrpc2-objects"
-version = "4.0.0"
+version = "4.1.1"
 description = "A collection of objects for use in JSON-RPC 2.0 implementations."
 category = "main"
 optional = false
@@ -168,6 +168,21 @@ dev = ["pre-commit", "tox"]
 testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
+name = "py-undefined"
+version = "0.1.2"
+description = "Provides an Undefined constant."
+category = "main"
+optional = false
+python-versions = "^3.9"
+develop = false
+
+[package.source]
+type = "git"
+url = "https://gitlab.com/mburkard/py-undefined.git"
+reference = "main"
+resolved_reference = "e791f7d622f60a5004f2a6d78294b844f24d8764"
+
+[[package]]
 name = "pydantic"
 version = "2.5.3"
 description = "Data validation using Python type hints"
@@ -196,7 +211,7 @@ typing-extensions = ">=4.6.0,<4.7.0 || >4.7.0"
 
 [[package]]
 name = "pytest"
-version = "7.4.3"
+version = "7.4.4"
 description = "pytest: simple powerful testing with Python"
 category = "dev"
 optional = false
@@ -215,7 +230,7 @@ testing = ["argcomplete", "attrs (>=19.2.0)", "hypothesis (>=3.56)", "mock", "no
 
 [[package]]
 name = "pytest-asyncio"
-version = "0.23.2"
+version = "0.23.3"
 description = "Pytest support for asyncio"
 category = "dev"
 optional = false
@@ -230,7 +245,7 @@ testing = ["coverage (>=6.2)", "hypothesis (>=5.7.1)"]
 
 [[package]]
 name = "ruff"
-version = "0.1.9"
+version = "0.1.11"
 description = "An extremely fast Python linter and code formatter, written in Rust."
 category = "dev"
 optional = false
@@ -255,7 +270,7 @@ python-versions = ">=3.8"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "35295417cde8ea275ae048c776d8851c2fcca7fed87c8839d37f6568dbd0120a"
+content-hash = "21840fc1e73fc9ca1793260c44a4cc92e5e499c980247d41f66e86cbd8dc9148"
 
 [metadata.files]
 annotated-types = []
@@ -273,6 +288,7 @@ packaging = []
 pathspec = []
 platformdirs = []
 pluggy = []
+py-undefined = []
 pydantic = []
 pydantic-core = []
 pytest = []

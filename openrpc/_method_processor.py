@@ -23,6 +23,7 @@ from jsonrpcobjects.objects import (
     ResultResponse,
 )
 from pydantic import ValidationError
+from pydantic_core import PydanticUndefined
 
 from openrpc import ParamStructure
 from openrpc._common import RPCMethod, SecurityFunctionDetails
@@ -114,15 +115,28 @@ class MethodProcessor:
 
         # Call method.
         if isinstance(self.request, (Request, Notification)):
-            result = self.method.function(**dependencies)
+            # No params.
+            defaults = {}
+            if self.method.params_model.model_fields:
+                # Get defaults in case of `Undefined` params.
+                defaults = {
+                    k: v.default
+                    for k, v in self.method.params_model.model_fields.items()
+                    if v.default is not PydanticUndefined
+                }
+            result = self.method.function(**{**dependencies, **defaults})
+
         elif isinstance(self.request.params, list):
+            # List params.
             if self.method.metadata.param_structure == ParamStructure.BY_NAME:
                 msg = "Params must be passed by name."
                 raise InvalidParams(msg)
             list_params = self._get_list_params(self.request.params)
             result = self.method.function(*list_params, **dependencies)
             params_msg = ", ".join(str(p) for p in list_params)
+
         else:
+            # Dict params.
             if self.method.metadata.param_structure == ParamStructure.BY_POSITION:
                 msg = "Params must be passed by position."
                 raise InvalidParams(msg)

@@ -1,5 +1,5 @@
 """Tests for `Undefined` type."""
-from typing import Optional
+from typing import Optional, Union
 
 from openrpc import RPCServer, Undefined
 from tests import util
@@ -21,8 +21,13 @@ def method_two(required: str, param: Optional[str] = Undefined) -> bool:
     return param is Undefined
 
 
+@rpc.method()
+def undefined_type(param: Union[Undefined, str]) -> bool:
+    """Method using undefined as a parameter type."""
+    return param is Undefined
+
+
 def test_undefined() -> None:
-    assert not Undefined
     request = util.get_request("method")
     response = util.parse_response(rpc.process_request(request))
     assert response.result is True
@@ -30,6 +35,18 @@ def test_undefined() -> None:
     response = util.parse_response(rpc.process_request(request))
     assert response.result is False
     request = util.get_request("method", '[""]')
+    response = util.parse_response(rpc.process_request(request))
+    assert response.result is False
+
+
+def test_undefined_type() -> None:
+    request = util.get_request("undefined_type")
+    response = util.parse_response(rpc.process_request(request))
+    assert response.result is True
+    request = util.get_request("undefined_type", '{"param": ""}')
+    response = util.parse_response(rpc.process_request(request))
+    assert response.result is False
+    request = util.get_request("undefined_type", '[""]')
     response = util.parse_response(rpc.process_request(request))
     assert response.result is False
 
