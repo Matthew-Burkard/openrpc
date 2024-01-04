@@ -169,18 +169,14 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "py-undefined"
-version = "0.1.2"
+version = "0.1.5"
 description = "Provides an Undefined constant."
 category = "main"
 optional = false
-python-versions = "^3.9"
-develop = false
+python-versions = ">=3.9,<4.0"
 
-[package.source]
-type = "git"
-url = "https://gitlab.com/mburkard/py-undefined.git"
-reference = "main"
-resolved_reference = "e791f7d622f60a5004f2a6d78294b844f24d8764"
+[package.dependencies]
+typing-extensions = ">=4.9.0,<5.0.0"
 
 [[package]]
 name = "pydantic"
@@ -270,7 +266,7 @@ python-versions = ">=3.8"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "21840fc1e73fc9ca1793260c44a4cc92e5e499c980247d41f66e86cbd8dc9148"
+content-hash = "e7b7d54f5a15df2d9393f01833e0b8881a2b8d4de04176659aada7789d942d4c"
 
 [metadata.files]
 annotated-types = []

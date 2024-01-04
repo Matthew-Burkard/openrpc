@@ -24,7 +24,7 @@ python = "^3.9"
 pydantic = "^2.4.2"
 jsonrpc2-objects = "^4.1.0"
 lorem-pysum = "^1.4.3"
-py-undefined = {git = "https://gitlab.com/mburkard/py-undefined.git", rev = "main"}
+py-undefined = "^0.1.5"
 
 [tool.poetry.dev-dependencies]
 coverage = "^7.4.0"
