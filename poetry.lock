@@ -169,7 +169,7 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "py-undefined"
-version = "0.1.5"
+version = "0.1.7"
 description = "Provides an Undefined constant."
 category = "main"
 optional = false
@@ -266,7 +266,7 @@ python-versions = ">=3.8"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "e7b7d54f5a15df2d9393f01833e0b8881a2b8d4de04176659aada7789d942d4c"
+content-hash = "fe20561d635e7d5550abb61c1229a4c4cb0333069dc2248d57d7c63dda7fd202"
 
 [metadata.files]
 annotated-types = []
