@@ -4,7 +4,6 @@ from typing import Optional, Union
 from openrpc import RPCServer, Undefined
 from tests import util
 
-
 rpc = RPCServer(debug=True)
 
 
@@ -61,3 +60,19 @@ def test_undefined_discover() -> None:
     param = rpc.discover()["methods"][0]["params"][0]
     assert param["required"] is False
     assert "default" not in param["schema"]
+
+
+def test_310_union() -> None:
+    import platform
+
+    if platform.python_version().startswith("3.9"):
+        return None
+
+    @rpc.method()
+    def method310(param: int | None | Undefined) -> bool:
+        """Method with py310 union syntax."""
+        return param is Undefined
+
+    request = util.get_request("method310")
+    response = util.parse_response(rpc.process_request(request))
+    assert response.result is True

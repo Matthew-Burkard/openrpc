@@ -149,9 +149,12 @@ class MethodRegistrar:
             elif Undefined in (args := typing.get_args(annotation)):
                 default = Undefined
                 # Remove `Undefined` from annotation for Pydantic.
-                origin = typing.get_origin(annotation)
                 new_args = tuple(arg for arg in args if arg is not Undefined)
-                annotation = origin[new_args]  # type: ignore
+                origin = typing.get_origin(annotation)
+                if hasattr(origin, "__name__") and origin.__name__ == "UnionType":
+                    annotation = Union[new_args]
+                else:
+                    annotation = origin[new_args]  # type: ignore
             elif param.default is inspect.Signature.empty:
                 required.append(param_name)
                 default = ...
