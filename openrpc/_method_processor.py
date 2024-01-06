@@ -23,6 +23,7 @@ from jsonrpcobjects.objects import (
     ResultResponse,
 )
 from pydantic import ValidationError
+from pydantic_core import PydanticUndefined
 
 from openrpc import ParamStructure
 from openrpc._common import RPCMethod, SecurityFunctionDetails
@@ -75,6 +76,7 @@ class MethodProcessor:
 
             # Get result.
             result = self._execute(dependencies)
+            self._log_call(result)
             if isinstance(self.request, (Notification, ParamsNotification)):
                 # If request was notification, return nothing.
                 return None
@@ -96,10 +98,13 @@ class MethodProcessor:
                 self.method.depends, self.caller_details
             )
 
-            # Get result.
+            # Call method and get result.
             result = self._execute(dependencies)
             if inspect.isawaitable(result):
                 result = await result
+            self._log_call(result)
+
+            # Return method result.
             if isinstance(self.request, (Notification, ParamsNotification)):
                 # If request was notification, return nothing.
                 return None
@@ -109,35 +114,35 @@ class MethodProcessor:
             return self._get_error_response(error)
 
     def _execute(self, dependencies: dict[str, Any]) -> Any:
-        # If permissions are present, call method.
-        params_msg = ""
-
         # Call method.
         if isinstance(self.request, (Request, Notification)):
-            result = self.method.function(**dependencies)
+            # No params.
+            defaults = {}
+            if self.method.params_model.model_fields:
+                # Get defaults in case of `Undefined` params.
+                defaults = {
+                    k: v.default
+                    for k, v in self.method.params_model.model_fields.items()
+                    if v.default is not PydanticUndefined
+                }
+            result = self.method.function(**{**dependencies, **defaults})
+
         elif isinstance(self.request.params, list):
+            # List params.
             if self.method.metadata.param_structure == ParamStructure.BY_NAME:
                 msg = "Params must be passed by name."
                 raise InvalidParams(msg)
             list_params = self._get_list_params(self.request.params)
             result = self.method.function(*list_params, **dependencies)
-            params_msg = ", ".join(str(p) for p in list_params)
+
         else:
+            # Dict params.
             if self.method.metadata.param_structure == ParamStructure.BY_POSITION:
                 msg = "Params must be passed by position."
                 raise InvalidParams(msg)
             dict_params = self._get_dict_params(self.request.params)
             result = self.method.function(**dict_params, **dependencies)
-            params_msg = ", ".join(f"{k}={v}" for k, v in dict_params.items())
 
-        # Logging
-        id_msg = "None"
-        if isinstance(self.request, (Request, ParamsRequest)):
-            if isinstance(self.request.id, str):
-                id_msg = f'"{self.request.id}"'
-            else:
-                id_msg = str(self.request.id)
-        log.info("%s: %s(%s) -> %s", id_msg, self.request.method, params_msg, result)
         return result
 
     def _get_error_response(self, error: Exception) -> Optional[str]:
@@ -335,6 +340,23 @@ class MethodProcessor:
             param_name: self._depends[dep.function]
             for param_name, dep in depends_params.items()
         }
+
+    def _log_call(self, result: Any) -> None:
+        """Log a method call, param, and result."""
+        # Log method call, params, and result.
+        if isinstance(self.request, (Request, Notification)):
+            param_msg = ""
+        elif isinstance(self.request.params, dict):
+            param_msg = ", ".join(f"{k}={v}" for k, v in self.request.params.items())
+        else:
+            param_msg = ", ".join(str(p) for p in self.request.params)
+        id_msg = "None"
+        if isinstance(self.request, (Request, ParamsRequest)):
+            if isinstance(self.request.id, str):
+                id_msg = f'"{self.request.id}"'
+            else:
+                id_msg = str(self.request.id)
+        log.info("%s: %s(%s) -> %s", id_msg, self.request.method, param_msg, result)
 
 
 def _get_trimmed_traceback(error: Exception) -> str:

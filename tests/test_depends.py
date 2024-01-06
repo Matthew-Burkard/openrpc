@@ -4,6 +4,7 @@ import json
 import pytest
 
 from openrpc import Depends, RPCServer
+from tests import util
 from tests.util import get_response, get_response_async
 
 rpc = RPCServer(title="Test Depends", version="0.1.0")
@@ -51,3 +52,14 @@ async def test_depends_async() -> None:
     }
     result = await get_response_async(rpc, json.dumps(req), header)
     assert result["result"] == f"1-{header}"
+
+
+def test_depends_no_params() -> None:
+    @rpc.method()
+    def method_no_params(depends: bool = Depends(lambda: True)) -> bool:
+        """Method with depends argument and no other params."""
+        return depends is True
+
+    req = util.get_request("method_no_params")
+    response = util.parse_response(rpc.process_request(req))
+    assert response.result is True

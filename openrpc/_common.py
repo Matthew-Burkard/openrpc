@@ -4,21 +4,12 @@ __all__ = (
     "RPCMethod",
     "SecurityFunction",
     "SecurityFunctionDetails",
-    "Undefined",
     "resolved_annotation",
 )
 
 import dataclasses
 import inspect
-from typing import (
-    Any,
-    Awaitable,
-    Callable,
-    ForwardRef,
-    Optional,
-    Type,
-    Union,
-)
+from typing import Any, Awaitable, Callable, ForwardRef, Optional, Type, Union
 
 from pydantic import BaseModel
 
@@ -92,23 +83,3 @@ def resolved_annotation(annotation: Any, function: Callable) -> Any:
         annotation = ForwardRef(annotation)
         annotation = evaluate_forwardref(annotation, globalns, globalns)
     return type(None) if annotation is None else annotation
-
-
-class _Undefined:
-    """Undefined type."""
-
-    __instance: Optional["_Undefined"] = None
-
-    def __bool__(self) -> bool:
-        return False
-
-    @staticmethod
-    def _get_instance() -> "_Undefined":
-        """Get the instance of _Undefined."""
-        if _Undefined.__instance is None:
-            _Undefined.__instance = _Undefined()
-        return _Undefined.__instance
-
-
-# noinspection PyProtectedMember
-Undefined: Any = _Undefined._get_instance()

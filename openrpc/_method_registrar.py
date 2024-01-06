@@ -4,15 +4,16 @@ __all__ = ("MethodRegistrar", "CallableType")
 
 import inspect
 import logging
-from typing import Callable, Optional, TypeVar, Union
+import typing
+from typing import Any, Callable, Optional, TypeVar, Union
 
+from py_undefined import Undefined
 from pydantic import create_model
 
 from openrpc._common import (
     MethodMetaData,
     resolved_annotation,
     RPCMethod,
-    Undefined,
 )
 from openrpc._depends import DependsModel
 from openrpc._objects import (
@@ -138,26 +139,32 @@ class MethodRegistrar:
         schema_fields = {}
         required = []
         for param_name, param in signature.parameters.items():
+            default: Any = param.default
+            annotation: Any = param.annotation
             if isinstance(param.default, DependsModel):
                 depends[param_name] = param.default
                 continue
-            if param.default is inspect.Signature.empty:
+            if param.default is Undefined:
+                default = Undefined
+            elif Undefined in (args := typing.get_args(annotation)):
+                default = Undefined
+                # Remove `Undefined` from annotation for Pydantic.
+                new_args = tuple(arg for arg in args if arg is not Undefined)
+                origin = typing.get_origin(annotation)
+                if hasattr(origin, "__name__") and origin.__name__ == "UnionType":
+                    annotation = Union[new_args]
+                else:
+                    annotation = origin[new_args]  # type: ignore
+            elif param.default is inspect.Signature.empty:
                 required.append(param_name)
                 default = ...
-                schema_default = ...
-            elif param.default is Undefined:
-                default = Undefined
-                schema_default = ...
-            else:
-                default = param.default
-                schema_default = param.default
             fields[param_name] = (
-                resolved_annotation(param.annotation, function),
+                resolved_annotation(annotation, function),
                 default,
             )
             schema_fields[param_name] = (
-                resolved_annotation(param.annotation, function),
-                schema_default,
+                resolved_annotation(annotation, function),
+                default if default is not Undefined else ...,
             )
 
         # Params model.

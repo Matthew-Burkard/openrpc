@@ -14,9 +14,8 @@ from openrpc import RPCServer
 rpc = RPCServer()
 
 @rpc.method()
-async def update(a: str | None = None, b: str | None = None) -> None
-    if a is not None:
-        ...  # Update a.
+async def update(a: str, b: str | None = None) -> None:
+    ...  # Update a.
     if b is not None:
         ...  # Update b.
 ```
@@ -26,7 +25,9 @@ only `b` will be updated. But there's a problem, what if `None` is a valid value
 the request params: `{"b": null}`, `b` won't be updated to `null`, nothing will happen.
 
 In order to distinguish between a value of `null` and the parameter not being provided
-at all, the default value of that parameter can be set to `Undefined`.
+at all, the type of that parameter can union `Undefined`. If a param type unions
+`Undefined`, the framework will pass `Undefined` to the method on call for each param
+that was not present in the request.
 
 ```python
 from openrpc import RPCServer, Undefined
@@ -34,7 +35,7 @@ from openrpc import RPCServer, Undefined
 rpc = RPCServer()
 
 @rpc.method()
-async def update_values(a: str | None = Undefined, b: str | None = Undefined) -> None
+async def update_values(a: str | Undefined, b: str | None | Undefined) -> None
     if a is not Undefined:
         ...  # Update a.
     if b is not Undefined:
