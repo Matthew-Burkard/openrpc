@@ -144,9 +144,7 @@ class MethodRegistrar:
             if isinstance(param.default, DependsModel):
                 depends[param_name] = param.default
                 continue
-            if param.default is Undefined:
-                default = Undefined
-            elif Undefined in (args := typing.get_args(annotation)):
+            if Undefined in (args := typing.get_args(annotation)):
                 default = Undefined
                 # Remove `Undefined` from annotation for Pydantic.
                 new_args = tuple(arg for arg in args if arg is not Undefined)
@@ -155,6 +153,8 @@ class MethodRegistrar:
                     annotation = Union[new_args]
                 else:
                     annotation = origin[new_args]  # type: ignore
+            elif param.default is Undefined:
+                default = Undefined
             elif param.default is inspect.Signature.empty:
                 required.append(param_name)
                 default = ...
