@@ -15,6 +15,7 @@ __all__ = (
     "License",
     "Link",
     "Method",
+    "MethodRegistrar",
     "OAuth2",
     "OAuth2Flow",
     "OAuth2FlowType",
@@ -26,8 +27,8 @@ __all__ = (
     "Reference",
     "Schema",
     "SchemaType",
-    "Server",
     "SecurityFunction",
+    "Server",
     "ServerVariable",
     "Tag",
     "Undefined",
@@ -37,6 +38,7 @@ from py_undefined import Undefined
 
 from openrpc._common import SecurityFunction
 from openrpc._depends import Depends
+from openrpc._method_registrar import MethodRegistrar
 from openrpc._objects import (
     APIKeyAuth,
     BearerAuth,
