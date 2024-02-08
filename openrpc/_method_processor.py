@@ -80,7 +80,9 @@ class MethodProcessor:
             if isinstance(self.request, (Notification, ParamsNotification)):
                 # If request was notification, return nothing.
                 return None
-            return ResultResponse(id=self.request.id, result=result).model_dump_json()
+            return ResultResponse(id=self.request.id, result=result).model_dump_json(
+                by_alias=True
+            )
 
         except Exception as error:
             return self._get_error_response(error)
@@ -108,7 +110,9 @@ class MethodProcessor:
             if isinstance(self.request, (Notification, ParamsNotification)):
                 # If request was notification, return nothing.
                 return None
-            return ResultResponse(id=self.request.id, result=result).model_dump_json()
+            return ResultResponse(id=self.request.id, result=result).model_dump_json(
+                by_alias=True
+            )
 
         except Exception as error:
             return self._get_error_response(error)
