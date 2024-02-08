@@ -66,4 +66,4 @@ from openrpc._objects import (
     Tag,
 )
 from openrpc._router import RPCRouter
-from openrpc._server import RPCServer
+from openrpc._server import RPCServer, MethodRegistrar

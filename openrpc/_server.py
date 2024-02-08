@@ -1,6 +1,6 @@
 """Module providing RPCServer class."""
 
-__all__ = ("RPCServer",)
+__all__ = ("RPCServer", "MethodRegistrar")
 
 import inspect
 import logging
