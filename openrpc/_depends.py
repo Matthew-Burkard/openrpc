@@ -1,4 +1,5 @@
 """Module providing class to handle middleware dependencies."""
+
 import inspect
 from typing import Any, Callable
 

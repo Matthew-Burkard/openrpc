@@ -1,4 +1,5 @@
 """Provides classes for storing RPC method data."""
+
 __all__ = (
     "MethodMetaData",
     "RPCMethod",
