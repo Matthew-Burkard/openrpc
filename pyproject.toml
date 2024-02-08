@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openrpc"
-version = "10.2.0"
+version = "10.2.1"
 description = "Transport agnostic framework for developing OpenRPC servers."
 readme = "README.md"
 repository = "https://gitlab.com/mburkard/openrpc"
@@ -31,8 +31,10 @@ coverage = "^7.4.0"
 mypy = "^1.8.0"
 black = "^24.1.1"
 pytest = "^8.0.0"
-pytest-asyncio = "^0.23.2"
-ruff = "^0.1.11"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.2.1"
+pytest-asyncio = "^0.23.4"
 
 [build-system]
 
