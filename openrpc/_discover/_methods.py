@@ -1,4 +1,5 @@
 """Module for generating OpenRPC document methods."""
+
 __all__ = ("get_methods",)
 
 import re

@@ -1,4 +1,5 @@
 """Python class representations of OpenRPC and JSON Schema objects."""
+
 from __future__ import annotations
 
 __all__ = (
@@ -238,9 +239,9 @@ class Components(BaseModel):
         default=None, alias="examplePairingObjects"
     )
     tags: Optional[dict[str, Tag]] = None
-    x_security_schemes: Optional[
-        dict[str, Union[OAuth2, BearerAuth, APIKeyAuth]]
-    ] = Field(default=None, alias="x-securitySchemes")
+    x_security_schemes: Optional[dict[str, Union[OAuth2, BearerAuth, APIKeyAuth]]] = (
+        Field(default=None, alias="x-securitySchemes")
+    )
 
 
 class Tag(BaseModel):
