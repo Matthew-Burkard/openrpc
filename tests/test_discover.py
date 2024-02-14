@@ -699,67 +699,64 @@ def _rpc() -> RPCServer:
     return RPCServer(title="Test OpenRPC", version="1.0.0", debug=True)
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
 def increment(numbers: list[Union[int, float]]) -> list[Union[int, str]]:
     """Collections and unions."""
-    return list(map(int, numbers))
 
 
+# noinspection PyUnusedLocal
 def get_distance(position: Vector2, target: Vector2) -> Vector2:
     """Function with basic model annotations."""
-    return position or target
 
 
+# noinspection PyUnusedLocal
 def default_value(a: int = 2, b: float = 0.99792458, c: str = "c") -> str:
     """Function with default values for params."""
-    return f"{a}{b}{c}"
 
 
 # noinspection PyUnusedLocal
 def return_none(optional_param: Optional[str]) -> None:
     """Function with optional param that always returns None."""
-    return None
 
 
+# noinspection PyUnusedLocal
 def take_any_get_any(any_param: Any, dep: str = Depends(lambda x: x)) -> Any:
     """Function that takes and returns any type, uses Dep argument."""
-    return any_param + dep
 
 
+# noinspection PyUnusedLocal
 def dict_and_list(dict_param: dict, list_param: list) -> dict[str, list]:
     """For testing dict and list type annotations."""
-    dict_param[""] = list_param
-    return dict_param
 
 
+# noinspection PyUnusedLocal
 def typed_dict_and_list(
     dict_param: dict[str, int], list_param: list[dict[str, int]]
 ) -> dict[str, list]:
     """For testing typed dict and list type annotations."""
-    list_param.append(dict_param)
-    return {"": list_param}
 
 
+# noinspection PyUnusedLocal
 def nested_model(a: NestedModels) -> dict[str, NestedModels]:
     """For testing methods using nested models."""
-    return {"": a}
 
 
+# noinspection PyUnusedLocal
 def list_model_result() -> list[ListResultModel]:
     """Function returning a list of a model."""
-    return []
 
 
+# noinspection PyUnusedLocal
 def no_annotations(a, b):  # type: ignore
     """To test discover for poorly written functions."""
-    return a + b
 
 
+# noinspection PyUnusedLocal
 def method_with_properties() -> None:
     """Method to test other method properties."""
-    return None
 
 
+# noinspection PyUnusedLocal
 def method_using_complex_objects(
     date_field: datetime.date,
     time_field: datetime.time,
@@ -768,15 +765,9 @@ def method_using_complex_objects(
     decimal_field: Decimal,
 ) -> ComplexObjects:
     """Method to test schema generation for complex objects."""
-    return ComplexObjects(
-        date_field=date_field,
-        time_field=time_field,
-        datetime_field=datetime_field,
-        timedelta_field=timedelta_field,
-        decimal_field=decimal_field,
-    )
 
 
+# noinspection PyUnusedLocal
 def method_using_collections(
     list_field: list,
     list_str: list[str],
@@ -798,33 +789,14 @@ def method_using_collections(
     dict_union: dict[str, Union[str, int]],
 ) -> CollectionsModel:
     """Method using collection types."""
-    return CollectionsModel(
-        list_field=list_field,
-        list_str=list_str,
-        list_list=list_list,
-        list_list_int=list_list_int,
-        list_union=list_union,
-        tuple_field=tuple_field,
-        tuple_str=tuple_str,
-        tuple_tuple=tuple_tuple,
-        tuple_tuple_int=tuple_tuple_int,
-        tuple_union=tuple_union,
-        tuple_int_str_none=tuple_int_str_none,
-        set_str=set_str,
-        set_union=set_union,
-        dict_field=dict_field,
-        dict_str=dict_str,
-        dict_dict=dict_dict,
-        dict_int_keys=dict_int_keys,
-        dict_union=dict_union,
-    )
 
 
+# noinspection PyUnusedLocal
 def method_union_model() -> Union[ComplexObjects, CollectionsModel, None]:
     """Method with union model."""
-    return None
 
 
+# noinspection PyUnusedLocal
 def param_descriptions(a: int, b: int, c: int) -> tuple[int, int, int]:
     """Method with param descriptions.
 
@@ -834,9 +806,9 @@ def param_descriptions(a: int, b: int, c: int) -> tuple[int, int, int]:
     :param c: Third param.
     :return: The params.
     """
-    return a, b, c
 
 
+# noinspection PyUnusedLocal
 def param_description_no_return(a: int, b: int, c: int) -> tuple[int, int, int]:
     """Method with param descriptions.
 
@@ -845,4 +817,3 @@ def param_description_no_return(a: int, b: int, c: int) -> tuple[int, int, int]:
     :param b: Second param.
     :param c: Third param.
     """
-    return a, b, c

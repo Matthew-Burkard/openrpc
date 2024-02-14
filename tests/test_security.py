@@ -1,4 +1,5 @@
 """Unit tests for permissions."""
+
 import pytest
 from jsonrpcobjects.objects import ErrorResponse, ResultResponse
 
@@ -300,8 +301,8 @@ async def test_nested_depends_async() -> None:
 
 
 def test_async_security_error() -> None:
-    async def _security() -> dict[str, list[str]]:
-        return {"a": []}
+    # noinspection PyUnusedLocal
+    async def _security() -> dict[str, list[str]]:  ...
 
     async_error_rpc = RPCServer(security_function=_security, debug=True)
     async_error_rpc.method(security={"a": []})(add)

@@ -56,7 +56,7 @@ def _get_models(annotation: Optional[Type]) -> list[ModelType]:
     return models
 
 
-def _get_enums_from_method(method: RPCMethod) -> list[ModelType]:
+def _get_enums_from_method(method: RPCMethod) -> list[Type[Enum]]:
     enums = []
     for field_info in method.params_schema_model.model_fields.values():
         enums.extend(_get_enums(field_info.annotation))
@@ -65,7 +65,7 @@ def _get_enums_from_method(method: RPCMethod) -> list[ModelType]:
     return enums
 
 
-def _get_enums(annotation: Optional[Type]) -> list[ModelType]:
+def _get_enums(annotation: Optional[Type]) -> list[Type[Enum]]:
     if annotation is None:
         return []
     enums = []
