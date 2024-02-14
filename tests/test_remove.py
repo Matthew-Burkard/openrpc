@@ -2,9 +2,9 @@
 from openrpc import RPCServer
 
 
+# noinspection PyUnusedLocal
 def add(a: int, b: int) -> int:
     """Add two integers."""
-    return a + b
 
 
 def test_remove() -> None:

@@ -15,7 +15,6 @@ __all__ = (
     "License",
     "Link",
     "Method",
-    "MethodRegistrar",
     "OAuth2",
     "OAuth2Flow",
     "OAuth2FlowType",
@@ -66,4 +65,4 @@ from openrpc._objects import (
     Tag,
 )
 from openrpc._router import RPCRouter
-from openrpc._server import RPCServer, MethodRegistrar
+from openrpc._server import RPCServer

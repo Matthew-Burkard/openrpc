@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openrpc"
-version = "10.2.2"
+version = "10.2.5"
 description = "Transport agnostic framework for developing OpenRPC servers."
 readme = "README.md"
 repository = "https://gitlab.com/mburkard/openrpc"
@@ -46,7 +46,7 @@ disallow_untyped_defs = true
 ignore_missing_imports = true
 
 [tool.ruff]
-select = [
+lint.select = [
     "ARG",
     "ASYNC",
     "B",
@@ -75,4 +75,4 @@ select = [
     "TD",
     "TRY",
 ]
-ignore = ["D203", "D213", "FA102", "FA100", "PLR0913"]
+lint.ignore = ["D203", "D213", "FA102", "FA100", "PLR0913"]

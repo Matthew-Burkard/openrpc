@@ -1,4 +1,6 @@
 """Tests for `Undefined` type."""
+
+import sys
 from typing import Optional, Union
 
 from openrpc import RPCServer, Undefined
@@ -60,10 +62,10 @@ def test_undefined_with_required() -> None:
 def test_undefined_discover() -> None:
     rpc = RPCServer(debug=True)
 
+    # noinspection PyUnusedLocal
     @rpc.method()
     def method(param: str = Undefined) -> bool:
         """Method with non-required param."""
-        return param is Undefined
 
     schema_param = rpc.discover()["methods"][0]["params"][0]
     assert schema_param["required"] is False
@@ -71,9 +73,7 @@ def test_undefined_discover() -> None:
 
 
 def test_310_union() -> None:
-    import platform
-
-    if platform.python_version().startswith("3.9"):
+    if sys.version_info < (3, 10):
         return None
     rpc = RPCServer(debug=True)
 

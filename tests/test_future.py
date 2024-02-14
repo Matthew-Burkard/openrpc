@@ -1,4 +1,5 @@
 """Test future annotations which behave differently."""
+
 from __future__ import annotations
 
 import sys
@@ -11,11 +12,11 @@ def test_future() -> None:
     if sys.version_info < (3, 10):
         return None
 
+    # noinspection PyUnusedLocal
     def future(
         union_str_int: Union[str, int], list_str: Optional[list[str]] = None
     ) -> list[str]:
         """Function using future union syntax."""
-        return list_str or [union_str_int if isinstance(union_str_int, str) else ""]
 
     rpc = RPCServer(title="Test OpenRPC", version="1.0.0", debug=True)
     rpc.method()(future)
