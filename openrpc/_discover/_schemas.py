@@ -27,7 +27,7 @@ def get_type_to_schema_map(rpc_methods: Iterable[RPCMethod]) -> dict[Type, Schem
             schemas, _ = _get_model_schemas(model_type, type_to_schema_map)
             type_to_schema_map = {**type_to_schema_map, **schemas}
         # Get all enum schemas used in methods.
-        for enum_type in _get_enums_from_function(method):
+        for enum_type in _get_enums_from_method(method):
             type_to_schema_map[enum_type] = Schema(
                 title=enum_type.__name__,
                 enum=[it.value for it in enum_type],
@@ -56,17 +56,23 @@ def _get_models(annotation: Optional[Type]) -> list[ModelType]:
     return models
 
 
-def _get_enums_from_function(method: RPCMethod) -> list:
+def _get_enums_from_method(method: RPCMethod) -> list[ModelType]:
     enums = []
     for field_info in method.params_schema_model.model_fields.values():
-        if _is_enum(field_info.annotation):
-            enums.append(field_info.annotation)
-        for arg in get_args(field_info.annotation):
-            if isinstance(arg, Type) and issubclass(arg, Enum):  # type: ignore
-                enums.append(arg)
+        enums.extend(_get_enums(field_info.annotation))
     for field_info in method.result_model.model_fields.values():
-        if _is_enum(field_info.annotation):
-            enums.append(field_info.annotation)
+        enums.extend(_get_enums(field_info.annotation))
+    return enums
+
+
+def _get_enums(annotation: Optional[Type]) -> list[ModelType]:
+    if annotation is None:
+        return []
+    enums = []
+    if _is_enum(annotation):
+        enums.append(annotation)
+    for arg in get_args(annotation):
+        enums.extend(_get_enums(arg))
     return enums
 
 
