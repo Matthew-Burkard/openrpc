@@ -35,8 +35,8 @@ def get_methods(rpc_methods: Iterable[RPCMethod]) -> list[Method]:
         # `exclude_unset` in discover.
         if m.metadata.tags is not None:
             method.tags = m.metadata.tags
-        if m.metadata.summary is not None:
-            method.summary = m.metadata.summary
+        if (summary := _get_summary(m)) is not None:
+            method.summary = summary
         if (description := _get_description(m)) is not None:
             method.description = description
         if m.metadata.external_docs is not None:
@@ -108,11 +108,21 @@ def _get_example(rpc_method: RPCMethod) -> ExamplePairing:
     return ExamplePairing(params=params, result=result)
 
 
+def _get_summary(rpc_method: RPCMethod) -> Optional[str]:
+    summary = rpc_method.metadata.summary
+    if not summary:
+        summary = rpc_method.function.__doc__
+        # If using function doc as summary only take intro line.
+        if summary:
+            summary = summary.split("\n")[0].strip()
+    return summary
+
+
 def _get_description(rpc_method: RPCMethod) -> Optional[str]:
     description = rpc_method.metadata.description
-    if not description:
-        description = rpc_method.function.__doc__
-        # If using function doc as description only take intro line.
-        if description:
-            description = description.split("\n")[0]
+    if not description and (
+        (doc_string := rpc_method.function.__doc__)
+        and (match := re.match(r"^.*?\n\n(.*?)(\n\n|$)", doc_string, re.S))
+    ):
+        description = re.sub(r"\s+", " ", match.groups()[0]).strip()
     return description

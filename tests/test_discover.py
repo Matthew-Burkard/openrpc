@@ -1,4 +1,5 @@
 """Test the generated "rpc.discover" method."""
+
 import datetime
 import json
 from _decimal import Decimal
@@ -134,7 +135,6 @@ def test_method_properties() -> None:
     url = "http://localhost:8000"
     rpc = _rpc()
     rpc.method(
-        summary="Summary",
         external_docs=ExternalDocumentation(url=url),
         deprecated=True,
         servers=[Server(name="Server", url=url)],
@@ -144,8 +144,7 @@ def test_method_properties() -> None:
     )(method_with_properties)
     method = rpc.discover()["methods"][0]
     assert method["name"] == "method_with_properties"
-    assert method["description"] == "Method to test other method properties."
-    assert method["summary"] == "Summary"
+    assert method["summary"] == "Method to test other method properties."
     assert method["externalDocs"] == {"url": url}
     assert method["deprecated"] is True
     assert method["servers"] == [{"name": "Server", "url": url}]
@@ -693,6 +692,38 @@ def test_param_descriptions() -> None:
         assert (
             doc["methods"][0]["result"].get("description") == result_descriptions.pop()
         )
+
+
+def test_descriptions() -> None:
+    rpc = _rpc()
+
+    @rpc.method()
+    def description() -> None:
+        """Method description.
+
+        This method also has a lengthy description in addition to the
+        summary line. It makes a point to span multiple lines for the sake
+        of doing so.
+        """
+
+    @rpc.method()
+    def description_w_params(_a: int) -> None:
+        """Method description.
+
+        This method also has a lengthy description in addition to the
+        summary line. It makes a point to span multiple lines for the sake
+        of doing so.
+
+        :param _a: An integer.
+        """
+
+    doc = rpc.discover()
+    description = (
+        "This method also has a lengthy description in addition to the summary line. It"
+        " makes a point to span multiple lines for the sake of doing so."
+    )
+    assert doc["methods"][0]["description"] == description
+    assert doc["methods"][1]["description"] == description
 
 
 def _rpc() -> RPCServer:
