@@ -2,10 +2,10 @@
 
 import datetime
 import json
-from _decimal import Decimal
 from enum import Enum
 from typing import Any, List, Optional, Union
 
+from _decimal import Decimal
 from jsonrpcobjects.objects import Request
 from pydantic import BaseModel, Field
 
@@ -116,7 +116,7 @@ def test_open_rpc_info() -> None:
     request = Request(id=1, method="rpc.discover")
     resp = json.loads(rpc.process_request(request.model_dump_json()))  # type: ignore
     discover_result = resp["result"]
-    assert "1.2.6" == discover_result["openrpc"]
+    assert "1.2.6" == discover_result["openrpc"]  # noqa: SIM300
     assert discover_result["info"] == {
         "contact": {},
         "description": "description",
@@ -718,12 +718,12 @@ def test_descriptions() -> None:
         """
 
     doc = rpc.discover()
-    description = (
+    expected_description = (
         "This method also has a lengthy description in addition to the summary line. It"
         " makes a point to span multiple lines for the sake of doing so."
     )
-    assert doc["methods"][0]["description"] == description
-    assert doc["methods"][1]["description"] == description
+    assert doc["methods"][0]["description"] == expected_description
+    assert doc["methods"][1]["description"] == expected_description
 
 
 def _rpc() -> RPCServer:
@@ -731,54 +731,67 @@ def _rpc() -> RPCServer:
 
 
 # noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
-def increment(numbers: list[Union[int, float]]) -> list[Union[int, str]]:
+def increment(
+    numbers: list[Union[int, float]]  # noqa: ARG001
+) -> list[Union[int, str]]:  # type: ignore
     """Collections and unions."""
 
 
 # noinspection PyUnusedLocal
-def get_distance(position: Vector2, target: Vector2) -> Vector2:
+def get_distance(
+    position: Vector2,  # noqa: ARG001
+    target: Vector2,  # noqa: ARG001
+) -> Vector2:  # type: ignore
     """Function with basic model annotations."""
 
 
 # noinspection PyUnusedLocal
-def default_value(a: int = 2, b: float = 0.99792458, c: str = "c") -> str:
+def default_value(
+    a: int = 2, b: float = 0.99792458, c: str = "c"  # noqa: ARG001
+) -> str:  # noqa: ARG001  # type: ignore
     """Function with default values for params."""
 
 
 # noinspection PyUnusedLocal
-def return_none(optional_param: Optional[str]) -> None:
+def return_none(optional_param: Optional[str]) -> None:  # noqa: ARG001
     """Function with optional param that always returns None."""
 
 
 # noinspection PyUnusedLocal
-def take_any_get_any(any_param: Any, dep: str = Depends(lambda x: x)) -> Any:
+def take_any_get_any(
+    any_param: Any, dep: str = Depends(lambda x: x)  # noqa: ARG001
+) -> Any:
     """Function that takes and returns any type, uses Dep argument."""
 
 
 # noinspection PyUnusedLocal
-def dict_and_list(dict_param: dict, list_param: list) -> dict[str, list]:
+def dict_and_list(
+    dict_param: dict, list_param: list  # noqa: ARG001
+) -> dict[str, list]:  # type: ignore
     """For testing dict and list type annotations."""
 
 
 # noinspection PyUnusedLocal
 def typed_dict_and_list(
-    dict_param: dict[str, int], list_param: list[dict[str, int]]
-) -> dict[str, list]:
+    dict_param: dict[str, int], list_param: list[dict[str, int]]  # noqa: ARG001
+) -> dict[str, list]:  # type: ignore
     """For testing typed dict and list type annotations."""
 
 
 # noinspection PyUnusedLocal
-def nested_model(a: NestedModels) -> dict[str, NestedModels]:
+def nested_model(
+    a: NestedModels,  # noqa: ARG001
+) -> dict[str, NestedModels]:  # type: ignore
     """For testing methods using nested models."""
 
 
 # noinspection PyUnusedLocal
-def list_model_result() -> list[ListResultModel]:
+def list_model_result() -> list[ListResultModel]:  # type: ignore
     """Function returning a list of a model."""
 
 
 # noinspection PyUnusedLocal
-def no_annotations(a, b):  # type: ignore
+def no_annotations(a, b):  # type: ignore  # noqa: ARG001
     """To test discover for poorly written functions."""
 
 
@@ -789,36 +802,36 @@ def method_with_properties() -> None:
 
 # noinspection PyUnusedLocal
 def method_using_complex_objects(
-    date_field: datetime.date,
-    time_field: datetime.time,
-    datetime_field: datetime.datetime,
-    timedelta_field: datetime.timedelta,
-    decimal_field: Decimal,
-) -> ComplexObjects:
+    date_field: datetime.date,  # noqa: ARG001
+    time_field: datetime.time,  # noqa: ARG001
+    datetime_field: datetime.datetime,  # noqa: ARG001
+    timedelta_field: datetime.timedelta,  # noqa: ARG001
+    decimal_field: Decimal,  # noqa: ARG001
+) -> ComplexObjects:  # type: ignore
     """Method to test schema generation for complex objects."""
 
 
 # noinspection PyUnusedLocal
 def method_using_collections(
-    list_field: list,
-    list_str: list[str],
-    list_list: list[list],
-    list_list_int: list[list[int]],
-    list_union: list[Union[str, int]],
-    tuple_field: tuple,
-    tuple_str: tuple[str],
-    tuple_tuple: tuple[tuple],
-    tuple_tuple_int: tuple[tuple[int]],
-    tuple_union: tuple[Union[str, int]],
-    tuple_int_str_none: tuple[int, str, None],
-    set_str: set[str],
-    set_union: set[Union[str, int]],
-    dict_field: dict,
-    dict_str: dict[str, str],
-    dict_dict: dict[str, dict],
-    dict_int_keys: dict[int, str],
-    dict_union: dict[str, Union[str, int]],
-) -> CollectionsModel:
+    list_field: list,  # noqa: ARG001
+    list_str: list[str],  # noqa: ARG001
+    list_list: list[list],  # noqa: ARG001
+    list_list_int: list[list[int]],  # noqa: ARG001
+    list_union: list[Union[str, int]],  # noqa: ARG001
+    tuple_field: tuple,  # noqa: ARG001
+    tuple_str: tuple[str],  # noqa: ARG001
+    tuple_tuple: tuple[tuple],  # noqa: ARG001
+    tuple_tuple_int: tuple[tuple[int]],  # noqa: ARG001
+    tuple_union: tuple[Union[str, int]],  # noqa: ARG001
+    tuple_int_str_none: tuple[int, str, None],  # noqa: ARG001
+    set_str: set[str],  # noqa: ARG001
+    set_union: set[Union[str, int]],  # noqa: ARG001
+    dict_field: dict,  # noqa: ARG001
+    dict_str: dict[str, str],  # noqa: ARG001
+    dict_dict: dict[str, dict],  # noqa: ARG001
+    dict_int_keys: dict[int, str],  # noqa: ARG001
+    dict_union: dict[str, Union[str, int]],  # noqa: ARG001
+) -> CollectionsModel:  # type: ignore
     """Method using collection types."""
 
 
@@ -828,7 +841,9 @@ def method_union_model() -> Union[ComplexObjects, CollectionsModel, None]:
 
 
 # noinspection PyUnusedLocal
-def param_descriptions(a: int, b: int, c: int) -> tuple[int, int, int]:
+def param_descriptions(
+    a: int, b: int, c: int  # noqa: ARG001
+) -> tuple[int, int, int]:  # type: ignore
     """Method with param descriptions.
 
     :param a: First param, it has a long description that spans more
@@ -840,7 +855,9 @@ def param_descriptions(a: int, b: int, c: int) -> tuple[int, int, int]:
 
 
 # noinspection PyUnusedLocal
-def param_description_no_return(a: int, b: int, c: int) -> tuple[int, int, int]:
+def param_description_no_return(
+    a: int, b: int, c: int  # noqa: ARG001
+) -> tuple[int, int, int]:  # type: ignore
     """Method with param descriptions.
 
     :param a: First param, it has a long description that spans more

@@ -1,4 +1,5 @@
 """OpenRPC custom JSON RPC errors tests."""
+
 from typing import Any
 
 from jsonrpcobjects.errors import JSONRPCError

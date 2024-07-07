@@ -35,11 +35,14 @@ pytest = "^8.0.0"
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.2.1"
 pytest-asyncio = "^0.23.4"
+pytest-cov = "^5.0.0"
 
 [build-system]
-
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.coverage.run]
+source = ["livecov"]
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -76,3 +79,6 @@ lint.select = [
     "TRY",
 ]
 lint.ignore = ["D203", "D213", "FA102", "FA100", "PLR0913"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "D"]

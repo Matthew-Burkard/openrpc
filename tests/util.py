@@ -1,4 +1,5 @@
 """Functions shared by tests."""
+
 import json
 from typing import Any, Optional, Union
 
@@ -23,12 +24,24 @@ class Vector3(BaseModel):
     z: float
 
 
-def parse_response(data: Union[bytes, str]) -> ResponseType:
+def parse_response(data: Union[bytes, str, None]) -> ResponseType:
     """Map a JSON-RPC2 response to the appropriate object."""
-    resp = json.loads(data)
+    resp = json.loads(data or "")
     if resp.get("error"):
         return ErrorResponse(**resp)
     return ResultResponse(**resp)
+
+
+def parse_result_response(data: Union[bytes, str, None]) -> ResultResponse:
+    """Map a JSON-RPC2 response to ResultResponse."""
+    resp = json.loads(data or "")
+    return ResultResponse(**resp)
+
+
+def parse_error_response(data: Union[bytes, str, None]) -> ErrorResponse:
+    """Map a JSON-RPC2 response to ErrorResponse."""
+    resp = json.loads(data or "")
+    return ErrorResponse(**resp)
 
 
 def get_response(

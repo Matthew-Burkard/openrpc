@@ -1,4 +1,5 @@
 """Test depends."""
+
 import json
 
 import pytest
@@ -35,7 +36,7 @@ def test_depends() -> None:
 def test_depends_no_dependency_args() -> None:
     req = {"id": 1, "method": "method_with_dep", "params": {"arg": 1}, "jsonrpc": "2.0"}
     result = get_response(rpc, json.dumps(req))
-    assert result["result"] == f"1-None"
+    assert result["result"] == "1-None"
 
 
 @pytest.mark.asyncio
@@ -56,10 +57,10 @@ async def test_depends_async() -> None:
 
 def test_depends_no_params() -> None:
     @rpc.method()
-    def method_no_params(depends: bool = Depends(lambda: True)) -> bool:
+    def method_no_params(depends: bool = Depends(lambda: True)) -> bool:  # noqa: FBT001
         """Method with depends argument and no other params."""
         return depends is True
 
     req = util.get_request("method_no_params")
-    response = util.parse_response(rpc.process_request(req))
+    response = util.parse_result_response(rpc.process_request(req))
     assert response.result is True

@@ -10,7 +10,7 @@ __all__ = (
 
 import dataclasses
 import inspect
-from typing import Any, Awaitable, Callable, ForwardRef, Optional, Type, Union
+from typing import Any, Awaitable, Callable, ForwardRef, Mapping, Optional, Type, Union
 
 from pydantic import BaseModel
 
@@ -30,7 +30,8 @@ from openrpc._objects import (
 )
 
 SecurityFunction = Union[
-    Callable[..., dict[str, list[str]]], Callable[..., Awaitable[dict[str, list[str]]]]
+    Callable[..., Mapping[str, list[str]]],
+    Callable[..., Awaitable[Mapping[str, list[str]]]],
 ]
 
 

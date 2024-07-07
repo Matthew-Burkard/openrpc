@@ -21,9 +21,9 @@ async def test_alias() -> None:
         return TestModel(calories=type_)
 
     request = util.get_request("method", '{"type_": "philly cheese steak"}')
-    response = util.parse_response(rpc.process_request(request))
+    response = util.parse_result_response(rpc.process_request(request))
     assert response.result["calories"] == "philly cheese steak"
 
     request = util.get_request("method", '{"type_": "spinach and onion"}')
-    response = util.parse_response(await rpc.process_request_async(request))
+    response = util.parse_result_response(await rpc.process_request_async(request))
     assert response.result["calories"] == "spinach and onion"

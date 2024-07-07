@@ -1,4 +1,5 @@
 """Misc unit tests."""
+
 import json
 
 from openrpc import RPCServer
@@ -16,5 +17,5 @@ def get_distance(a: Vector3, b: Vector3) -> Vector3:
 def test_model_para_by_name() -> None:
     params = '{"a": {"x": 1, "y": 1, "z": 1}, "b": {"x": 1, "y": 1, "z": 1}}'
     req = '{"id": 1, "method": "get_distance", "params": %s, "jsonrpc": "2.0"}' % params
-    resp = rpc.process_request(req)
+    resp = rpc.process_request(req) or ""
     assert json.loads(resp)["result"] == {"x": 0, "y": 0, "z": 0}

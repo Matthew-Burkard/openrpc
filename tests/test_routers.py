@@ -5,6 +5,7 @@ from jsonrpcobjects.objects import Request
 from openrpc import RPCRouter, RPCServer
 from tests.util import get_response
 
+METHOD_NOT_FOUND_CODE = -32601
 rpc = RPCServer(title="RouterTestServer", version="1.0.0")
 auth_router = RPCRouter()
 
@@ -33,7 +34,7 @@ def test_router_remove() -> None:
     auth_router.remove("login")
     req = Request(id=1, method="auth.login")
     resp = get_response(rpc, req.model_dump_json())
-    assert resp["error"]["code"] == -32601  # Method not found code.
+    assert resp["error"]["code"] == METHOD_NOT_FOUND_CODE
 
 
 router_with_tags_no_prefix = RPCRouter()
@@ -66,7 +67,7 @@ def test_tags_no_prefix_router_remove() -> None:
     router_with_tags_no_prefix.remove("return_coffee")
     req = Request(id=1, method="return_coffee")
     resp = get_response(rpc, req.model_dump_json())
-    assert resp["error"]["code"] == -32601  # Method not found code.
+    assert resp["error"]["code"] == METHOD_NOT_FOUND_CODE
 
 
 def test_debug() -> None:

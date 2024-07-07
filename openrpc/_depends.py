@@ -14,7 +14,7 @@ class DependsModel(BaseModel):
     accepts_caller_details: bool
 
 
-def _depends(function: Callable) -> Any:
+def Depends(function: Callable) -> Any:  # noqa: N802
     signature = inspect.signature(function)
     depends_params = {
         k: v.default
@@ -28,6 +28,3 @@ def _depends(function: Callable) -> Any:
         depends_params=depends_params,
         accepts_caller_details=accepts_caller_details,
     )
-
-
-Depends = _depends

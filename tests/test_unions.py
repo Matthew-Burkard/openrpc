@@ -1,4 +1,5 @@
 """Test deserializing union types."""
+
 import json
 from typing import Union
 

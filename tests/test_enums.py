@@ -1,4 +1,5 @@
 """Test Python enums to JSON Schema enums."""
+
 import enum
 import json
 from typing import Optional
@@ -86,7 +87,7 @@ def test_calling_enums_method_with_bar_param() -> None:
     res = get_response(rpc, json.dumps(req))
     assert (
         res["error"]["data"].split("\n")[0]
-        == "1 validation error for enum_test_funcParams"
+        == "1 validation error for enum_test_func_params"
     )
 
 
@@ -100,7 +101,7 @@ def test_enum_optional_param() -> None:
 
     # noinspection PyUnusedLocal
     @e_rpc.method()
-    def method(param: Optional[EnumOnlyUsedAsParam]) -> None:
+    def method(param: Optional[EnumOnlyUsedAsParam]) -> None:  # noqa: ARG001
         """Pass."""
 
     req = util.get_request("rpc.discover")

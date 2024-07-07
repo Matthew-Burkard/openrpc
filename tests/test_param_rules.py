@@ -1,4 +1,5 @@
 """Test param rules."""
+
 import json
 
 from openrpc import ParamStructure, RPCServer
@@ -22,18 +23,19 @@ def name_add(a: int, b: int) -> int:
 
 
 def test_by_position() -> None:
+    a, b = 2, 2
     position_req = {
         "id": 1,
         "method": "position_add",
-        "params": [2, 2],
+        "params": [a, b],
         "jsonrpc": "2.0",
     }
     result = get_response(rpc, json.dumps(position_req))
-    assert result["result"] == 4
+    assert result["result"] == a + b
     name_req = {
         "id": 1,
         "method": "position_add",
-        "params": {"a": 2, "b": 2},
+        "params": {"a": a, "b": b},
         "jsonrpc": "2.0",
     }
     result = get_response(rpc, json.dumps(name_req))
@@ -41,18 +43,19 @@ def test_by_position() -> None:
 
 
 def test_by_name() -> None:
+    a, b = 2, 2
     name_req = {
         "id": 1,
         "method": "name_add",
-        "params": {"a": 2, "b": 2},
+        "params": {"a": a, "b": b},
         "jsonrpc": "2.0",
     }
     result = get_response(rpc, json.dumps(name_req))
-    assert result["result"] == 4
+    assert result["result"] == a + b
     position_req = {
         "id": 1,
         "method": "name_add",
-        "params": [2, 2],
+        "params": [a, b],
         "jsonrpc": "2.0",
     }
     result = get_response(rpc, json.dumps(position_req))

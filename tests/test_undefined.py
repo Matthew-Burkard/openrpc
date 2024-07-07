@@ -11,18 +11,18 @@ def test_undefined() -> None:
     rpc = RPCServer(debug=True)
 
     @rpc.method()
-    def method(param: str = Undefined) -> bool:
+    def method(param: str = Undefined) -> bool:  # type: ignore
         """Method with non-required param."""
         return param is Undefined
 
     request = util.get_request("method")
-    response = util.parse_response(rpc.process_request(request))
+    response = util.parse_result_response(rpc.process_request(request))
     assert response.result is True
     request = util.get_request("method", '{"param": ""}')
-    response = util.parse_response(rpc.process_request(request))
+    response = util.parse_result_response(rpc.process_request(request))
     assert response.result is False
     request = util.get_request("method", '[""]')
-    response = util.parse_response(rpc.process_request(request))
+    response = util.parse_result_response(rpc.process_request(request))
     assert response.result is False
 
 
@@ -35,13 +35,13 @@ def test_undefined_type() -> None:
         return param is Undefined
 
     request = util.get_request("undefined_type")
-    response = util.parse_response(rpc.process_request(request))
+    response = util.parse_result_response(rpc.process_request(request))
     assert response.result is True
     request = util.get_request("undefined_type", '{"param": ""}')
-    response = util.parse_response(rpc.process_request(request))
+    response = util.parse_result_response(rpc.process_request(request))
     assert response.result is False
     request = util.get_request("undefined_type", '[""]')
-    response = util.parse_response(rpc.process_request(request))
+    response = util.parse_result_response(rpc.process_request(request))
     assert response.result is False
 
 
@@ -50,12 +50,12 @@ def test_undefined_with_required() -> None:
 
     # noinspection PyUnusedLocal
     @rpc.method()
-    def method(required: str, param: Optional[str] = Undefined) -> bool:
+    def method(_req: str, param: Optional[str] = Undefined) -> bool:  # type: ignore
         """Method with required and non-required params."""
         return param is Undefined
 
     request = util.get_request("method", '[""]')
-    response = util.parse_response(rpc.process_request(request))
+    response = util.parse_result_response(rpc.process_request(request))
     assert response.result is True
 
 
@@ -64,7 +64,7 @@ def test_undefined_discover() -> None:
 
     # noinspection PyUnusedLocal
     @rpc.method()
-    def method(param: str = Undefined) -> bool:
+    def method(param: str = Undefined) -> bool:  # type: ignore  # noqa: ARG001
         """Method with non-required param."""
 
     schema_param = rpc.discover()["methods"][0]["params"][0]
@@ -74,7 +74,7 @@ def test_undefined_discover() -> None:
 
 def test_310_union() -> None:
     if sys.version_info < (3, 10):
-        return None
+        return
     rpc = RPCServer(debug=True)
 
     @rpc.method()
@@ -83,7 +83,7 @@ def test_310_union() -> None:
         return param is Undefined
 
     request = util.get_request("method310")
-    response = util.parse_response(rpc.process_request(request))
+    response = util.parse_result_response(rpc.process_request(request))
     assert response.result is True
 
 
@@ -96,5 +96,5 @@ def test_union_default() -> None:
         return param is Undefined
 
     request = util.get_request("method")
-    response = util.parse_response(rpc.process_request(request))
+    response = util.parse_result_response(rpc.process_request(request))
     assert response.result is True

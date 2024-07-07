@@ -1,7 +1,12 @@
 /log/
 /dist/
 /venv/
-/.idea/
 *.egg-info
 *__pycache__*
 .python-version
+cov.xml
+coverage.xml
+.coverage
+
+.idea/
+.vscode/

@@ -1,4 +1,5 @@
 """Test errors."""
+
 import inspect
 import json
 from pathlib import Path
@@ -17,9 +18,10 @@ error_message = "Custom error message"
 @rpc.method()
 def method_with_error(*_args: Any) -> None:
     """That raises an error."""
-    current_frame: FrameType = inspect.currentframe()  # type: ignore
+    current_frame: Any = inspect.currentframe()  # type: ignore
     try:
-        raise ValueError(f"{error_message}-{current_frame.f_lineno}")
+        msg = f"{error_message}-{current_frame.f_lineno}"
+        raise ValueError(msg)
     finally:
         del current_frame
 
@@ -39,13 +41,13 @@ def test_method_errors_debug() -> None:
     rpc.debug = True
     result = get_response(rpc, json.dumps(req))
     absolute_path = Path(__file__).resolve()
-    line = result["error"]["data"][-3:-1]
+    line = int(result["error"]["data"][-3:-1])
     error = (
         inspect.cleandoc(
             f"""
             ValueError
-              File "{absolute_path}", line {line}, in method_with_error
-                raise ValueError(f"{{error_message}}-{{current_frame.f_lineno}}")
+              File "{absolute_path}", line {line + 1}, in method_with_error
+                raise ValueError(msg)
             ValueError: Custom error message-{line}
             """
         )
