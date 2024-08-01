@@ -4,7 +4,7 @@ __all__ = ("RPCServer", "MethodRegistrar")
 
 import inspect
 import logging
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Mapping, Optional, Union
 
 from jsonrpcobjects.errors import INTERNAL_ERROR
 from jsonrpcobjects.objects import DataError, Error, ErrorResponse
@@ -25,6 +25,7 @@ from openrpc._objects import (
     Server,
     Tag,
 )
+
 from ._depends import DependsModel
 from ._discover.discover import get_openrpc_doc
 
@@ -45,7 +46,7 @@ class RPCServer(MethodRegistrar):
         license_: Optional[License] = None,
         servers: Optional[Union[list[Server], Server]] = None,
         security_schemes: Optional[
-            dict[str, Union[OAuth2, BearerAuth, APIKeyAuth]]
+            Mapping[str, Union[OAuth2, BearerAuth, APIKeyAuth]]
         ] = None,
         security_function: Optional[SecurityFunction] = None,
         *,

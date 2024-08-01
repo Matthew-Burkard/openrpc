@@ -1,4 +1,5 @@
 """Asynchronous OpenRPC tests."""
+
 import asyncio
 import unittest
 from typing import Any, Optional, Union

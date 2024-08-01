@@ -10,11 +10,7 @@ from typing import Any, Callable, Optional, TypeVar, Union
 from py_undefined import Undefined
 from pydantic import create_model
 
-from openrpc._common import (
-    MethodMetaData,
-    resolved_annotation,
-    RPCMethod,
-)
+from openrpc._common import MethodMetaData, RPCMethod, resolved_annotation
 from openrpc._depends import DependsModel
 from openrpc._objects import (
     ContentDescriptor,
@@ -150,7 +146,7 @@ class MethodRegistrar:
                 new_args = tuple(arg for arg in args if arg is not Undefined)
                 origin = typing.get_origin(annotation)
                 if hasattr(origin, "__name__") and origin.__name__ == "UnionType":
-                    annotation = Union[new_args]
+                    annotation = Union[new_args]  # type: ignore
                 else:
                     annotation = origin[new_args]  # type: ignore
             elif param.default is Undefined:
@@ -168,15 +164,15 @@ class MethodRegistrar:
             )
 
         # Params model.
-        param_model = create_model(f"{metadata.name}Params", **fields)  # type: ignore
+        param_model = create_model(f"{metadata.name}_params", **fields)  # type: ignore
         # Params model.
         param_schema_model = create_model(  # type: ignore
-            f"{metadata.name}Params", **schema_fields
+            f"{metadata.name}_params", **schema_fields
         )
 
         # Result Model
         result_model = create_model(
-            f"{metadata.name}Result",
+            f"{metadata.name}_result",
             result=(resolved_annotation(signature.return_annotation, function), ...),
         )
 

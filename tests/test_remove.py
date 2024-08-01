@@ -1,9 +1,10 @@
 """Test removing a method from a server."""
+
 from openrpc import RPCServer
 
 
 # noinspection PyUnusedLocal
-def add(a: int, b: int) -> int:
+def add(a: int, b: int) -> int:  # type: ignore  # noqa: ARG001
     """Add two integers."""
 
 

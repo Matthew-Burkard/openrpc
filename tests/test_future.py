@@ -10,12 +10,13 @@ from openrpc import RPCServer
 
 def test_future() -> None:
     if sys.version_info < (3, 10):
-        return None
+        return
 
     # noinspection PyUnusedLocal
     def future(
-        union_str_int: Union[str, int], list_str: Optional[list[str]] = None
-    ) -> list[str]:
+        union_str_int: Union[str, int],  # noqa: ARG001
+        list_str: Optional[list[str]] = None,  # noqa: ARG001
+    ) -> list[str]:  # type: ignore
         """Function using future union syntax."""
 
     rpc = RPCServer(title="Test OpenRPC", version="1.0.0", debug=True)

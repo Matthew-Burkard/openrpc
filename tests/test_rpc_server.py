@@ -1,4 +1,5 @@
 """OpenRPC tests."""
+
 from __future__ import annotations
 
 import asyncio
@@ -24,9 +25,9 @@ from tests.util import (
     INVALID_REQUEST,
     METHOD_NOT_FOUND,
     PARSE_ERROR,
-    parse_response,
     SERVER_ERROR,
     Vector3,
+    parse_response,
 )
 
 
@@ -366,4 +367,4 @@ def args_and_kwargs(*args: Any, **kwargs: Any) -> Any:
 
 def return_none() -> None:
     """Function that returns `None`."""
-    return None
+    return
