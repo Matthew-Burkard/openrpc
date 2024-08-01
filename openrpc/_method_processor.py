@@ -6,7 +6,7 @@ import inspect
 import logging
 import traceback
 from pathlib import Path
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Mapping, Optional, Union
 
 from jsonrpcobjects.errors import InternalError, InvalidParams, JSONRPCError
 from jsonrpcobjects.objects import (
@@ -259,7 +259,7 @@ class MethodProcessor:
         return None
 
     def _get_permission_error_from_scheme(
-        self, active_scheme: Optional[dict[str, list[str]]]
+        self, active_scheme: Optional[Mapping[str, list[str]]]
     ) -> Optional[str]:
         if not active_scheme:
             return "No active security schemes for caller."
