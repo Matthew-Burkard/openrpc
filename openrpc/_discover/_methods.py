@@ -124,5 +124,7 @@ def _get_description(rpc_method: RPCMethod) -> Optional[str]:
         (doc_string := rpc_method.function.__doc__)
         and (match := re.match(r"^.*?\n\n(.*?)(\n\n|$)", doc_string, re.S))
     ):
-        description = re.sub(r"\s+", " ", match.groups()[0]).strip()
+        doc = re.sub(r"\s+", " ", match.groups()[0]).strip()
+        if not doc.startswith(":"):
+            return doc
     return description

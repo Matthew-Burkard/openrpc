@@ -7,7 +7,7 @@ from openrpc import RPCServer
 from tests import util
 
 
-class TestModel(BaseModel):
+class Model(BaseModel):
     pizza: str = Field(..., alias="calories")
 
 
@@ -16,9 +16,9 @@ async def test_alias() -> None:
     rpc = RPCServer()
 
     @rpc.method()
-    def method(type_: str) -> TestModel:
+    def method(type_: str) -> Model:
         """Test method."""
-        return TestModel(calories=type_)
+        return Model(calories=type_)
 
     request = util.get_request("method", '{"type_": "philly cheese steak"}')
     response = util.parse_result_response(rpc.process_request(request))

@@ -722,8 +722,25 @@ def test_descriptions() -> None:
         "This method also has a lengthy description in addition to the summary line. It"
         " makes a point to span multiple lines for the sake of doing so."
     )
+    expected_first_line = "Method description."
+    assert doc["methods"][0]["summary"] == expected_first_line
     assert doc["methods"][0]["description"] == expected_description
+    assert doc["methods"][1]["summary"] == expected_first_line
     assert doc["methods"][1]["description"] == expected_description
+
+
+def test_no_description() -> None:
+    rpc = _rpc()
+
+    @rpc.method()
+    def no_description(_a: int) -> None:
+        """Summary line.
+
+        :param _a: A param.
+        """
+
+    doc = rpc.discover()
+    assert doc["methods"][0].get("description") is None
 
 
 def _rpc() -> RPCServer:

@@ -114,7 +114,6 @@ class MethodRegistrar:
                     security=security or {},
                 ),
             )
-
         return _decorator
 
     def remove(self, method: str) -> None:
