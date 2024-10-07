@@ -27,7 +27,7 @@ from openrpc._objects import (
 )
 
 from ._depends import DependsModel
-from ._discover.discover import get_openrpc_doc
+from ._discover import get_openrpc_doc
 
 log = logging.getLogger("openrpc")
 _META_REF = "https://raw.githubusercontent.com/open-rpc/meta-schema/master/schema.json"
@@ -330,12 +330,9 @@ class RPCServer(MethodRegistrar):
     def _get_error_response(self, error: Exception) -> ErrorResponse:
         log.exception("%s:", type(error).__name__)
         if self._debug:
-            error_object: Union[Error, DataError] = DataError(
-                **{
-                    **INTERNAL_ERROR.model_dump(),
-                    **{"data": f"{type(error).__name__}: {error}"},
-                }
-            )
+            error_dict = INTERNAL_ERROR.model_dump()
+            error_dict["data"] = f"{type(error).__name__}: {error}"
+            error_object: Union[Error, DataError] = DataError(**error_dict)
         else:
             error_object = Error(**INTERNAL_ERROR.model_dump())
         return ErrorResponse(id=None, error=error_object)

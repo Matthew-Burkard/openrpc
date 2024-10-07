@@ -101,7 +101,7 @@ def test_enum_optional_param() -> None:
 
     # noinspection PyUnusedLocal
     @e_rpc.method()
-    def method(param: Optional[EnumOnlyUsedAsParam]) -> None:  # noqa: ARG001
+    def method(param: Optional[EnumOnlyUsedAsParam]) -> None:  # type: ignore  # noqa: ARG001
         """Pass."""
 
     req = util.get_request("rpc.discover")

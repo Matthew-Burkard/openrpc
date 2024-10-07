@@ -175,10 +175,10 @@ class RPCTest(unittest.TestCase):
         self.assertEqual(len(responses), 6)
 
     def test_list_param(self) -> None:
-        def increment_list(numbers: list[Union[int, float]]) -> list:
-            return [it + 1 for it in numbers]
+        def increment_list(numbers: list[Union[int, float]]) -> list:  # type: ignore
+            return [it + 1 for it in numbers]  # type: ignore
 
-        self.method(increment_list)
+        self.method(increment_list)  # type: ignore
         request = ParamsRequest(id=1, method="increment_list", params=[[1, 2, 3]])
         resp = self.get_sync_and_async_resp(request.model_dump_json())
         self.assertEqual([2, 3, 4], resp["result"])
@@ -273,7 +273,6 @@ class RPCTest(unittest.TestCase):
 
     def test_deserialize_nested_objects(self) -> None:
         def take_thing(thing: RecursiveModel) -> bool:
-            self.assertTrue(isinstance(thing, RecursiveModel))
             assert isinstance(thing.another_thing, RecursiveModel)
             assert isinstance(thing.another_thing.position, Vector3)
             assert isinstance(thing.another_thing_no_future_annotations, RecursiveModel)
@@ -327,14 +326,14 @@ class RPCTest(unittest.TestCase):
             return {"result": None}
         return json.loads(sync_resp)
 
-    def method(self, func: Callable, name: Optional[str] = None) -> None:
+    def method(self, func: Callable[..., Any], name: Optional[str] = None) -> None:
         self.server.method(name=name)(func)
         if name is not None:
             name = f"async_{name}"
         self.server.method(name=name)(get_as_async(func))
 
 
-def get_as_async(func: Callable) -> Callable:
+def get_as_async(func: Callable[..., Any]) -> Callable[..., Any]:
     """Get an async version of a function."""
 
     @functools.wraps(func)

@@ -21,7 +21,11 @@ security: Mapping[str, Union[OAuth2, BearerAuth, APIKeyAuth]] = {
         ]
     )
 }
-rpc = RPCServer(security_schemes=security, security_function=lambda x: x, debug=True)
+rpc = RPCServer(
+    security_schemes=security,
+    security_function=lambda x: x,  # type: ignore
+    debug=True,
+)
 
 
 def add(a: int, b: int) -> int:
@@ -54,7 +58,8 @@ def test_security_depends() -> None:
         return headers["user"]
 
     def security_function(
-        _headers: dict[str, str], user=Depends(middleware)  # noqa: B008
+        _headers: dict[str, str],
+        user: str = Depends(middleware),  # noqa: B008
     ) -> dict[str, list[str]]:
         """Typical security function."""
         return {"pizza": {"oauth2": ["coffee", "mocha"]}}[user]
@@ -64,7 +69,7 @@ def test_security_depends() -> None:
     )
 
     @security_rpc.method(security={"oauth2": ["coffee", "mocha"]})
-    def permission_method_with_depends(user: str = Depends(middleware)) -> str:
+    def permission_method_with_depends(user: str = Depends(middleware)) -> str:  # type: ignore
         """Method requiring a permission with `Depends`."""
         return user
 
@@ -197,7 +202,7 @@ def test_security_only_depends() -> None:
         return {"apikey": ["pickle"]}
 
     def _security(
-        depends: dict[str, list[str]] = Depends(_depends)  # noqa: B008
+        depends: dict[str, list[str]] = Depends(_depends),  # noqa: B008
     ) -> dict[str, list[str]]:
         return depends
 
@@ -237,7 +242,7 @@ def test_nested_depends() -> None:
 @pytest.mark.asyncio
 async def test_async_security_function() -> None:
     async def _awaitable_security(
-        caller_details: dict[str, list[str]]
+        caller_details: dict[str, list[str]],
     ) -> dict[str, list[str]]:
         return caller_details
 

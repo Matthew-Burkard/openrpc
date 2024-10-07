@@ -21,7 +21,8 @@ def test_future() -> None:
 
     rpc = RPCServer(title="Test OpenRPC", version="1.0.0", debug=True)
     rpc.method()(future)
-    method = rpc.discover()["methods"][0]
+    doc = rpc.discover()
+    method = doc["methods"][0]
     # Examples
     assert method["examples"] == [
         {
@@ -33,30 +34,45 @@ def test_future() -> None:
         }
     ]
     # Params
+    assert doc["components"]["schemas"]["future_params.properties.union_str_int"] == {
+        "anyOf": [{"type": "string"}, {"type": "integer"}],
+        "title": "Union Str Int",
+    }
+    assert doc["components"]["schemas"][
+        "future_params.properties.list_str.any_of.0"
+    ] == {"items": {"type": "string"}, "type": "array"}
+    assert doc["components"]["schemas"]["future_params.properties.list_str"] == {
+        "anyOf": [
+            {"$ref": "#/components/schemas/future_params.properties.list_str.any_of.0"},
+            {"type": "null"},
+        ],
+        "default": None,
+        "title": "List Str",
+    }
+
     assert method["params"] == [
         {
             "name": "union_str_int",
             "required": True,
             "schema": {
-                "anyOf": [{"type": "string"}, {"type": "integer"}],
-                "title": "Union Str Int",
+                "$ref": "#/components/schemas/future_params.properties.union_str_int"
             },
         },
         {
             "name": "list_str",
             "required": False,
             "schema": {
-                "anyOf": [
-                    {"items": {"type": "string"}, "type": "array"},
-                    {"type": "null"},
-                ],
-                "default": None,
-                "title": "List Str",
+                "$ref": "#/components/schemas/future_params.properties.list_str"
             },
         },
     ]
     # Result
+    assert doc["components"]["schemas"]["future_result.properties.result"] == {
+        "items": {"type": "string"},
+        "type": "array",
+        "title": "Result",
+    }
     assert method["result"] == {
         "name": "result",
-        "schema": {"items": {"type": "string"}, "type": "array", "title": "Result"},
+        "schema": {"$ref": "#/components/schemas/future_result.properties.result"},
     }

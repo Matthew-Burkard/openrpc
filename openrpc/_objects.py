@@ -185,6 +185,14 @@ class Schema(BaseModel):
     else_: Optional[SchemaType] = Field(alias="else", default=None)
     schema_: Optional[str] = Field(alias="$schema", default=None)
 
+    def is_primitive(self) -> bool:
+        for name in self.model_fields:
+            if name == "title":
+                continue
+            if name != "type" and getattr(self, name) is not None:
+                return False
+        return True
+
 
 class ExamplePairing(BaseModel):
     """Consists of a set of example params and result."""

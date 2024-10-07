@@ -16,7 +16,7 @@ async def test_alias() -> None:
     rpc = RPCServer()
 
     @rpc.method()
-    def method(type_: str) -> Model:
+    def method(type_: str) -> Model:  # type: ignore
         """Test method."""
         return Model(calories=type_)
 

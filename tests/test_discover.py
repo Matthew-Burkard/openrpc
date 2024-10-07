@@ -66,22 +66,22 @@ class ComplexObjects(BaseModel):
 
 
 class CollectionsModel(BaseModel):
-    list_field: list
+    list_field: list  # type: ignore
     list_str: list[str]
-    list_list: list[list]
+    list_list: list[list]  # type: ignore
     list_list_int: list[list[int]]
     list_union: list[Union[str, int]]
-    tuple_field: tuple
+    tuple_field: tuple  # type: ignore
     tuple_str: tuple[str]
-    tuple_tuple: tuple[tuple]
+    tuple_tuple: tuple[tuple]  # type: ignore
     tuple_tuple_int: tuple[tuple[int]]
     tuple_union: tuple[Union[str, int]]
     tuple_int_str_none: tuple[int, str, None]
     set_str: set[str]
     set_union: set[Union[str, int]]
-    dict_field: dict
+    dict_field: dict  # type: ignore
     dict_str: dict[str, str]
-    dict_dict: dict[str, dict]
+    dict_dict: dict[str, dict]  # type: ignore
     dict_int_keys: dict[int, str]
     dict_union: dict[str, Union[str, int]]
 
@@ -101,11 +101,11 @@ def test_open_rpc_info() -> None:
     rpc.method()(return_none)
     rpc.method()(default_value)
     rpc.method()(take_any_get_any)
-    rpc.method()(dict_and_list)
+    rpc.method()(dict_and_list)  # type: ignore
     rpc.method()(nested_model)
-    rpc.method()(typed_dict_and_list)
+    rpc.method()(typed_dict_and_list)  # type: ignore
     rpc.method()(list_model_result)
-    rpc.method()(no_annotations)
+    rpc.method()(no_annotations)  # type: ignore
     rpc.title = rpc.title or "Test OpenRPC"
     rpc.version = rpc.version or "1.0.0"
     rpc.description = rpc.description or "Testing rpc.discover"
@@ -328,7 +328,7 @@ def test_any() -> None:
 
 def test_no_annotations() -> None:
     rpc = _rpc()
-    rpc.method()(no_annotations)
+    rpc.method()(no_annotations)  # type: ignore
     method = rpc.discover()["methods"][0]
     # Examples
     assert method["examples"] == [
@@ -422,7 +422,7 @@ def test_complex_objects() -> None:
 
 def test_collections() -> None:
     rpc = _rpc()
-    rpc.method()(method_using_collections)
+    rpc.method()(method_using_collections)  # type: ignore
     method = rpc.discover()["methods"][0]
 
     # Params
@@ -698,7 +698,7 @@ def test_descriptions() -> None:
     rpc = _rpc()
 
     @rpc.method()
-    def description() -> None:
+    def description() -> None:  # type: ignore
         """Method description.
 
         This method also has a lengthy description in addition to the
@@ -707,7 +707,7 @@ def test_descriptions() -> None:
         """
 
     @rpc.method()
-    def description_w_params(_a: int) -> None:
+    def description_w_params(_a: int) -> None:  # type: ignore
         """Method description.
 
         This method also has a lengthy description in addition to the
@@ -733,7 +733,7 @@ def test_no_description() -> None:
     rpc = _rpc()
 
     @rpc.method()
-    def no_description(_a: int) -> None:
+    def no_description(_a: int) -> None:  # type: ignore
         """Summary line.
 
         :param _a: A param.
@@ -749,7 +749,7 @@ def _rpc() -> RPCServer:
 
 # noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
 def increment(
-    numbers: list[Union[int, float]]  # noqa: ARG001
+    numbers: list[Union[int, float]],  # noqa: ARG001
 ) -> list[Union[int, str]]:  # type: ignore
     """Collections and unions."""
 
@@ -764,7 +764,9 @@ def get_distance(
 
 # noinspection PyUnusedLocal
 def default_value(
-    a: int = 2, b: float = 0.99792458, c: str = "c"  # noqa: ARG001
+    a: int = 2,
+    b: float = 0.99792458,
+    c: str = "c",  # noqa: ARG001
 ) -> str:  # noqa: ARG001  # type: ignore
     """Function with default values for params."""
 
@@ -776,21 +778,24 @@ def return_none(optional_param: Optional[str]) -> None:  # noqa: ARG001
 
 # noinspection PyUnusedLocal
 def take_any_get_any(
-    any_param: Any, dep: str = Depends(lambda x: x)  # noqa: ARG001
+    any_param: Any,
+    dep: str = Depends(lambda x: x),  # type: ignore  # noqa: ARG001
 ) -> Any:
     """Function that takes and returns any type, uses Dep argument."""
 
 
 # noinspection PyUnusedLocal
-def dict_and_list(
-    dict_param: dict, list_param: list  # noqa: ARG001
+def dict_and_list(  # type: ignore
+    dict_param: dict,  # type: ignore
+    list_param: list,  # type: ignore  # noqa: ARG001
 ) -> dict[str, list]:  # type: ignore
     """For testing dict and list type annotations."""
 
 
 # noinspection PyUnusedLocal
-def typed_dict_and_list(
-    dict_param: dict[str, int], list_param: list[dict[str, int]]  # noqa: ARG001
+def typed_dict_and_list(  # type: ignore
+    dict_param: dict[str, int],
+    list_param: list[dict[str, int]],  # noqa: ARG001
 ) -> dict[str, list]:  # type: ignore
     """For testing typed dict and list type annotations."""
 
@@ -830,22 +835,22 @@ def method_using_complex_objects(
 
 # noinspection PyUnusedLocal
 def method_using_collections(
-    list_field: list,  # noqa: ARG001
+    list_field: list,  # type: ignore  # noqa: ARG001
     list_str: list[str],  # noqa: ARG001
-    list_list: list[list],  # noqa: ARG001
+    list_list: list[list],  # type: ignore  # noqa: ARG001
     list_list_int: list[list[int]],  # noqa: ARG001
     list_union: list[Union[str, int]],  # noqa: ARG001
-    tuple_field: tuple,  # noqa: ARG001
+    tuple_field: tuple,  # type: ignore  # noqa: ARG001
     tuple_str: tuple[str],  # noqa: ARG001
-    tuple_tuple: tuple[tuple],  # noqa: ARG001
+    tuple_tuple: tuple[tuple],  # type: ignore  # noqa: ARG001
     tuple_tuple_int: tuple[tuple[int]],  # noqa: ARG001
     tuple_union: tuple[Union[str, int]],  # noqa: ARG001
     tuple_int_str_none: tuple[int, str, None],  # noqa: ARG001
     set_str: set[str],  # noqa: ARG001
     set_union: set[Union[str, int]],  # noqa: ARG001
-    dict_field: dict,  # noqa: ARG001
+    dict_field: dict,  # type: ignore  # noqa: ARG001
     dict_str: dict[str, str],  # noqa: ARG001
-    dict_dict: dict[str, dict],  # noqa: ARG001
+    dict_dict: dict[str, dict],  # type: ignore  # noqa: ARG001
     dict_int_keys: dict[int, str],  # noqa: ARG001
     dict_union: dict[str, Union[str, int]],  # noqa: ARG001
 ) -> CollectionsModel:  # type: ignore
@@ -859,7 +864,9 @@ def method_union_model() -> Union[ComplexObjects, CollectionsModel, None]:
 
 # noinspection PyUnusedLocal
 def param_descriptions(
-    a: int, b: int, c: int  # noqa: ARG001
+    a: int,
+    b: int,
+    c: int,  # noqa: ARG001
 ) -> tuple[int, int, int]:  # type: ignore
     """Method with param descriptions.
 
@@ -873,7 +880,9 @@ def param_descriptions(
 
 # noinspection PyUnusedLocal
 def param_description_no_return(
-    a: int, b: int, c: int  # noqa: ARG001
+    a: int,
+    b: int,
+    c: int,  # noqa: ARG001
 ) -> tuple[int, int, int]:  # type: ignore
     """Method with param descriptions.
 

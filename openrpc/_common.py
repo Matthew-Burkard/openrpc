@@ -57,7 +57,7 @@ class MethodMetaData(BaseModel):
 class RPCMethod(BaseModel):
     """Hold information about a decorated Python function."""
 
-    function: Callable
+    function: Callable[..., Any]
     metadata: MethodMetaData
     depends: dict[str, DependsModel]
     # Schema model needed to support Undefined.
@@ -76,7 +76,7 @@ class SecurityFunctionDetails:
     accepts_caller_details: bool
 
 
-def resolved_annotation(annotation: Any, function: Callable) -> Any:
+def resolved_annotation(annotation: Any, function: Callable[..., Any]) -> Any:
     """Get annotation resolved."""
     if annotation == inspect.Signature.empty:
         return Any
