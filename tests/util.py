@@ -7,6 +7,7 @@ from jsonrpcobjects.objects import ErrorResponse, ResponseType, ResultResponse
 from pydantic import BaseModel
 
 from openrpc import RPCServer
+from openrpc._objects import Components, Schema, SchemaType
 
 INTERNAL_ERROR = -32603
 INVALID_PARAMS = -32602
@@ -67,3 +68,17 @@ def get_request(method: str, params: Optional[str] = None) -> str:
     if params is None:
         return f'{{"id": 1, "method": "{method}", "jsonrpc": "2.0"}}'
     return f'{{"id": 1, "method": "{method}", "params": {params}, "jsonrpc": "2.0"}}'
+
+
+def resolve(ref: SchemaType, components: Components | None) -> Schema:
+    assert components is not None
+    assert components.schemas is not None
+    assert not isinstance(ref, bool)
+    assert ref.ref is not None
+    schema = components.schemas[ref.ref.removeprefix("#/components/schemas/")]
+    assert not isinstance(schema, bool)
+    return schema
+
+
+def dump(model: BaseModel) -> dict[str, Any]:
+    return model.model_dump(exclude_unset=True, by_alias=True)

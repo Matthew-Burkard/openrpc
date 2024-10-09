@@ -189,7 +189,7 @@ class Schema(BaseModel):
         for name in self.model_fields:
             if name == "title":
                 continue
-            if name != "type" and getattr(self, name) is not None:
+            if name not in ["type", "default"] and getattr(self, name) is not None:
                 return False
         return True
 

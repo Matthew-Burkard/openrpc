@@ -20,7 +20,8 @@ from openrpc import (
     RPCServer,
     Server,
 )
-from tests.util import Vector3
+from openrpc._objects import OpenRPC
+from tests.util import Vector3, dump, resolve
 
 
 class EnumAsModelField(Enum):
@@ -156,84 +157,68 @@ def test_method_properties() -> None:
 def test_lists() -> None:
     rpc = _rpc()
     rpc.method()(increment)
-    method = rpc.discover()["methods"][0]
+    doc = OpenRPC(**rpc.discover())
     # Examples
-    assert method["examples"] == [
-        {"params": [{"name": "numbers", "value": [1]}], "result": {"value": [1]}}
-    ]
-    # Params
-    assert method["params"] == [
-        {
-            "name": "numbers",
-            "schema": {
-                "type": "array",
-                "items": {"anyOf": [{"type": "integer"}, {"type": "number"}]},
-                "title": "Numbers",
-            },
-            "required": True,
-        }
-    ]
-    # Result
-    assert method["result"] == {
-        "name": "result",
-        "schema": {
-            "type": "array",
-            "items": {"anyOf": [{"type": "integer"}, {"type": "string"}]},
-            "title": "Result",
-        },
+    assert doc.methods[0].examples is not None
+    examples = dump(doc.methods[0].examples[0])
+    assert examples == {
+        "params": [{"name": "numbers", "value": [1]}],
+        "result": {"value": [1]},
     }
+    # Params
+    expected_param_schema = {
+        "type": "array",
+        "items": {"anyOf": [{"type": "integer"}, {"type": "number"}]},
+        "title": "Numbers",
+    }
+    param_schema = resolve(doc.methods[0].params[0].schema_, doc.components)
+    assert param_schema.items is not None
+    param_schema.items = resolve(param_schema.items, doc.components)
+    assert dump(param_schema) == expected_param_schema
+    # Result
+    expected_result = {
+        "type": "array",
+        "items": {"anyOf": [{"type": "integer"}, {"type": "string"}]},
+        "title": "Result",
+    }
+    result_schema = resolve(doc.methods[0].result.schema_, doc.components)
+    assert result_schema.items is not None
+    result_schema.items = resolve(result_schema.items, doc.components)
+    assert dump(result_schema) == expected_result
 
 
 def test_schema_params() -> None:
     rpc = _rpc()
     rpc.method()(get_distance)
-    method = rpc.discover()["methods"][0]
+    doc = OpenRPC(**rpc.discover())
+    method = doc.methods[0]
+    model_example = {
+        "enum_field": EnumAsModelField.A,
+        "vanilla_model": {"x": 1.0, "y": 1.0, "z": 1.0},
+        "x": 1.0,
+        "y": 1.0,
+    }
     # Examples
-    assert method["examples"] == [
-        {
-            "params": [
-                {
-                    "name": "position",
-                    "value": {
-                        "enum_field": "A",
-                        "vanilla_model": {"x": 1.0, "y": 1.0, "z": 1.0},
-                        "x": 1.0,
-                        "y": 1.0,
-                    },
-                },
-                {
-                    "name": "target",
-                    "value": {
-                        "enum_field": "A",
-                        "vanilla_model": {"x": 1.0, "y": 1.0, "z": 1.0},
-                        "x": 1.0,
-                        "y": 1.0,
-                    },
-                },
-            ],
-            "result": {
-                "value": {
-                    "enum_field": "A",
-                    "vanilla_model": {"x": 1.0, "y": 1.0, "z": 1.0},
-                    "x": 1.0,
-                    "y": 1.0,
-                }
-            },
-        }
-    ]
+    assert method.examples is not None
+    example = method.examples[0]
+    assert example.params is not None
+    assert dump(example.params[0]) == {"name": "position", "value": model_example}
+    assert dump(example.params[1]) == {"name": "target", "value": model_example}
+    assert example.result is not None
+    assert dump(example.result) == {"value": model_example}
     # Params
-    assert method["params"] == [
-        {
-            "name": "position",
-            "schema": {"$ref": "#/components/schemas/Vector2"},
-            "required": True,
+    p1 = method.params[0]
+    p1_schema = dump(resolve(p1.schema_, doc.components))
+    assert p1_schema["properties"]["x"] == {
+        "x": {"title": "X", "type": "number"},
+        "y": {"title": "Y", "type": "number"},
+        "vanilla_model": {
+            "$ref": "#/components/schemas/get_distance_params.defs.Vector3"
         },
-        {
-            "name": "target",
-            "schema": {"$ref": "#/components/schemas/Vector2"},
-            "required": True,
+        "enum_field": {
+            "$ref": "#/components/schemas/get_distance_params.defs.EnumAsModelField"
         },
-    ]
+    }
     # Result
     assert method["result"] == {
         "name": "result",
@@ -244,38 +229,38 @@ def test_schema_params() -> None:
 def test_defaults() -> None:
     rpc = _rpc()
     rpc.method()(default_value)
-    method = rpc.discover()["methods"][0]
+    doc = OpenRPC(**rpc.discover())
+    method = doc.methods[0]
     # Examples
-    assert method["examples"] == [
-        {
-            "params": [
-                {"name": "a", "value": 2},
-                {"name": "b", "value": 0.99792458},
-                {"name": "c", "value": "c"},
-            ],
-            "result": {"value": "string"},
-        }
-    ]
+    assert method.examples is not None
+    assert method.examples[0].model_dump(exclude_none=True) == {
+        "params": [
+            {"name": "a", "value": 2},
+            {"name": "b", "value": 0.99792458},
+            {"name": "c", "value": "c"},
+        ],
+        "result": {"value": "string"},
+    }
     # Params
-    assert method["params"] == [
+    assert method.model_dump(exclude_unset=True, by_alias=True)["params"] == [
         {
             "name": "a",
+            "schema": {"title": "A", "type": "integer", "default": 2},
             "required": False,
-            "schema": {"default": 2, "title": "A", "type": "integer"},
         },
         {
             "name": "b",
+            "schema": {"title": "B", "type": "number", "default": 0.99792458},
             "required": False,
-            "schema": {"default": 0.99792458, "title": "B", "type": "number"},
         },
         {
             "name": "c",
+            "schema": {"title": "C", "type": "string", "default": "c"},
             "required": False,
-            "schema": {"default": "c", "title": "C", "type": "string"},
         },
     ]
     # Result
-    assert method["result"] == {
+    assert method.result.model_dump(exclude_unset=True, by_alias=True) == {
         "name": "result",
         "schema": {"title": "Result", "type": "string"},
     }

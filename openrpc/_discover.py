@@ -1,4 +1,7 @@
-"""Module for `rpc.discover` related functions."""
+"""Module for `rpc.discover` related functions.
+
+This is iteration number 3 of this module and I'm still unhappy with it.
+"""
 
 __all__ = ("get_openrpc_doc",)
 
@@ -61,9 +64,11 @@ def get_methods(
         if rpc_method.metadata.name == "rpc.discover":
             continue
         params_schema = Schema(**rpc_method.params_model.model_json_schema())
-        schemas = flatten_schemas(params_schema.title or "", params_schema, schemas)
+        param_ref = params_schema.title or ""
+        schemas = flatten_schemas(param_ref, param_ref, params_schema, schemas)
         result_schema = Schema(**rpc_method.result_model.model_json_schema())
-        schemas = flatten_schemas(result_schema.title or "", result_schema, schemas)
+        result_ref = result_schema.title or ""
+        schemas = flatten_schemas(result_ref, result_ref, result_schema, schemas)
 
         method = Method(
             name=rpc_method.metadata.name or rpc_method.function.__name__,
@@ -97,7 +102,7 @@ def get_methods(
 
 
 def flatten_schemas(
-    ref: str, schema: Schema, schemas: dict[str, SchemaType]
+    base_ref: str, ref: str, schema: Schema, schemas: dict[str, SchemaType]
 ) -> dict[str, SchemaType]:
     # Handle schema lists.
     for attr, schema_list in [
@@ -112,9 +117,10 @@ def flatten_schemas(
                 new_list.append(schema_item)
                 continue
             new_ref = f"{ref}.{attr}.{index}"
-            schemas = flatten_schemas(new_ref, schema_item, schemas)
-            data: Any = {"$ref": f"{schema_ref}/{new_ref}"}
-            new_list.append(Schema(**data))
+            new_schema, schemas = _handle_schema(
+                base_ref, new_ref, schema_item, schemas
+            )
+            new_list.append(new_schema)
         if new_list:
             setattr(schema, attr, new_list)
 
@@ -122,8 +128,8 @@ def flatten_schemas(
     for attr, schema_map in [
         ("properties", schema.properties or {}),
         ("pattern_properties", schema.pattern_properties or {}),
-        ("defs", schema.defs or {}),
         ("dependent_schemas", schema.dependent_schemas or {}),
+        ("defs", schema.defs or {}),
     ]:
         new_map: dict[str, SchemaType] = {}
         for name, schema_item in schema_map.items():
@@ -131,9 +137,10 @@ def flatten_schemas(
                 new_map[name] = schema_item
                 continue
             new_ref = f"{ref}.{attr}.{name}"
-            schemas = flatten_schemas(new_ref, schema_item, schemas)
-            data: Any = {"$ref": f"{schema_ref}/{new_ref}"}
-            new_map[name] = Schema(**data)
+            new_schema, schemas = _handle_schema(
+                base_ref, new_ref, schema_item, schemas
+            )
+            new_map[name] = new_schema
         if new_map:
             setattr(schema, attr, new_map)
 
@@ -147,14 +154,22 @@ def flatten_schemas(
         ):
             continue
         new_ref = f"{ref}.{attr}"
-        schemas = flatten_schemas(new_ref, schema_item, schemas)
-        data: Any = {"$ref": f"{schema_ref}/{new_ref}"}
-        new_schema = Schema(**data)
-        if new_schema:
-            setattr(schema, attr, new_schema)
+        new_schema, schemas = _handle_schema(base_ref, new_ref, schema_item, schemas)
+        setattr(schema, attr, new_schema)
 
     schemas[ref] = schema
     return schemas
+
+
+def _handle_schema(
+    base_ref: str, ref: str, schema: Schema, schemas: dict[str, SchemaType]
+) -> tuple[Schema, dict[str, SchemaType]]:
+    if schema.ref is not None:
+        schema.ref = schema.ref.replace("#/$defs/", f"{schema_ref}/{base_ref}.defs.")
+        return schema, schemas
+    schemas = flatten_schemas(base_ref, ref, schema, schemas)
+    data: Any = {"$ref": f"{schema_ref}/{ref}"}
+    return Schema(**data), schemas
 
 
 def _get_result(
@@ -162,7 +177,7 @@ def _get_result(
 ) -> ContentDescriptor:
     if rpc_method.metadata.result:
         return rpc_method.metadata.result
-    result_schema = schemas[rpc_method.result_model.__name__]
+    result_schema = schemas.pop(rpc_method.result_model.__name__)
     if isinstance(result_schema, bool):
         schema = result_schema
     else:
@@ -190,7 +205,7 @@ def _get_params(
         )
     }
     descriptors: list[ContentDescriptor] = []
-    schema = schemas[f"{rpc_method.params_model.__name__}"]
+    schema = schemas.pop(f"{rpc_method.params_model.__name__}")
     if isinstance(schema, bool):
         return []
     # Get schema for each param.
