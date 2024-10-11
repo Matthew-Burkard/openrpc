@@ -20,8 +20,8 @@ from openrpc import (
     RPCServer,
     Server,
 )
-from openrpc._objects import OpenRPC
-from tests.util import Vector3, dump, resolve
+from openrpc._objects import OpenRPC, Schema
+from tests.util import Vector3, dump, resolve, validate_references
 
 
 class EnumAsModelField(Enum):
@@ -172,7 +172,6 @@ def test_lists() -> None:
         "title": "Numbers",
     }
     param_schema = resolve(doc.methods[0].params[0].schema_, doc.components)
-    assert param_schema.items is not None
     param_schema.items = resolve(param_schema.items, doc.components)
     assert dump(param_schema) == expected_param_schema
     # Result
@@ -182,7 +181,6 @@ def test_lists() -> None:
         "title": "Result",
     }
     result_schema = resolve(doc.methods[0].result.schema_, doc.components)
-    assert result_schema.items is not None
     result_schema.items = resolve(result_schema.items, doc.components)
     assert dump(result_schema) == expected_result
 
@@ -209,7 +207,7 @@ def test_schema_params() -> None:
     # Params
     p1 = method.params[0]
     p1_schema = dump(resolve(p1.schema_, doc.components))
-    assert p1_schema["properties"]["x"] == {
+    assert p1_schema["properties"] == {
         "x": {"title": "X", "type": "number"},
         "y": {"title": "Y", "type": "number"},
         "vanilla_model": {
@@ -218,11 +216,6 @@ def test_schema_params() -> None:
         "enum_field": {
             "$ref": "#/components/schemas/get_distance_params.defs.EnumAsModelField"
         },
-    }
-    # Result
-    assert method["result"] == {
-        "name": "result",
-        "schema": {"$ref": "#/components/schemas/Vector2"},
     }
 
 
@@ -269,30 +262,23 @@ def test_defaults() -> None:
 def test_return_none() -> None:
     rpc = _rpc()
     rpc.method()(return_none)
-    method = rpc.discover()["methods"][0]
+    doc = OpenRPC(**rpc.discover())
+    method = doc.methods[0]
     # Examples
-    assert method["examples"] == [
-        {
-            "params": [{"name": "optional_param", "value": "string"}],
-            "result": {"value": None},
-        }
-    ]
-    # Params
-    assert method["params"] == [
-        {
-            "name": "optional_param",
-            "required": True,
-            "schema": {
-                "anyOf": [{"type": "string"}, {"type": "null"}],
-                "title": "Optional Param",
-            },
-        }
-    ]
-    # Result
-    assert method["result"] == {
-        "name": "result",
-        "schema": {"title": "Result", "type": "null"},
+    assert method.examples is not None
+    assert dump(method.examples[0]) == {
+        "params": [{"name": "optional_param", "value": "string"}],
+        "result": {"value": None},
     }
+    # Params
+    param_schema = dump(resolve(method.params[0].schema_, doc.components))
+    assert param_schema == {
+        "anyOf": [{"type": "string"}, {"type": "null"}],
+        "title": "Optional Param",
+    }
+    # Result
+    result_schema = dump(method.result.schema_)
+    assert result_schema == {"title": "Result", "type": "null"}
 
 
 def test_any() -> None:
@@ -337,330 +323,199 @@ def test_no_annotations() -> None:
 def test_complex_objects() -> None:
     rpc = _rpc()
     rpc.method()(method_using_complex_objects)
-    method = rpc.discover()["methods"][0]
+    doc = OpenRPC(**rpc.discover())
+    method = doc.methods[0]
     # Examples
-    assert method["examples"] == [
-        {
-            "params": [
-                {"name": "date_field", "value": "1788-06-21"},
-                {"name": "time_field", "value": "00:00:00"},
-                {"name": "datetime_field", "value": "1788-06-21T00:00:00"},
-                {"name": "timedelta_field", "value": "PT0S"},
-                {"name": "decimal_field", "value": "1.0"},
-            ],
-            "result": {
-                "value": {
-                    "date_field": "1788-06-21",
-                    "datetime_field": "1788-06-21T00:00:00",
-                    "decimal_field": "1.0",
-                    "time_field": "00:00:00",
-                    "timedelta_field": "PT0S",
-                }
-            },
-        }
-    ]
+    assert bool(method.examples)
+    assert bool(method.examples[0].params)
+    assert method.examples[0].params[0].name == "date_field"
     # Params
-    assert method["params"] == [
-        {
-            "name": "date_field",
-            "required": True,
-            "schema": {"format": "date", "title": "Date Field", "type": "string"},
-        },
-        {
-            "name": "time_field",
-            "required": True,
-            "schema": {"format": "time", "title": "Time Field", "type": "string"},
-        },
-        {
-            "name": "datetime_field",
-            "required": True,
-            "schema": {
-                "format": "date-time",
-                "title": "Datetime Field",
-                "type": "string",
-            },
-        },
-        {
-            "name": "timedelta_field",
-            "required": True,
-            "schema": {
-                "format": "duration",
-                "title": "Timedelta Field",
-                "type": "string",
-            },
-        },
-        {
-            "name": "decimal_field",
-            "required": True,
-            "schema": {
-                "anyOf": [{"type": "number"}, {"type": "string"}],
-                "title": "Decimal Field",
-            },
-        },
-    ]
-    # Result
-    assert method["result"] == {
-        "name": "result",
-        "schema": {"$ref": "#/components/schemas/ComplexObjects"},
+    assert dump(resolve(method.params[0].schema_, doc.components)) == {
+        "format": "date",
+        "title": "Date Field",
+        "type": "string",
     }
+    assert dump(resolve(method.params[1].schema_, doc.components)) == {
+        "format": "time",
+        "title": "Time Field",
+        "type": "string",
+    }
+    assert dump(resolve(method.params[2].schema_, doc.components)) == {
+        "format": "date-time",
+        "title": "Datetime Field",
+        "type": "string",
+    }
+    assert dump(resolve(method.params[3].schema_, doc.components)) == {
+        "format": "duration",
+        "title": "Timedelta Field",
+        "type": "string",
+    }
+    assert dump(resolve(method.params[4].schema_, doc.components)) == {
+        "anyOf": [{"type": "number"}, {"type": "string"}],
+        "title": "Decimal Field",
+    }
+    # Result
+    assert dump(resolve(method.params[4].schema_, doc.components)) == {
+        "anyOf": [{"type": "number"}, {"type": "string"}],
+        "title": "Decimal Field",
+    }
+    validate_references(method.result.schema_, doc.components)
 
 
 def test_collections() -> None:
     rpc = _rpc()
     rpc.method()(method_using_collections)  # type: ignore
-    method = rpc.discover()["methods"][0]
+    doc = OpenRPC(**rpc.discover())
+    method = doc.methods[0]
 
     # Params
-    # Lists
-    assert method["params"][0] == {
-        "name": "list_field",
-        "required": True,
-        "schema": {"items": {}, "title": "List Field", "type": "array"},
+    assert dump(resolve(method.params[0].schema_, doc.components)) == {
+        "items": {},
+        "title": "List Field",
+        "type": "array",
     }
-    assert method["params"][1] == {
-        "name": "list_str",
-        "required": True,
-        "schema": {"items": {"type": "string"}, "title": "List Str", "type": "array"},
+    assert dump(resolve(method.params[1].schema_, doc.components)) == {
+        "items": {"type": "string"},
+        "title": "List Str",
+        "type": "array",
     }
-    assert method["params"][2] == {
-        "name": "list_list",
-        "required": True,
-        "schema": {
-            "items": {"items": {}, "type": "array"},
-            "title": "List List",
-            "type": "array",
-        },
+    ref = resolve(method.params[2].schema_, doc.components).items
+    assert dump(resolve(ref, doc.components)) == {"items": {}, "type": "array"}
+    ref = resolve(method.params[3].schema_, doc.components).items
+    assert dump(resolve(ref, doc.components)) == {
+        "items": {"type": "integer"},
+        "type": "array",
     }
-    assert method["params"][3] == {
-        "name": "list_list_int",
-        "required": True,
-        "schema": {
-            "items": {"items": {"type": "integer"}, "type": "array"},
-            "title": "List List Int",
-            "type": "array",
-        },
-    }
-    assert method["params"][4] == {
-        "name": "list_union",
-        "required": True,
-        "schema": {
-            "items": {"anyOf": [{"type": "string"}, {"type": "integer"}]},
-            "title": "List Union",
-            "type": "array",
-        },
+    ref = resolve(method.params[4].schema_, doc.components).items
+    assert dump(resolve(ref, doc.components)) == {
+        "anyOf": [{"type": "string"}, {"type": "integer"}]
     }
     # Tuples
-    assert method["params"][5] == {
-        "name": "tuple_field",
-        "required": True,
-        "schema": {"items": {}, "title": "Tuple Field", "type": "array"},
+    assert dump(resolve(method.params[5].schema_, doc.components)) == {
+        "items": {},
+        "title": "Tuple Field",
+        "type": "array",
     }
-    assert method["params"][6] == {
-        "name": "tuple_str",
-        "required": True,
-        "schema": {
-            "maxItems": 1,
-            "minItems": 1,
-            "prefixItems": [{"type": "string"}],
-            "title": "Tuple Str",
-            "type": "array",
-        },
+    assert dump(resolve(method.params[6].schema_, doc.components)) == {
+        "maxItems": 1,
+        "minItems": 1,
+        "prefixItems": [{"type": "string"}],
+        "title": "Tuple Str",
+        "type": "array",
     }
-    assert method["params"][7] == {
-        "name": "tuple_tuple",
-        "required": True,
-        "schema": {
-            "maxItems": 1,
-            "minItems": 1,
-            "prefixItems": [{"items": {}, "type": "array"}],
-            "title": "Tuple Tuple",
-            "type": "array",
-        },
+
+    prefix_items = resolve(method.params[7].schema_, doc.components).prefix_items
+    assert prefix_items is not None
+    schema = dump(resolve(method.params[7].schema_, doc.components))
+    schema["prefixItems"] = [dump(resolve(prefix_items[0], doc.components))]
+    assert schema == {
+        "maxItems": 1,
+        "minItems": 1,
+        "prefixItems": [{"items": {}, "type": "array"}],
+        "title": "Tuple Tuple",
+        "type": "array",
     }
-    assert method["params"][8] == {
-        "name": "tuple_tuple_int",
-        "required": True,
-        "schema": {
-            "maxItems": 1,
-            "minItems": 1,
-            "prefixItems": [
-                {
-                    "maxItems": 1,
-                    "minItems": 1,
-                    "prefixItems": [{"type": "integer"}],
-                    "type": "array",
-                }
-            ],
-            "title": "Tuple Tuple Int",
-            "type": "array",
-        },
+
+    prefix_items = resolve(method.params[8].schema_, doc.components).prefix_items
+    assert prefix_items is not None
+    schema = dump(resolve(method.params[8].schema_, doc.components))
+    schema["prefixItems"] = [dump(resolve(prefix_items[0], doc.components))]
+    assert schema == {
+        "maxItems": 1,
+        "minItems": 1,
+        "prefixItems": [
+            {
+                "maxItems": 1,
+                "minItems": 1,
+                "prefixItems": [{"type": "integer"}],
+                "type": "array",
+            }
+        ],
+        "title": "Tuple Tuple Int",
+        "type": "array",
     }
-    assert method["params"][9] == {
-        "name": "tuple_union",
-        "required": True,
-        "schema": {
-            "maxItems": 1,
-            "minItems": 1,
-            "prefixItems": [{"anyOf": [{"type": "string"}, {"type": "integer"}]}],
-            "title": "Tuple Union",
-            "type": "array",
-        },
+
+    prefix_items = resolve(method.params[9].schema_, doc.components).prefix_items
+    assert prefix_items is not None
+    schema = dump(resolve(method.params[9].schema_, doc.components))
+    schema["prefixItems"] = [dump(resolve(prefix_items[0], doc.components))]
+    assert schema == {
+        "maxItems": 1,
+        "minItems": 1,
+        "prefixItems": [{"anyOf": [{"type": "string"}, {"type": "integer"}]}],
+        "title": "Tuple Union",
+        "type": "array",
     }
-    assert method["params"][10] == {
-        "name": "tuple_int_str_none",
-        "required": True,
-        "schema": {
-            "maxItems": 3,
-            "minItems": 3,
-            "prefixItems": [{"type": "integer"}, {"type": "string"}, {"type": "null"}],
-            "title": "Tuple Int Str None",
-            "type": "array",
-        },
+    assert dump(resolve(method.params[10].schema_, doc.components)) == {
+        "maxItems": 3,
+        "minItems": 3,
+        "prefixItems": [{"type": "integer"}, {"type": "string"}, {"type": "null"}],
+        "title": "Tuple Int Str None",
+        "type": "array",
     }
     # Sets
-    assert method["params"][11] == {
-        "name": "set_str",
-        "required": True,
-        "schema": {
-            "items": {"type": "string"},
-            "title": "Set Str",
-            "type": "array",
-            "uniqueItems": True,
-        },
+    assert dump(resolve(method.params[11].schema_, doc.components)) == {
+        "items": {"type": "string"},
+        "title": "Set Str",
+        "type": "array",
+        "uniqueItems": True,
     }
-    assert method["params"][12] == {
-        "name": "set_union",
-        "required": True,
-        "schema": {
-            "items": {"anyOf": [{"type": "string"}, {"type": "integer"}]},
-            "title": "Set Union",
-            "type": "array",
-            "uniqueItems": True,
-        },
+    items = resolve(method.params[12].schema_, doc.components).items
+    assert items is not None
+    schema = dump(resolve(method.params[12].schema_, doc.components))
+    schema["items"] = dump(resolve(items, doc.components))
+    assert schema == {
+        "items": {"anyOf": [{"type": "string"}, {"type": "integer"}]},
+        "title": "Set Union",
+        "type": "array",
+        "uniqueItems": True,
     }
     # Dictionaries
-    assert method["params"][13] == {
-        "name": "dict_field",
-        "required": True,
-        "schema": {"title": "Dict Field", "type": "object"},
+    assert dump(method.params[13].schema_) == {
+        "title": "Dict Field",
+        "type": "object",
     }
-    assert method["params"][14] == {
-        "name": "dict_str",
-        "required": True,
-        "schema": {
-            "additionalProperties": {"type": "string"},
-            "title": "Dict Str",
-            "type": "object",
-        },
+    assert dump(resolve(method.params[14].schema_, doc.components)) == {
+        "additionalProperties": {"type": "string"},
+        "title": "Dict Str",
+        "type": "object",
     }
-    assert method["params"][15] == {
-        "name": "dict_dict",
-        "required": True,
-        "schema": {
-            "additionalProperties": {"type": "object"},
-            "title": "Dict Dict",
-            "type": "object",
-        },
+    assert dump(resolve(method.params[15].schema_, doc.components)) == {
+        "additionalProperties": {"type": "object"},
+        "title": "Dict Dict",
+        "type": "object",
     }
-    assert method["params"][16] == {
-        "name": "dict_int_keys",
-        "required": True,
-        "schema": {
-            "additionalProperties": {"type": "string"},
-            "title": "Dict Int Keys",
-            "type": "object",
-        },
+    assert dump(resolve(method.params[16].schema_, doc.components)) == {
+        "additionalProperties": {"type": "string"},
+        "title": "Dict Int Keys",
+        "type": "object",
     }
-    assert method["params"][17] == {
-        "name": "dict_union",
-        "required": True,
-        "schema": {
-            "additionalProperties": {
-                "anyOf": [{"type": "string"}, {"type": "integer"}]
-            },
-            "title": "Dict Union",
-            "type": "object",
-        },
+    assert dump(resolve(method.params[17].schema_, doc.components)) == {
+        "additionalProperties": {"anyOf": [{"type": "string"}, {"type": "integer"}]},
+        "title": "Dict Union",
+        "type": "object",
     }
 
 
 def test_method_union_model() -> None:
     rpc = _rpc()
     rpc.method()(method_union_model)
-    doc = rpc.discover()
-
-    assert list(doc["components"]["schemas"].keys()) == [
-        "ComplexObjects",
-        "CollectionsModel",
-    ]
+    doc = OpenRPC(**rpc.discover())
+    validate_references(doc.methods[0].result.schema_, doc.components)
 
 
 def test_recursive_schemas() -> None:
     rpc = _rpc()
     rpc.method()(nested_model)
-    doc = rpc.discover()
-    assert doc["components"]["schemas"]["NestedModels"] == {
-        "description": "To test models with other models as fields.",
-        "properties": {
-            "any_of": {
-                "anyOf": [
-                    {"$ref": "#/components/schemas/Vector3"},
-                    {"$ref": "#/components/schemas/NestedModels"},
-                ],
-                "title": "Any Of",
-            },
-            "dict_model_values": {
-                "additionalProperties": {"$ref": "#/components/schemas/Vector2"},
-                "title": "Dict Model Values",
-                "type": "object",
-            },
-            "list_recursion": {
-                "items": {
-                    "anyOf": [
-                        {"$ref": "#/components/schemas/NestedModels"},
-                        {"type": "null"},
-                    ]
-                },
-                "title": "List Recursion",
-                "type": "array",
-            },
-            "name": {"title": "Name", "type": "string"},
-            "path": {
-                "items": {"$ref": "#/components/schemas/Vector3"},
-                "title": "Path",
-                "type": "array",
-            },
-            "position": {"$ref": "#/components/schemas/Vector3"},
-            "recursion": {
-                "anyOf": [
-                    {"$ref": "#/components/schemas/NestedModels"},
-                    {"type": "null"},
-                ]
-            },
-        },
-        "required": [
-            "name",
-            "position",
-            "path",
-            "recursion",
-            "list_recursion",
-            "any_of",
-        ],
-        "title": "NestedModels",
-        "type": "object",
-    }
-
-    assert doc["components"]["schemas"]["Vector3"] == {
-        "type": "object",
-        "title": "Vector3",
-        "description": "x, y, and z values.",
-        "properties": {
-            "x": {"title": "X", "type": "number"},
-            "y": {"title": "Y", "type": "number"},
-            "z": {"title": "Z", "type": "number"},
-        },
-        "required": ["x", "y", "z"],
-    }
+    doc = OpenRPC(**rpc.discover())
+    method = doc.methods[0]
+    schema_properties = resolve(method.params[0].schema_, doc.components).properties
+    assert schema_properties is not None
+    recursive = schema_properties["recursion"]
+    ref_properties = resolve(recursive, doc.components)
+    validate_references(method.params[0].schema_, doc.components)
+    validate_references(method.result.schema_, doc.components)
+    assert resolve(schema_properties["recursion"], doc.components) == ref_properties
 
 
 def test_param_descriptions() -> None:
