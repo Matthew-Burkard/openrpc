@@ -20,7 +20,7 @@ from openrpc import (
     RPCServer,
     Server,
 )
-from openrpc._objects import OpenRPC, Schema
+from openrpc._objects import OpenRPC
 from tests.util import Vector3, dump, resolve, validate_references
 
 

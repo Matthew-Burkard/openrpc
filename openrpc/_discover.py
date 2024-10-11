@@ -178,11 +178,10 @@ def _get_result(
     if rpc_method.metadata.result:
         return rpc_method.metadata.result
     result_schema = schemas.pop(rpc_method.result_model.__name__)
-    if isinstance(result_schema, bool):
-        schema = result_schema
-    else:
-        properties = result_schema.properties
-        schema = True if properties is None else properties["result"]
+    properties = (
+        None if isinstance(result_schema, bool) else result_schema.properties or {}
+    )
+    schema = True if properties is None else properties["result"]
     descriptor = ContentDescriptor(name="result", schema=schema)
     result_description = re.findall(
         return_pattern, re.sub(r"\n +", " ", rpc_method.function.__doc__ or "")
@@ -205,11 +204,9 @@ def _get_params(
         )
     }
     descriptors: list[ContentDescriptor] = []
-    schema = schemas.pop(f"{rpc_method.params_model.__name__}")
-    if isinstance(schema, bool):
-        return []
+    schema = schemas.pop(rpc_method.params_model.__name__)
     # Get schema for each param.
-    properties = schema.properties or {}
+    properties = {} if isinstance(schema, bool) else schema.properties or {}
     for name in rpc_method.params_schema_model.model_fields:
         descriptor = ContentDescriptor(
             name=name,
