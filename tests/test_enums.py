@@ -4,6 +4,7 @@ import enum
 import json
 from typing import Optional
 
+
 from openrpc import RPCServer
 from openrpc._objects import OpenRPC
 from tests import util
@@ -100,8 +101,8 @@ def test_enum_optional_param() -> None:
     resp = util.get_response(e_rpc, req)
     doc = OpenRPC(**resp["result"])
 
-    ref = doc.methods[0].params[0].schema_
-    param_schema = resolve(ref, doc.components)
+    param_schema = doc.methods[0].params[0].schema_
+    assert not isinstance(param_schema, bool)
     assert param_schema.any_of is not None
 
     enum_ref = param_schema.any_of[0]

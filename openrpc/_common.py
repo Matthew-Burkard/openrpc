@@ -25,6 +25,8 @@ from openrpc._objects import (
     ExternalDocumentation,
     Link,
     ParamStructure,
+    Schema,
+    SchemaType,
     Server,
     Tag,
 )
@@ -85,3 +87,13 @@ def resolved_annotation(annotation: Any, function: Callable[..., Any]) -> Any:
         annotation = ForwardRef(annotation)
         annotation = evaluate_forwardref(annotation, globalns, globalns)
     return type(None) if annotation is None else annotation
+
+
+def get_schema(value: Optional[SchemaType]) -> Schema:
+    if value is None:
+        msg = "Failed to find schema."
+        raise ValueError(msg)
+    if isinstance(value, bool):
+        msg = "Boolean schemas are not supported"
+        raise TypeError(msg)
+    return value

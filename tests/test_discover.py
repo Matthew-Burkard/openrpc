@@ -20,6 +20,7 @@ from openrpc import (
     RPCServer,
     Server,
 )
+from openrpc._common import get_schema
 from openrpc._objects import OpenRPC
 from tests.util import Vector3, dump, resolve, validate_references
 
@@ -171,8 +172,7 @@ def test_lists() -> None:
         "items": {"anyOf": [{"type": "integer"}, {"type": "number"}]},
         "title": "Numbers",
     }
-    param_schema = resolve(doc.methods[0].params[0].schema_, doc.components)
-    param_schema.items = resolve(param_schema.items, doc.components)
+    param_schema = doc.methods[0].params[0].schema_
     assert dump(param_schema) == expected_param_schema
     # Result
     expected_result = {
@@ -180,8 +180,7 @@ def test_lists() -> None:
         "items": {"anyOf": [{"type": "integer"}, {"type": "string"}]},
         "title": "Result",
     }
-    result_schema = resolve(doc.methods[0].result.schema_, doc.components)
-    result_schema.items = resolve(result_schema.items, doc.components)
+    result_schema = doc.methods[0].result.schema_
     assert dump(result_schema) == expected_result
 
 
@@ -210,12 +209,8 @@ def test_schema_params() -> None:
     assert p1_schema["properties"] == {
         "x": {"title": "X", "type": "number"},
         "y": {"title": "Y", "type": "number"},
-        "vanilla_model": {
-            "$ref": "#/components/schemas/get_distance_params.defs.Vector3"
-        },
-        "enum_field": {
-            "$ref": "#/components/schemas/get_distance_params.defs.EnumAsModelField"
-        },
+        "vanilla_model": {"$ref": "#/components/schemas/Vector3"},
+        "enum_field": {"$ref": "#/components/schemas/EnumAsModelField"},
     }
 
 
@@ -271,7 +266,7 @@ def test_return_none() -> None:
         "result": {"value": None},
     }
     # Params
-    param_schema = dump(resolve(method.params[0].schema_, doc.components))
+    param_schema = dump(method.params[0].schema_)
     assert param_schema == {
         "anyOf": [{"type": "string"}, {"type": "null"}],
         "title": "Optional Param",
@@ -330,32 +325,32 @@ def test_complex_objects() -> None:
     assert bool(method.examples[0].params)
     assert method.examples[0].params[0].name == "date_field"
     # Params
-    assert dump(resolve(method.params[0].schema_, doc.components)) == {
+    assert dump(method.params[0].schema_) == {
         "format": "date",
         "title": "Date Field",
         "type": "string",
     }
-    assert dump(resolve(method.params[1].schema_, doc.components)) == {
+    assert dump(method.params[1].schema_) == {
         "format": "time",
         "title": "Time Field",
         "type": "string",
     }
-    assert dump(resolve(method.params[2].schema_, doc.components)) == {
+    assert dump(method.params[2].schema_) == {
         "format": "date-time",
         "title": "Datetime Field",
         "type": "string",
     }
-    assert dump(resolve(method.params[3].schema_, doc.components)) == {
+    assert dump(method.params[3].schema_) == {
         "format": "duration",
         "title": "Timedelta Field",
         "type": "string",
     }
-    assert dump(resolve(method.params[4].schema_, doc.components)) == {
+    assert dump(method.params[4].schema_) == {
         "anyOf": [{"type": "number"}, {"type": "string"}],
         "title": "Decimal Field",
     }
     # Result
-    assert dump(resolve(method.params[4].schema_, doc.components)) == {
+    assert dump(method.params[4].schema_) == {
         "anyOf": [{"type": "number"}, {"type": "string"}],
         "title": "Decimal Field",
     }
@@ -369,34 +364,38 @@ def test_collections() -> None:
     method = doc.methods[0]
 
     # Params
-    assert dump(resolve(method.params[0].schema_, doc.components)) == {
+    assert dump(method.params[0].schema_) == {
         "items": {},
         "title": "List Field",
         "type": "array",
     }
-    assert dump(resolve(method.params[1].schema_, doc.components)) == {
+    assert dump(method.params[1].schema_) == {
         "items": {"type": "string"},
         "title": "List Str",
         "type": "array",
     }
-    ref = resolve(method.params[2].schema_, doc.components).items
-    assert dump(resolve(ref, doc.components)) == {"items": {}, "type": "array"}
-    ref = resolve(method.params[3].schema_, doc.components).items
-    assert dump(resolve(ref, doc.components)) == {
+    schema = method.params[2].schema_
+    assert dump(schema) == {
+        "title": "List List",
+        "items": {"items": {}, "type": "array"},
+        "type": "array",
+    }
+    assert dump(get_schema(get_schema(method.params[3].schema_).items)) == {
         "items": {"type": "integer"},
         "type": "array",
     }
-    ref = resolve(method.params[4].schema_, doc.components).items
-    assert dump(resolve(ref, doc.components)) == {
-        "anyOf": [{"type": "string"}, {"type": "integer"}]
+    assert dump(method.params[4].schema_) == {
+        "title": "List Union",
+        "items": {"anyOf": [{"type": "string"}, {"type": "integer"}]},
+        "type": "array",
     }
     # Tuples
-    assert dump(resolve(method.params[5].schema_, doc.components)) == {
+    assert dump(method.params[5].schema_) == {
         "items": {},
         "title": "Tuple Field",
         "type": "array",
     }
-    assert dump(resolve(method.params[6].schema_, doc.components)) == {
+    assert dump(method.params[6].schema_) == {
         "maxItems": 1,
         "minItems": 1,
         "prefixItems": [{"type": "string"}],
@@ -404,11 +403,7 @@ def test_collections() -> None:
         "type": "array",
     }
 
-    prefix_items = resolve(method.params[7].schema_, doc.components).prefix_items
-    assert prefix_items is not None
-    schema = dump(resolve(method.params[7].schema_, doc.components))
-    schema["prefixItems"] = [dump(resolve(prefix_items[0], doc.components))]
-    assert schema == {
+    assert dump(get_schema(method.params[7].schema_)) == {
         "maxItems": 1,
         "minItems": 1,
         "prefixItems": [{"items": {}, "type": "array"}],
@@ -416,11 +411,7 @@ def test_collections() -> None:
         "type": "array",
     }
 
-    prefix_items = resolve(method.params[8].schema_, doc.components).prefix_items
-    assert prefix_items is not None
-    schema = dump(resolve(method.params[8].schema_, doc.components))
-    schema["prefixItems"] = [dump(resolve(prefix_items[0], doc.components))]
-    assert schema == {
+    assert dump(method.params[8].schema_) == {
         "maxItems": 1,
         "minItems": 1,
         "prefixItems": [
@@ -435,18 +426,14 @@ def test_collections() -> None:
         "type": "array",
     }
 
-    prefix_items = resolve(method.params[9].schema_, doc.components).prefix_items
-    assert prefix_items is not None
-    schema = dump(resolve(method.params[9].schema_, doc.components))
-    schema["prefixItems"] = [dump(resolve(prefix_items[0], doc.components))]
-    assert schema == {
+    assert dump(method.params[9].schema_) == {
         "maxItems": 1,
         "minItems": 1,
         "prefixItems": [{"anyOf": [{"type": "string"}, {"type": "integer"}]}],
         "title": "Tuple Union",
         "type": "array",
     }
-    assert dump(resolve(method.params[10].schema_, doc.components)) == {
+    assert dump(method.params[10].schema_) == {
         "maxItems": 3,
         "minItems": 3,
         "prefixItems": [{"type": "integer"}, {"type": "string"}, {"type": "null"}],
@@ -454,17 +441,13 @@ def test_collections() -> None:
         "type": "array",
     }
     # Sets
-    assert dump(resolve(method.params[11].schema_, doc.components)) == {
+    assert dump(method.params[11].schema_) == {
         "items": {"type": "string"},
         "title": "Set Str",
         "type": "array",
         "uniqueItems": True,
     }
-    items = resolve(method.params[12].schema_, doc.components).items
-    assert items is not None
-    schema = dump(resolve(method.params[12].schema_, doc.components))
-    schema["items"] = dump(resolve(items, doc.components))
-    assert schema == {
+    assert dump(method.params[12].schema_) == {
         "items": {"anyOf": [{"type": "string"}, {"type": "integer"}]},
         "title": "Set Union",
         "type": "array",
@@ -475,22 +458,22 @@ def test_collections() -> None:
         "title": "Dict Field",
         "type": "object",
     }
-    assert dump(resolve(method.params[14].schema_, doc.components)) == {
+    assert dump(method.params[14].schema_) == {
         "additionalProperties": {"type": "string"},
         "title": "Dict Str",
         "type": "object",
     }
-    assert dump(resolve(method.params[15].schema_, doc.components)) == {
+    assert dump(method.params[15].schema_) == {
         "additionalProperties": {"type": "object"},
         "title": "Dict Dict",
         "type": "object",
     }
-    assert dump(resolve(method.params[16].schema_, doc.components)) == {
+    assert dump(method.params[16].schema_) == {
         "additionalProperties": {"type": "string"},
         "title": "Dict Int Keys",
         "type": "object",
     }
-    assert dump(resolve(method.params[17].schema_, doc.components)) == {
+    assert dump(method.params[17].schema_) == {
         "additionalProperties": {"anyOf": [{"type": "string"}, {"type": "integer"}]},
         "title": "Dict Union",
         "type": "object",
@@ -511,11 +494,10 @@ def test_recursive_schemas() -> None:
     method = doc.methods[0]
     schema_properties = resolve(method.params[0].schema_, doc.components).properties
     assert schema_properties is not None
-    recursive = schema_properties["recursion"]
-    ref_properties = resolve(recursive, doc.components)
-    validate_references(method.params[0].schema_, doc.components)
-    validate_references(method.result.schema_, doc.components)
-    assert resolve(schema_properties["recursion"], doc.components) == ref_properties
+    recursive = get_schema(schema_properties["recursion"])
+    any_of = recursive.any_of or []
+    properties = resolve(any_of[0], doc.components).properties or {}
+    assert properties["recursion"] == recursive
 
 
 def test_param_descriptions() -> None:

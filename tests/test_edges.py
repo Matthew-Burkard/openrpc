@@ -2,7 +2,10 @@
 
 import json
 
+import pytest
+
 from openrpc import RPCServer
+from openrpc._common import get_schema
 from openrpc._objects import OpenRPC, Schema
 from tests.util import Vector3
 
@@ -34,3 +37,10 @@ def test_resolve_reference() -> None:
     assert isinstance(schema, Schema)
     doc.components.schemas = None
     assert doc.components.resolve_reference(ref_schema.ref) is None
+
+
+def test_get_schema() -> None:
+    with pytest.raises(ValueError):
+        get_schema(None)
+    with pytest.raises(TypeError):
+        get_schema(value=True)

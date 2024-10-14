@@ -34,45 +34,18 @@ def test_future() -> None:
         }
     ]
     # Params
-    assert doc["components"]["schemas"]["future_params.properties.union_str_int"] == {
+    assert method["params"][0]["schema"] == {
         "anyOf": [{"type": "string"}, {"type": "integer"}],
         "title": "Union Str Int",
     }
-    assert doc["components"]["schemas"][
-        "future_params.properties.list_str.any_of.0"
-    ] == {"items": {"type": "string"}, "type": "array"}
-    assert doc["components"]["schemas"]["future_params.properties.list_str"] == {
-        "anyOf": [
-            {"$ref": "#/components/schemas/future_params.properties.list_str.any_of.0"},
-            {"type": "null"},
-        ],
+    assert method["params"][1]["schema"] == {
+        "anyOf": [{"type": "array", "items": {"type": "string"}}, {"type": "null"}],
         "default": None,
         "title": "List Str",
     }
-
-    assert method["params"] == [
-        {
-            "name": "union_str_int",
-            "required": True,
-            "schema": {
-                "$ref": "#/components/schemas/future_params.properties.union_str_int"
-            },
-        },
-        {
-            "name": "list_str",
-            "required": False,
-            "schema": {
-                "$ref": "#/components/schemas/future_params.properties.list_str"
-            },
-        },
-    ]
     # Result
-    assert doc["components"]["schemas"]["future_result.properties.result"] == {
+    assert method["result"]["schema"] == {
+        "title": "Result",
         "items": {"type": "string"},
         "type": "array",
-        "title": "Result",
-    }
-    assert method["result"] == {
-        "name": "result",
-        "schema": {"$ref": "#/components/schemas/future_result.properties.result"},
     }

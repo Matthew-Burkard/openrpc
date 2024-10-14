@@ -31,7 +31,7 @@ def test_nested_enum_discover() -> None:
     discover = OpenRPC(**rpc.discover())
     assert discover.components is not None
     assert discover.components.schemas is not None
-    schema = discover.components.schemas["method_result.defs.SomeEnum"]
+    schema = discover.components.schemas["SomeEnum"]
     assert isinstance(schema, Schema)
     assert schema.title == "SomeEnum"
-    # TODO: Assert schemas are correct
+    assert schema.enum == [1]
