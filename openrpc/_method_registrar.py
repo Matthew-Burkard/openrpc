@@ -26,7 +26,7 @@ from openrpc._request_processor import RequestProcessor
 
 log = logging.getLogger("openrpc")
 
-CallableType = TypeVar("CallableType", bound=Callable)
+CallableType = TypeVar("CallableType", bound=Callable[..., Any])
 
 
 class MethodRegistrar:
@@ -130,10 +130,10 @@ class MethodRegistrar:
         signature = inspect.signature(function)
 
         # Get field information from each method parameter.
-        depends = {}
-        fields = {}
-        schema_fields = {}
-        required = []
+        depends: dict[str, DependsModel] = {}
+        fields: dict[str, Any] = {}
+        schema_fields: dict[str, Any] = {}
+        required: list[str] = []
         for param_name, param in signature.parameters.items():
             default: Any = param.default
             annotation: Any = param.annotation
@@ -148,7 +148,7 @@ class MethodRegistrar:
                 if hasattr(origin, "__name__") and origin.__name__ == "UnionType":
                     annotation = Union[new_args]  # type: ignore
                 else:
-                    annotation = origin[new_args]  # type: ignore
+                    annotation = origin[new_args]
             elif param.default is Undefined:
                 default = Undefined
             elif param.default is inspect.Signature.empty:
@@ -164,11 +164,9 @@ class MethodRegistrar:
             )
 
         # Params model.
-        param_model = create_model(f"{metadata.name}_params", **fields)  # type: ignore
+        param_model = create_model(f"{metadata.name}_params", **fields)
         # Params model.
-        param_schema_model = create_model(  # type: ignore
-            f"{metadata.name}_params", **schema_fields
-        )
+        param_schema_model = create_model(f"{metadata.name}_params", **schema_fields)
 
         # Result Model
         result_model = create_model(

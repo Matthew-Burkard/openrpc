@@ -25,6 +25,8 @@ from openrpc._objects import (
     ExternalDocumentation,
     Link,
     ParamStructure,
+    Schema,
+    SchemaType,
     Server,
     Tag,
 )
@@ -57,7 +59,7 @@ class MethodMetaData(BaseModel):
 class RPCMethod(BaseModel):
     """Hold information about a decorated Python function."""
 
-    function: Callable
+    function: Callable[..., Any]
     metadata: MethodMetaData
     depends: dict[str, DependsModel]
     # Schema model needed to support Undefined.
@@ -76,7 +78,7 @@ class SecurityFunctionDetails:
     accepts_caller_details: bool
 
 
-def resolved_annotation(annotation: Any, function: Callable) -> Any:
+def resolved_annotation(annotation: Any, function: Callable[..., Any]) -> Any:
     """Get annotation resolved."""
     if annotation == inspect.Signature.empty:
         return Any
@@ -85,3 +87,13 @@ def resolved_annotation(annotation: Any, function: Callable) -> Any:
         annotation = ForwardRef(annotation)
         annotation = evaluate_forwardref(annotation, globalns, globalns)
     return type(None) if annotation is None else annotation
+
+
+def get_schema(value: Optional[SchemaType]) -> Schema:
+    if value is None:
+        msg = "Failed to find schema."
+        raise ValueError(msg)
+    if isinstance(value, bool):
+        msg = "Boolean schemas are not supported"
+        raise TypeError(msg)
+    return value

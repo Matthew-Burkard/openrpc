@@ -6,6 +6,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 from openrpc import OpenRPC, RPCServer
+from openrpc._objects import Schema
 
 
 class SomeEnum(enum.Enum):
@@ -28,4 +29,9 @@ def method() -> Model:  # type: ignore
 
 def test_nested_enum_discover() -> None:
     discover = OpenRPC(**rpc.discover())
-    assert discover.components.schemas["SomeEnum"].title == "SomeEnum"  # type: ignore
+    assert discover.components is not None
+    assert discover.components.schemas is not None
+    schema = discover.components.schemas["SomeEnum"]
+    assert isinstance(schema, Schema)
+    assert schema.title == "SomeEnum"
+    assert schema.enum == [1]

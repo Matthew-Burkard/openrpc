@@ -7,6 +7,7 @@ from jsonrpcobjects.objects import ErrorResponse, ResponseType, ResultResponse
 from pydantic import BaseModel
 
 from openrpc import RPCServer
+from openrpc._objects import Components, Schema, SchemaType
 
 INTERNAL_ERROR = -32603
 INVALID_PARAMS = -32602
@@ -67,3 +68,48 @@ def get_request(method: str, params: Optional[str] = None) -> str:
     if params is None:
         return f'{{"id": 1, "method": "{method}", "jsonrpc": "2.0"}}'
     return f'{{"id": 1, "method": "{method}", "params": {params}, "jsonrpc": "2.0"}}'
+
+
+def resolve(ref: Optional[SchemaType], components: Optional[Components]) -> Schema:
+    assert ref is not None
+    assert components is not None
+    assert components.schemas is not None
+    assert not isinstance(ref, bool)
+    assert ref.ref is not None
+    schema = components.schemas[ref.ref.removeprefix("#/components/schemas/")]
+    assert not isinstance(schema, bool)
+    return schema
+
+
+def dump(model: Union[BaseModel, bool]) -> dict[str, Any]:
+    assert not isinstance(model, bool)
+    return model.model_dump(exclude_unset=True, by_alias=True)
+
+
+def validate_references(
+    schema: Optional[SchemaType],
+    components: Optional[Components],
+    processed: Optional[list[str]] = None,
+) -> None:
+    if schema is None or isinstance(schema, bool):
+        return
+    assert components is not None
+    processed = processed or []
+    if schema.ref in processed:
+        return
+    if schema.ref:
+        processed.append(schema.ref)
+        ref_schema = components.resolve_reference(schema.ref)
+        validate_references(ref_schema, components, processed)
+    schema_item: Optional[SchemaType] = None
+    for attr in ["any_of", "all_of", "one_of", "prefix_items"]:
+        schema_list: list[SchemaType] = getattr(schema, attr) or []
+        for schema_item in schema_list:
+            validate_references(schema_item, components, processed)
+    for attr in ["properties", "pattern_properties", "dependent_schemas", "defs"]:
+        schema_maps: dict[str, SchemaType] = getattr(schema, attr) or {}
+        for schema_item in schema_maps.values():
+            validate_references(schema_item, components, processed)
+    for attr in ("not_", "property_names", "items", "contains", "if_", "then", "else_"):
+        schema_item: Optional[SchemaType] = getattr(schema, attr)
+        validate_references(schema_item, components, processed)

@@ -4,9 +4,11 @@ import enum
 import json
 from typing import Optional
 
+
 from openrpc import RPCServer
+from openrpc._objects import OpenRPC
 from tests import util
-from tests.util import get_response
+from tests.util import get_response, resolve
 
 rpc = RPCServer(title="Test Enums", version="1.0.0", debug=True)
 
@@ -34,7 +36,8 @@ def enum_test_func(ee: EnumExample) -> EnumExampleWithNull:
 
 def test_register_enum_using_method() -> None:
     rpc_doc = rpc.discover()
-    components = rpc_doc["components"]["schemas"]
+    schemas = rpc_doc["components"]["schemas"]
+    methods = rpc_doc["methods"]
 
     # Param expectations.
     param_schema = {
@@ -42,28 +45,18 @@ def test_register_enum_using_method() -> None:
         "enum": [3, 'A string with a "'],
         "title": "EnumExample",
     }
-    params = [
-        {
-            "name": "ee",
-            "schema": {"$ref": "#/components/schemas/EnumExample"},
-            "required": True,
-        }
-    ]
     # Result expectations.
     result_schema = {
         "description": 'If any field is None, "null" should be a valid type.',
         "enum": ['\\"\\\\"', None],
         "title": "EnumExampleWithNull",
     }
-    result = {
-        "name": "result",
-        "schema": {"$ref": "#/components/schemas/EnumExampleWithNull"},
-    }
 
-    assert components["EnumExample"] == param_schema
-    assert components["EnumExampleWithNull"] == result_schema
-    assert rpc_doc["methods"][0]["params"] == params
-    assert rpc_doc["methods"][0]["result"] == result
+    ref: str = methods[0]["params"][0]["schema"]["$ref"]
+    assert schemas[ref.removeprefix("#/components/schemas/")] == param_schema
+
+    ref: str = methods[0]["result"]["schema"]["$ref"]
+    assert schemas[ref.removeprefix("#/components/schemas/")] == result_schema
 
 
 def test_calling_enums_method() -> None:
@@ -101,10 +94,21 @@ def test_enum_optional_param() -> None:
 
     # noinspection PyUnusedLocal
     @e_rpc.method()
-    def method(param: Optional[EnumOnlyUsedAsParam]) -> None:  # noqa: ARG001
+    def method(param: Optional[EnumOnlyUsedAsParam]) -> None:  # type: ignore  # noqa: ARG001
         """Pass."""
 
     req = util.get_request("rpc.discover")
     resp = util.get_response(e_rpc, req)
+    doc = OpenRPC(**resp["result"])
 
-    assert "EnumOnlyUsedAsParam" in resp["result"]["components"]["schemas"]
+    param_schema = doc.methods[0].params[0].schema_
+    assert not isinstance(param_schema, bool)
+    assert param_schema.any_of is not None
+
+    enum_ref = param_schema.any_of[0]
+    enum_schema = resolve(enum_ref, doc.components)
+    assert enum_schema.enum == [1]
+
+    none_schema = param_schema.any_of[1]
+    assert not isinstance(none_schema, bool)
+    assert none_schema.type == "null"

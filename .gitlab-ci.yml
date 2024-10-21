@@ -45,13 +45,13 @@ ruff:
   script:
     - ruff check $PROJECT_SRC_DIR
 
-mypy:
+pyright:
   stage: analysis
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
   <<: *setup_env
   script:
-    - mypy $PROJECT_SRC_DIR
+    - pyright $PROJECT_SRC_DIR
 
 pytest:
   stage: test

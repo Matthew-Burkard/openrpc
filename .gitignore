@@ -1,12 +1,18 @@
-/log/
-/dist/
-/venv/
+# IDE
+.idea/
+.vscode/
+.fleet/
+
+# Python
+dist/
+venv/
+.venv/
 *.egg-info
 *__pycache__*
 .python-version
+
+# Test Coverage
+.coverage
+coverage.json
 cov.xml
 coverage.xml
-.coverage
-
-.idea/
-.vscode/

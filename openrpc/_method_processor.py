@@ -62,7 +62,7 @@ class MethodProcessor:
         self.uncaught_error_code = uncaught_error_code
         self.caller_details = caller_details
         self.security = security
-        self._depends: dict[Callable, Any] = {}
+        self._depends: dict[Callable[..., Any], Any] = {}
 
     def execute(self) -> Optional[str]:
         """Execute the method and get the JSON-RPC2 response."""
@@ -264,7 +264,7 @@ class MethodProcessor:
         if not active_scheme:
             return "No active security schemes for caller."
 
-        missing_scopes = {}
+        missing_scopes: dict[str, list[str]] = {}
         # If any scheme and scopes are matched, permit method call.
         for method_scheme, method_scopes in self.method.metadata.security.items():
             call_scopes = active_scheme.get(method_scheme)

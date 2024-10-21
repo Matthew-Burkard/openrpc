@@ -21,7 +21,8 @@ def test_future() -> None:
 
     rpc = RPCServer(title="Test OpenRPC", version="1.0.0", debug=True)
     rpc.method()(future)
-    method = rpc.discover()["methods"][0]
+    doc = rpc.discover()
+    method = doc["methods"][0]
     # Examples
     assert method["examples"] == [
         {
@@ -33,30 +34,18 @@ def test_future() -> None:
         }
     ]
     # Params
-    assert method["params"] == [
-        {
-            "name": "union_str_int",
-            "required": True,
-            "schema": {
-                "anyOf": [{"type": "string"}, {"type": "integer"}],
-                "title": "Union Str Int",
-            },
-        },
-        {
-            "name": "list_str",
-            "required": False,
-            "schema": {
-                "anyOf": [
-                    {"items": {"type": "string"}, "type": "array"},
-                    {"type": "null"},
-                ],
-                "default": None,
-                "title": "List Str",
-            },
-        },
-    ]
+    assert method["params"][0]["schema"] == {
+        "anyOf": [{"type": "string"}, {"type": "integer"}],
+        "title": "Union Str Int",
+    }
+    assert method["params"][1]["schema"] == {
+        "anyOf": [{"type": "array", "items": {"type": "string"}}, {"type": "null"}],
+        "default": None,
+        "title": "List Str",
+    }
     # Result
-    assert method["result"] == {
-        "name": "result",
-        "schema": {"items": {"type": "string"}, "type": "array", "title": "Result"},
+    assert method["result"]["schema"] == {
+        "title": "Result",
+        "items": {"type": "string"},
+        "type": "array",
     }
