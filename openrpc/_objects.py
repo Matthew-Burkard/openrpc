@@ -243,6 +243,12 @@ class Components(BaseModel):
         Field(default=None, alias="x-securitySchemes")
     )
 
+    def resolve_reference(self, reference: str) -> Optional[SchemaType]:
+        ref_path = "#/components/schemas/"
+        if not reference.startswith(ref_path) or self.schemas is None:
+            return None
+        return self.schemas.get(reference.removeprefix(ref_path))
+
 
 class Tag(BaseModel):
     """Adds metadata to a single tag that is used by the Method Object."""

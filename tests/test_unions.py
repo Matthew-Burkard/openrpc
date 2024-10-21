@@ -19,7 +19,7 @@ class CustomB(BaseModel):
 
 def func(c: Union[CustomA, CustomB]) -> bool:
     """Test function."""
-    return isinstance(c, (CustomA, CustomB))
+    return isinstance(c, (CustomA, CustomB))  # type: ignore
 
 
 def test_union_casting() -> None:

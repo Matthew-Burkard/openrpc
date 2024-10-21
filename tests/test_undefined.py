@@ -30,7 +30,7 @@ def test_undefined_type() -> None:
     rpc = RPCServer(debug=True)
 
     @rpc.method()
-    def undefined_type(param: Union[Undefined, str]) -> bool:
+    def undefined_type(param: Union[Undefined, str]) -> bool:  # type: ignore
         """Method using undefined as a parameter type."""
         return param is Undefined
 
@@ -78,7 +78,7 @@ def test_310_union() -> None:
     rpc = RPCServer(debug=True)
 
     @rpc.method()
-    def method310(param: int | None | Undefined) -> bool:
+    def method310(param: int | None | Undefined) -> bool:  # type: ignore
         """Method with py310 union syntax."""
         return param is Undefined
 
@@ -91,7 +91,7 @@ def test_union_default() -> None:
     rpc = RPCServer(debug=True)
 
     @rpc.method()
-    def method(param: Union[int, None, Undefined] = Undefined) -> bool:
+    def method(param: Union[int, None, Undefined] = Undefined) -> bool:  # type: ignore
         """Method with union and default undefined."""
         return param is Undefined
 

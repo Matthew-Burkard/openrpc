@@ -73,8 +73,8 @@ def test_tags_no_prefix_router_remove() -> None:
 def test_debug() -> None:
     rpc.include_router(auth_router, prefix="auth.")
     rpc.debug = True
-    for router in rpc._routers:
+    for router in rpc._routers:  # type: ignore
         assert router.debug is True
     rpc.debug = False
-    for router in rpc._routers:
+    for router in rpc._routers:  # type: ignore
         assert router.debug is False

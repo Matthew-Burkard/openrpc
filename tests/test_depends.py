@@ -1,6 +1,7 @@
 """Test depends."""
 
 import json
+from typing import Any
 
 import pytest
 
@@ -11,14 +12,18 @@ from tests.util import get_response, get_response_async
 rpc = RPCServer(title="Test Depends", version="0.1.0")
 
 
+def _echo(x: Any) -> Any:
+    return x
+
+
 @rpc.method()
-def method_with_dep(arg: int, dep: str = Depends(lambda x: x)) -> str:
+def method_with_dep(arg: int, dep: str = Depends(_echo)) -> str:
     """Method with dependency to test."""
     return f"{arg}-{dep}"
 
 
 @rpc.method()
-async def async_method_with_dep(arg: int, dep: str = Depends(lambda x: x)) -> str:
+async def async_method_with_dep(arg: int, dep: str = Depends(_echo)) -> str:
     """Method with dependency to test."""
     return f"{arg}-{dep}"
 
@@ -57,7 +62,7 @@ async def test_depends_async() -> None:
 
 def test_depends_no_params() -> None:
     @rpc.method()
-    def method_no_params(depends: bool = Depends(lambda: True)) -> bool:  # noqa: FBT001
+    def method_no_params(depends: bool = Depends(lambda: True)) -> bool:  # type: ignore  # noqa: FBT001
         """Method with depends argument and no other params."""
         return depends is True
 

@@ -9,12 +9,12 @@ from pydantic import BaseModel
 class DependsModel(BaseModel):
     """Supply with function used to return a dependent argument."""
 
-    function: Callable
+    function: Callable[..., Any]
     depends_params: dict[str, "DependsModel"]
     accepts_caller_details: bool
 
 
-def Depends(function: Callable) -> Any:  # noqa: N802
+def Depends(function: Callable[..., Any]) -> Any:  # noqa: N802
     signature = inspect.signature(function)
     depends_params = {
         k: v.default
