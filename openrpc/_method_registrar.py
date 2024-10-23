@@ -8,7 +8,7 @@ import typing
 from typing import Any, Callable, Optional, TypeVar, Union
 
 from py_undefined import Undefined
-from pydantic import create_model
+from pydantic import create_model  # type: ignore
 
 from openrpc._common import MethodMetaData, RPCMethod, resolved_annotation
 from openrpc._depends import DependsModel

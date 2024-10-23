@@ -112,7 +112,9 @@ class Method(BaseModel):
         default=None, alias="paramStructure"
     )
     examples: Optional[list[ExamplePairing]] = None
-    x_security: Optional[dict[str, list[str]]] = Field(default=None, alias="x-security")
+    x_security: Optional[dict[str, list[str]]] = Field(
+        default=None, alias="x-security"  # type: ignore
+    )
 
 
 class ContentDescriptor(BaseModel):
@@ -129,7 +131,7 @@ class ContentDescriptor(BaseModel):
 class Schema(BaseModel):
     """JSON Schema object."""
 
-    id: Optional[str] = Field(alias="$id", default=None)
+    id: Optional[str] = Field(alias="$id", default=None)  # type: ignore
     title: Optional[str] = None
     format: Optional[str] = None
     enum: Optional[list[Any]] = None
@@ -157,7 +159,10 @@ class Schema(BaseModel):
     min_properties: Optional[int] = Field(alias="minProperties", default=None)
     max_properties: Optional[int] = Field(alias="maxProperties", default=None)
     required: Optional[list[str]] = None
-    defs: Optional[dict[str, SchemaType]] = Field(alias="$defs", default=None)
+    defs: Optional[dict[str, SchemaType]] = Field(
+        alias="$defs",  # type: ignore
+        default=None,
+    )
     items: Optional[SchemaType] = None
     prefix_items: Optional[list[SchemaType]] = Field(alias="prefixItems", default=None)
     contains: Optional[SchemaType] = None
@@ -166,7 +171,7 @@ class Schema(BaseModel):
     min_items: Optional[int] = Field(alias="minItems", default=None)
     max_items: Optional[int] = Field(alias="maxItems", default=None)
     unique_items: Optional[bool] = Field(alias="uniqueItems", default=None)
-    ref: Optional[str] = Field(alias="$ref", default=None)
+    ref: Optional[str] = Field(alias="$ref", default=None)  # type: ignore
     description: Optional[str] = None
     deprecated: Optional[bool] = None
     default: Optional[Any] = None
@@ -183,7 +188,7 @@ class Schema(BaseModel):
     if_: Optional[SchemaType] = Field(alias="if", default=None)
     then: Optional[SchemaType] = None
     else_: Optional[SchemaType] = Field(alias="else", default=None)
-    schema_: Optional[str] = Field(alias="$schema", default=None)
+    schema_: Optional[str] = Field(alias="$schema", default=None)  # type: ignore
 
 
 class ExamplePairing(BaseModel):
@@ -240,7 +245,7 @@ class Components(BaseModel):
     )
     tags: Optional[dict[str, Tag]] = None
     x_security_schemes: Optional[dict[str, Union[OAuth2, BearerAuth, APIKeyAuth]]] = (
-        Field(default=None, alias="x-securitySchemes")
+        Field(default=None, alias="x-securitySchemes")  # type: ignore
     )
 
     def resolve_reference(self, reference: str) -> Optional[SchemaType]:
@@ -271,7 +276,7 @@ class ExternalDocumentation(BaseModel):
 class Reference(BaseModel):
     """A simple object to allow referencing other components in the specification."""
 
-    ref: str = Field(alias="$ref")
+    ref: str = Field(alias="$ref")  # type: ignore
 
 
 class OpenRPC(BaseModel):
