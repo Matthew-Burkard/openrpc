@@ -164,13 +164,13 @@ class MethodRegistrar:
             )
 
         # Params model.
-        param_model = create_model(f"{metadata.name}_params", **fields)
+        param_model = create_model(f"{metadata.name}.params", **fields)
         # Params model.
-        param_schema_model = create_model(f"{metadata.name}_params", **schema_fields)
+        param_schema_model = create_model(f"{metadata.name}.params", **schema_fields)
 
         # Result Model
         result_model = create_model(
-            f"{metadata.name}_result",
+            f"{metadata.name}.result",
             result=(resolved_annotation(signature.return_annotation, function), ...),
         )
 

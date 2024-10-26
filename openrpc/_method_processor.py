@@ -8,7 +8,7 @@ import traceback
 from pathlib import Path
 from typing import Any, Callable, Mapping, Optional, Union
 
-from jsonrpcobjects.errors import InternalError, InvalidParams, JSONRPCError
+from jsonrpcobjects.errors import InternalError, InvalidParamsError, JSONRPCError
 from jsonrpcobjects.objects import (
     DataError,
     Error,
@@ -135,7 +135,7 @@ class MethodProcessor:
             # List params.
             if self.method.metadata.param_structure == ParamStructure.BY_NAME:
                 msg = "Params must be passed by name."
-                raise InvalidParams(msg)
+                raise InvalidParamsError(msg)
             list_params = self._get_list_params(self.request.params)
             result = self.method.function(*list_params, **dependencies)
 
@@ -143,7 +143,7 @@ class MethodProcessor:
             # Dict params.
             if self.method.metadata.param_structure == ParamStructure.BY_POSITION:
                 msg = "Params must be passed by position."
-                raise InvalidParams(msg)
+                raise InvalidParamsError(msg)
             dict_params = self._get_dict_params(self.request.params)
             result = self.method.function(**dict_params, **dependencies)
 
@@ -185,7 +185,7 @@ class MethodProcessor:
                 for field_name in validated_params.model_fields
             ]
         except ValidationError as e:
-            raise InvalidParams(str(e)) from e
+            raise InvalidParamsError(str(e)) from e
 
     def _get_dict_params(self, params: dict[str, Any]) -> dict[str, Any]:
         try:
@@ -195,7 +195,7 @@ class MethodProcessor:
                 for field in params_model.model_fields
             }
         except ValidationError as e:
-            raise InvalidParams(data=str(e)) from e
+            raise InvalidParamsError(data=str(e)) from e
 
     def _check_permissions(self) -> Optional[str]:
         # Default to permitting if no security is set for method.

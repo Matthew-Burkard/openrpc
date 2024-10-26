@@ -96,4 +96,17 @@ def get_schema(value: Optional[SchemaType]) -> Schema:
     if isinstance(value, bool):
         msg = "Boolean schemas are not supported"
         raise TypeError(msg)
+    # If allOf is the only field and has one item, swap this with it.
+    only_all_of = all(
+        getattr(value, name) is None
+        for name in value.model_fields_set
+        if name != "all_of"
+    )
+    if (
+        value.all_of is not None
+        and only_all_of
+        and len(value.all_of) == 1
+        and isinstance(value.all_of[0], Schema)
+    ):
+        return value.all_of[0]
     return value

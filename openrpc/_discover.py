@@ -50,10 +50,16 @@ def get_openrpc_doc(
     api_schema = Schema(**rpc_api_model.model_json_schema(ref_template=REF_TEMPLATE))
 
     methods = get_methods(rpc_methods, api_schema)
+    # Cleanup .result and .params schemas.
+    schemas = {
+        name: schema
+        for name, schema in (api_schema.defs or {}).items()
+        if "openrpc___method_registrar" not in name
+    }
     return OpenRPC(
         openrpc="1.2.6",
         info=info,
-        components=Components(schemas=api_schema.defs or {}),
+        components=Components(schemas=schemas),
         methods=methods,
         servers=servers,
     )
@@ -78,9 +84,6 @@ def get_methods(rpc_methods: Iterable[RPCMethod], api_schema: Schema) -> list[Me
         # Delete param and result schemas.
         # Their values have been pulled out.
         api_schema.defs = api_schema.defs or {}
-        if (ref := f"{rpc_method.metadata.name}_result") in api_schema.defs:
-            del api_schema.defs[ref]
-            del api_schema.defs[f"{rpc_method.metadata.name}_params"]
         # Don't pass `None` values to constructor for sake of
         # `exclude_unset` in discover.
         if rpc_method.metadata.tags is not None:
@@ -164,7 +167,6 @@ def _get_example(rpc_method: RPCMethod) -> ExamplePairing:
     ]
     result_value = lorem_pysum.generate(rpc_method.result_model, explicit_default=True)
     result = Example(value=result_value.result)  # type: ignore
-
     return ExamplePairing(params=params, result=result)
 
 

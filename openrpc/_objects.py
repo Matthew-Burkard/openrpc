@@ -113,7 +113,8 @@ class Method(BaseModel):
     )
     examples: Optional[list[ExamplePairing]] = None
     x_security: Optional[dict[str, list[str]]] = Field(
-        default=None, alias="x-security"  # type: ignore
+        default=None,
+        alias="x-security",  # type: ignore
     )
 
 

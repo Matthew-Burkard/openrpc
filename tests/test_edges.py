@@ -44,3 +44,11 @@ def test_get_schema() -> None:
         get_schema(None)
     with pytest.raises(TypeError):
         get_schema(value=True)
+
+
+def test_schema_all_of() -> None:
+    s1 = Schema(type="string")
+    s2 = Schema(allOf=[s1])
+    schema = get_schema(s2)
+    assert schema.all_of is None
+    assert schema.type == "string"

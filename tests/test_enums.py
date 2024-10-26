@@ -80,7 +80,7 @@ def test_calling_enums_method_with_bar_param() -> None:
     res = get_response(rpc, json.dumps(req))
     assert (
         res["error"]["data"].split("\n")[0]
-        == "1 validation error for enum_test_func_params"
+        == "1 validation error for enum_test_func.params"
     )
 
 
