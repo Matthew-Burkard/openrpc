@@ -26,8 +26,8 @@ from openrpc._objects import (
 COMPONENTS_REF = "#/components/schemas/"
 REF_TEMPLATE = f"{COMPONENTS_REF}{{model}}"
 
-param_pattern = re.compile(r" *:param (.*?): (.*?)(?=:\w|$)")
-return_pattern = re.compile(r" *:return: (.*?)(?=:\w|$)")
+param_pattern = re.compile(r"\n:param (.*?): (.*)")
+return_pattern = re.compile(r"\w*:return: (.*?)(?=:\w|$)")
 
 
 def get_openrpc_doc(
