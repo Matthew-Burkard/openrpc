@@ -200,13 +200,13 @@ pydantic = ">=2.5.1,<3.0.0"
 
 [[package]]
 name = "lorem-pysum"
-version = "1.4.6"
+version = "1.4.7"
 description = "Library to generate instances of Pydantic models."
 optional = false
-python-versions = ">=3.9,<4.0"
+python-versions = "<4.0,>=3.9"
 files = [
-    {file = "lorem_pysum-1.4.6-py3-none-any.whl", hash = "sha256:0d58f577e96b96b6058554f66bcb8cf1e3e145797a8cd401fd9bdf6731343020"},
-    {file = "lorem_pysum-1.4.6.tar.gz", hash = "sha256:6a81a75aba09195cd61acbb297ddf2b98e0e9811821617927a42bf66bf7e6885"},
+    {file = "lorem_pysum-1.4.7-py3-none-any.whl", hash = "sha256:460274492a9938f21944a7713ba813d2588b26f9657c892fcc32508bdfcc7c80"},
+    {file = "lorem_pysum-1.4.7.tar.gz", hash = "sha256:80548bb924f59c2687f43caeb671715d53177be36174bde9b8a316eb085d2a7a"},
 ]
 
 [package.dependencies]
@@ -554,4 +554,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "8d9ea486068a77cba993ce3283ff3fc80b00e000b860aea3446ae17fda30e817"
+content-hash = "4be90c97015c677cf3313bf7a397ffb91d3ee9ccbb8775ac3e444983b831a1ca"
