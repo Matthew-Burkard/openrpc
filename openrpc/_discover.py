@@ -26,7 +26,7 @@ from openrpc._objects import (
 COMPONENTS_REF = "#/components/schemas/"
 REF_TEMPLATE = f"{COMPONENTS_REF}{{model}}"
 
-param_pattern = re.compile(r"\n:param (.*?): (.*)")
+param_pattern = re.compile(r"\w*:param (.*?): (.*?)(?=:\w|\w*$)", re.M)
 return_pattern = re.compile(r"\w*:return: (.*?)(?=:\w|$)")
 
 
