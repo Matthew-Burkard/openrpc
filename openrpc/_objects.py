@@ -34,7 +34,8 @@ from enum import Enum
 from typing import Any, Literal, Optional, Union
 
 from jsonrpcobjects.errors import JSONRPCError
-from jsonrpcobjects.objects import DataError, Error as RPCError, ErrorType
+from jsonrpcobjects.objects import DataError, ErrorType
+from jsonrpcobjects.objects import Error as RPCError
 from pydantic import BaseModel, Field
 
 SchemaType = Union["Schema", bool]

@@ -2,10 +2,10 @@
 
 import datetime
 import json
+from decimal import Decimal
 from enum import Enum
 from typing import Any, List, Optional, Union
 
-from _decimal import Decimal
 from jsonrpcobjects.objects import Request
 from pydantic import BaseModel, Field
 
@@ -563,6 +563,17 @@ def test_no_description() -> None:
 
     doc = rpc.discover()
     assert doc["methods"][0].get("description") is None
+
+
+def test_schema_cleanup() -> None:
+    rpc = _rpc()
+
+    def add(a: int, b: int) -> int:
+        return a + b
+
+    rpc.method()(add)
+    doc = rpc.discover()
+    assert not doc["components"]["schemas"]
 
 
 def _rpc() -> RPCServer:
