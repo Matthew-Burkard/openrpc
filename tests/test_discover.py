@@ -566,11 +566,10 @@ def test_no_description() -> None:
 
 
 def test_schema_cleanup() -> None:
-    rpc = _rpc()
-
     def add(a: int, b: int) -> int:
         return a + b
 
+    rpc = _rpc()
     rpc.method()(add)
     doc = rpc.discover()
     assert not doc["components"]["schemas"]

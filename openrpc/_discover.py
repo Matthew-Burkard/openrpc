@@ -220,6 +220,7 @@ def _get_references(
         references.append(schema.ref)
         if referenced := schemas.get(schema.ref.removeprefix(COMPONENTS_REF)):
             references = _get_references(referenced, schemas, references, processed)
+    # Recersively check child list schemas.
     for list_schema in (
         (schema.all_of or [])
         + (schema.any_of or [])
@@ -227,14 +228,16 @@ def _get_references(
         + (schema.prefix_items or [])
     ):
         references = _get_references(list_schema, schemas, references, processed)
-    for value_schema in (schema.defs or {}).values():
-        references = _get_references(value_schema, schemas, references, processed)
-    for prop_schema in (schema.properties or {}).values():
-        references = _get_references(prop_schema, schemas, references, processed)
-    for prop_schema in (schema.pattern_properties or {}).values():
-        references = _get_references(prop_schema, schemas, references, processed)
-    for prop_schema in (schema.dependent_schemas or {}).values():
-        references = _get_references(prop_schema, schemas, references, processed)
+    # Recersively check child dict schemas.
+    for dict_schema in (
+        (schema.defs or {}),
+        (schema.properties or {}),
+        (schema.pattern_properties or {}),
+        (schema.dependent_schemas or {}),
+    ):
+        for value_schema in dict_schema.values():
+            references = _get_references(value_schema, schemas, references, processed)
+    # Recersively check child schemas.
     references = _get_references(schema.not_, schemas, references, processed)
     references = _get_references(
         schema.additional_properties, schemas, references, processed

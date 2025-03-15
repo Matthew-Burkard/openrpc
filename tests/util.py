@@ -63,7 +63,7 @@ async def get_response_async(
     return json.loads(resp)
 
 
-def get_request(method: str, params: Optional[str] = None) -> str:
+def get_request(method: str, params: Optional[Any] = None) -> str:
     """Get a request string."""
     if params is None:
         return f'{{"id": 1, "method": "{method}", "jsonrpc": "2.0"}}'
