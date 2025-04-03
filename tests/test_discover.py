@@ -94,7 +94,7 @@ def test_open_rpc_info() -> None:
         version="1.0.0",
         debug=True,
         description="description",
-        terms_of_service="terms_of_service",
+        terms_of_service="http://example.com/terms_of_service",
         contact=Contact(),
         license_=License(name="name"),
     )
@@ -118,12 +118,12 @@ def test_open_rpc_info() -> None:
     request = Request(id=1, method="rpc.discover")
     resp = json.loads(rpc.process_request(request.model_dump_json()))  # type: ignore
     discover_result = resp["result"]
-    assert "1.2.6" == discover_result["openrpc"]  # noqa: SIM300
+    assert "1.3.2" == discover_result["openrpc"]  # noqa: SIM300
     assert discover_result["info"] == {
         "contact": {},
         "description": "description",
         "license": {"name": "name"},
-        "termsOfService": "terms_of_service",
+        "termsOfService": "http://example.com/terms_of_service",
         "title": "Test OpenRPC",
         "version": "1.0.0",
     }
@@ -163,8 +163,9 @@ def test_lists() -> None:
     assert doc.methods[0].examples is not None
     examples = dump(doc.methods[0].examples[0])
     assert examples == {
+        "name": "Generated example",
         "params": [{"name": "numbers", "value": [1]}],
-        "result": {"value": [1]},
+        "result": {"name": "Generated result", "value": [1]},
     }
     # Params
     expected_param_schema = {
@@ -202,7 +203,7 @@ def test_schema_params() -> None:
     assert dump(example.params[0]) == {"name": "position", "value": model_example}
     assert dump(example.params[1]) == {"name": "target", "value": model_example}
     assert example.result is not None
-    assert dump(example.result) == {"value": model_example}
+    assert dump(example.result) == {"name": "Generated result", "value": model_example}
     # Params
     p1 = method.params[0]
     p1_schema = dump(resolve(p1.schema_, doc.components))
@@ -222,12 +223,13 @@ def test_defaults() -> None:
     # Examples
     assert method.examples is not None
     assert method.examples[0].model_dump(exclude_none=True) == {
+        "name": "Generated example",
         "params": [
             {"name": "a", "value": 2},
             {"name": "b", "value": 0.99792458},
             {"name": "c", "value": "c"},
         ],
-        "result": {"value": "string"},
+        "result": {"name": "Generated result", "value": "string"},
     }
     # Params
     assert method.model_dump(exclude_unset=True, by_alias=True)["params"] == [
@@ -262,8 +264,9 @@ def test_return_none() -> None:
     # Examples
     assert method.examples is not None
     assert dump(method.examples[0]) == {
+        "name": "Generated example",
         "params": [{"name": "optional_param", "value": "string"}],
-        "result": {"value": None},
+        "result": {"name": "Generated result", "value": None},
     }
     # Params
     param_schema = dump(method.params[0].schema_)
@@ -282,7 +285,11 @@ def test_any() -> None:
     method = rpc.discover()["methods"][0]
     # Examples
     assert method["examples"] == [
-        {"params": [{"name": "any_param", "value": {}}], "result": {"value": {}}}
+        {
+            "name": "Generated example",
+            "params": [{"name": "any_param", "value": {}}],
+            "result": {"name": "Generated result", "value": {}},
+        }
     ]
     # Params
     assert method["params"] == [
@@ -299,11 +306,12 @@ def test_no_annotations() -> None:
     # Examples
     assert method["examples"] == [
         {
+            "name": "Generated example",
             "params": [
                 {"name": "a", "value": {}},
                 {"name": "b", "value": {}},
             ],
-            "result": {"value": {}},
+            "result": {"name": "Generated result", "value": {}},
         }
     ]
     # Params

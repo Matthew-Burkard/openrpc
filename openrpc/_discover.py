@@ -57,11 +57,11 @@ def get_openrpc_doc(
         if "openrpc___method_registrar" not in name
     }
     return OpenRPC(
-        openrpc="1.2.6",
+        openrpc="1.3.2",
         info=info,
         components=Components(schemas=schemas),
         methods=methods,
-        servers=servers,
+        servers=servers if isinstance(servers, list) else [servers],
     )
 
 
@@ -166,8 +166,8 @@ def _get_example(rpc_method: RPCMethod) -> ExamplePairing:
         for name in param_values.model_fields
     ]
     result_value = lorem_pysum.generate(rpc_method.result_model, explicit_default=True)
-    result = Example(value=result_value.result)  # type: ignore
-    return ExamplePairing(params=params, result=result)
+    result = Example(name="Generated result", value=result_value.result)  # type: ignore
+    return ExamplePairing(name="Generated example", params=params, result=result)
 
 
 def _get_summary(rpc_method: RPCMethod) -> Optional[str]:
