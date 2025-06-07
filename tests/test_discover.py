@@ -50,7 +50,7 @@ class NestedModels(BaseModel):
     recursion: Optional["NestedModels"]
     list_recursion: List[Optional["NestedModels"]]
     any_of: Union[Vector3, "NestedModels"]
-    dict_model_values: dict[int, Vector2] = Field(default_factory=dict)
+    dict_model_values: dict[int, Vector2] = Field(default_factory=lambda: {})
 
 
 class ListResultModel(BaseModel):
@@ -465,6 +465,7 @@ def test_collections() -> None:
     assert dump(method.params[13].schema_) == {
         "title": "Dict Field",
         "type": "object",
+        "additionalProperties": True,
     }
     assert dump(method.params[14].schema_) == {
         "additionalProperties": {"type": "string"},
@@ -472,7 +473,10 @@ def test_collections() -> None:
         "type": "object",
     }
     assert dump(method.params[15].schema_) == {
-        "additionalProperties": {"type": "object"},
+        "additionalProperties": {
+            "type": "object",
+            "additionalProperties": True,
+        },
         "title": "Dict Dict",
         "type": "object",
     }
