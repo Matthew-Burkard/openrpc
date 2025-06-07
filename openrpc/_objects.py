@@ -196,17 +196,17 @@ class Schema(BaseModel):
 class ExamplePairing(BaseModel):
     """Consists of a set of example params and result."""
 
-    name: Optional[str] = None
+    name: str
     description: Optional[str] = None
     summary: Optional[str] = None
-    params: Optional[list[Example]] = None
+    params: list[Example]
     result: Optional[Example] = None
 
 
 class Example(BaseModel):
     """Example that is intended to match a given Content Descriptor Schema."""
 
-    name: Optional[str] = None
+    name: str
     summary: Optional[str] = None
     description: Optional[str] = None
     value: Optional[Any] = None
