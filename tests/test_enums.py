@@ -4,7 +4,6 @@ import enum
 import json
 from typing import Optional
 
-
 from openrpc import RPCServer
 from openrpc._objects import OpenRPC
 from tests import util

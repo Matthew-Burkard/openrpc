@@ -26,11 +26,12 @@ def test_future() -> None:
     # Examples
     assert method["examples"] == [
         {
+            "name": "Generated example",
             "params": [
                 {"name": "union_str_int", "value": "string"},
                 {"name": "list_str", "value": None},
             ],
-            "result": {"value": ["string"]},
+            "result": {"name": "Generated result", "value": ["string"]},
         }
     ]
     # Params

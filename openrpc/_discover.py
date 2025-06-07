@@ -8,7 +8,6 @@ from typing import Any, Iterable, Optional, Union
 import lorem_pysum
 from pydantic import create_model
 
-
 from openrpc._common import RPCMethod, get_schema
 from openrpc._objects import (
     Components,
@@ -48,20 +47,20 @@ def get_openrpc_doc(
         fields[method.metadata.name + ".result"] = (method.result_model, None)
     rpc_api_model = create_model("OpenRPCAPIModel", **fields)
     api_schema = Schema(**rpc_api_model.model_json_schema(ref_template=REF_TEMPLATE))
-
     methods = get_methods(rpc_methods, api_schema)
     # Cleanup .result and .params schemas.
+    used_references = _get_used_references(methods, api_schema.defs or {})
     schemas = {
-        name: schema
-        for name, schema in (api_schema.defs or {}).items()
-        if "openrpc___method_registrar" not in name
+        ref: schema
+        for ref, schema in (api_schema.defs or {}).items()
+        if f"{COMPONENTS_REF}{ref}" in used_references
     }
     return OpenRPC(
-        openrpc="1.2.6",
+        openrpc="1.3.2",
         info=info,
         components=Components(schemas=schemas),
         methods=methods,
-        servers=servers,
+        servers=servers if isinstance(servers, list) else [servers],
     )
 
 
@@ -166,8 +165,8 @@ def _get_example(rpc_method: RPCMethod) -> ExamplePairing:
         for name in param_values.model_fields
     ]
     result_value = lorem_pysum.generate(rpc_method.result_model, explicit_default=True)
-    result = Example(value=result_value.result)  # type: ignore
-    return ExamplePairing(params=params, result=result)
+    result = Example(name="Generated result", value=result_value.result)  # type: ignore
+    return ExamplePairing(name="Generated example", params=params, result=result)
 
 
 def _get_summary(rpc_method: RPCMethod) -> Optional[str]:
@@ -190,3 +189,62 @@ def _get_description(rpc_method: RPCMethod) -> Optional[str]:
         if not doc.startswith(":"):
             return doc
     return description
+
+
+def _get_used_references(
+    methods: list[Method], schemas: dict[str, SchemaType]
+) -> list[str]:
+    """Remove any schemas that have 0 references."""
+    references: list[str] = []
+    for method in methods:
+        for content_descriptor in method.params + [method.result]:
+            references = _get_references(
+                content_descriptor.schema_, schemas, references
+            )
+    return references
+
+
+def _get_references(
+    schema: Optional[SchemaType],
+    schemas: dict[str, SchemaType],
+    references: list[str],
+    processed: Optional[list[Schema]] = None,
+) -> list[str]:
+    if isinstance(schema, bool) or schema is None:
+        return references
+    processed = processed or []
+    if schema in processed:
+        return references
+    processed.append(schema)
+    if schema.ref and schema.ref not in references:
+        references.append(schema.ref)
+        if referenced := schemas.get(schema.ref.removeprefix(COMPONENTS_REF)):
+            references = _get_references(referenced, schemas, references, processed)
+    # Recersively check child list schemas.
+    for list_schema in (
+        (schema.all_of or [])
+        + (schema.any_of or [])
+        + (schema.one_of or [])
+        + (schema.prefix_items or [])
+    ):
+        references = _get_references(list_schema, schemas, references, processed)
+    # Recersively check child dict schemas.
+    for dict_schema in (
+        (schema.defs or {}),
+        (schema.properties or {}),
+        (schema.pattern_properties or {}),
+        (schema.dependent_schemas or {}),
+    ):
+        for value_schema in dict_schema.values():
+            references = _get_references(value_schema, schemas, references, processed)
+    # Recersively check child schemas.
+    references = _get_references(schema.not_, schemas, references, processed)
+    references = _get_references(
+        schema.additional_properties, schemas, references, processed
+    )
+    references = _get_references(schema.property_names, schemas, references, processed)
+    references = _get_references(schema.items, schemas, references, processed)
+    references = _get_references(schema.contains, schemas, references, processed)
+    references = _get_references(schema.if_, schemas, references, processed)
+    references = _get_references(schema.then, schemas, references, processed)
+    return _get_references(schema.else_, schemas, references, processed)
