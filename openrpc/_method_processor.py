@@ -182,7 +182,7 @@ class MethodProcessor:
             validated_params = self.method.params_model(**params_dict)
             return [
                 getattr(validated_params, field_name)
-                for field_name in validated_params.model_fields
+                for field_name in type(validated_params).model_fields
             ]
         except ValidationError as e:
             raise InvalidParamsError(str(e)) from e
@@ -192,7 +192,7 @@ class MethodProcessor:
             params_model = self.method.params_model(**params)
             return {
                 field: getattr(params_model, field)
-                for field in params_model.model_fields
+                for field in type(params_model).model_fields
             }
         except ValidationError as e:
             raise InvalidParamsError(data=str(e)) from e
