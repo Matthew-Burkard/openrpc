@@ -153,7 +153,7 @@ class MethodRegistrar:
                 default = Undefined
             elif param.default is inspect.Signature.empty:
                 required.append(param_name)
-                default = ...
+                default: Any = ...
             fields[param_name] = (
                 resolved_annotation(annotation, function),
                 default,
