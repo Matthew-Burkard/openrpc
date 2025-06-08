@@ -153,6 +153,7 @@ class MethodRegistrar:
                 default = Undefined
             elif param.default is inspect.Signature.empty:
                 required.append(param_name)
+                # Pyright has an issue with this only when running in Python 3.9
                 default: Any = ...  # type: ignore
             fields[param_name] = (
                 resolved_annotation(annotation, function),
@@ -171,7 +172,8 @@ class MethodRegistrar:
         # Result Model
         result_model = create_model(
             f"{metadata.name}.result",
-            result=(resolved_annotation(signature.return_annotation, function), ...),
+            # Pyright has an issue with this only when running in Python 3.9
+            result=(resolved_annotation(signature.return_annotation, function), ...),  # type: ignore
         )
 
         # Add method to processor method list.
