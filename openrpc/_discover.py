@@ -162,7 +162,7 @@ def _get_example(rpc_method: RPCMethod) -> ExamplePairing:
     )
     params = [
         Example(name=name, value=getattr(param_values, name))
-        for name in param_values.model_fields
+        for name in type(param_values).model_fields
     ]
     result_value = lorem_pysum.generate(rpc_method.result_model, explicit_default=True)
     result = Example(name="Generated result", value=result_value.result)  # type: ignore
