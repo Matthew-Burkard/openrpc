@@ -1,10 +1,12 @@
 """Module responsible for parsing JSON RPC 2.0 requests."""
 
+from __future__ import annotations
+
 __all__ = ("RequestProcessor",)
 
 import asyncio
 import logging
-from typing import Any, Optional, Union
+from typing import Any
 
 from jsonrpcobjects.errors import METHOD_NOT_FOUND
 from jsonrpcobjects.objects import (
@@ -51,10 +53,10 @@ class RequestProcessor:
 
     def process(
         self,
-        data: Union[bytes, str],
-        caller_details: Optional[Any],
-        security: Optional[SecurityFunctionDetails],
-    ) -> Optional[str]:
+        data: bytes | str,
+        caller_details: Any | None,
+        security: SecurityFunctionDetails | None,
+    ) -> str | None:
         """Parse a JSON-RPC2 request and get the response.
 
         :param data: A JSON-RPC2 request.
@@ -109,10 +111,10 @@ class RequestProcessor:
 
     async def process_async(
         self,
-        data: Union[bytes, str],
-        caller_details: Optional[Any],
-        security: Optional[SecurityFunctionDetails],
-    ) -> Optional[str]:
+        data: bytes | str,
+        caller_details: Any | None,
+        security: SecurityFunctionDetails | None,
+    ) -> str | None:
         """Process a JSON-RPC2 request and get the response.
 
         If the method called by the request is async it will be awaited.
@@ -131,7 +133,7 @@ class RequestProcessor:
         if isinstance(parsed_request, list):
 
             async def _process_request(
-                request: Union[ErrorResponse, NotificationType, RequestType]
+                request: ErrorResponse | NotificationType | RequestType,
             ) -> Any:
                 if isinstance(request, ErrorResponse):
                     return request.model_dump_json()
@@ -175,7 +177,7 @@ class RequestProcessor:
         return None if isinstance(parsed_request, NotificationTypes) else result
 
 
-def _get_method_not_found_error(req: Union[NotificationType, RequestType]) -> str:
+def _get_method_not_found_error(req: NotificationType | RequestType) -> str:
     return ErrorResponse(
         id=None if isinstance(req, NotificationTypes) else req.id,
         error=DataError(

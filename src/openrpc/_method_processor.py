@@ -1,12 +1,14 @@
 """Module responsible for processing a method call."""
 
+from __future__ import annotations
+
 __all__ = ("MethodProcessor",)
 
 import inspect
 import logging
 import traceback
 from pathlib import Path
-from typing import Any, Callable, Mapping, Optional, Union
+from typing import Any, Callable, Mapping
 
 from jsonrpcobjects.errors import InternalError, InvalidParamsError, JSONRPCError
 from jsonrpcobjects.objects import (
@@ -40,13 +42,13 @@ class MethodProcessor:
         self,
         method: RPCMethod,
         uncaught_error_code: int,
-        request: Union[RequestType, NotificationType],
-        caller_details: Optional[Any],
-        security: Optional[SecurityFunctionDetails],
+        request: RequestType | NotificationType,
+        caller_details: Any | None,
+        security: SecurityFunctionDetails | None,
         *,
         debug: bool,
     ) -> None:
-        """Init a MethodProcessor.
+        """Instantiate a `MethodProcessor`.
 
         :param method: The Python callable.
         :param uncaught_error_code: Code for errors raised by method.
@@ -64,7 +66,7 @@ class MethodProcessor:
         self.security = security
         self._depends: dict[Callable[..., Any], Any] = {}
 
-    def execute(self) -> Optional[str]:
+    def execute(self) -> str | None:
         """Execute the method and get the JSON-RPC2 response."""
         try:
             # Raise permission error if any problems with `security_scheme`.
@@ -87,7 +89,7 @@ class MethodProcessor:
         except Exception as error:
             return self._get_error_response(error)
 
-    async def execute_async(self) -> Optional[str]:
+    async def execute_async(self) -> str | None:
         """Execute the method and get the JSON-RPC2 response.
 
         If the method is an async method it will be awaited.
@@ -149,7 +151,7 @@ class MethodProcessor:
 
         return result
 
-    def _get_error_response(self, error: Exception) -> Optional[str]:
+    def _get_error_response(self, error: Exception) -> str | None:
         log.exception("%s:", type(error).__name__)
 
         if not isinstance(self.request, (ParamsRequest, Request)):
@@ -197,7 +199,7 @@ class MethodProcessor:
         except ValidationError as e:
             raise InvalidParamsError(data=str(e)) from e
 
-    def _check_permissions(self) -> Optional[str]:
+    def _check_permissions(self) -> str | None:
         # Default to permitting if no security is set for method.
         permit = not self.method.metadata.security
         if permit:
@@ -229,7 +231,7 @@ class MethodProcessor:
             raise RPCPermissionError(error if self.debug else None)
         return None
 
-    async def _check_permissions_async(self) -> Optional[str]:
+    async def _check_permissions_async(self) -> str | None:
         # Default to permitting if no security is set for method.
         permit = not self.method.metadata.security
         if permit:
@@ -259,8 +261,8 @@ class MethodProcessor:
         return None
 
     def _get_permission_error_from_scheme(
-        self, active_scheme: Optional[Mapping[str, list[str]]]
-    ) -> Optional[str]:
+        self, active_scheme: Mapping[str, list[str]] | None
+    ) -> str | None:
         if not active_scheme:
             return "No active security schemes for caller."
 

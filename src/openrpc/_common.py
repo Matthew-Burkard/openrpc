@@ -1,5 +1,7 @@
 """Provides classes for storing RPC method data."""
 
+from __future__ import annotations
+
 __all__ = (
     "MethodMetaData",
     "RPCMethod",
@@ -13,8 +15,6 @@ import inspect
 from typing import Any, Awaitable, Callable, ForwardRef, Mapping, Optional, Type, Union
 
 from pydantic import BaseModel
-
-# noinspection PyProtectedMember
 from pydantic.v1.typing import evaluate_forwardref
 
 from openrpc._depends import DependsModel
@@ -54,19 +54,35 @@ class MethodMetaData(BaseModel):
     param_structure: Optional[ParamStructure] = None
     examples: Optional[list[ExamplePairing]] = None
     security: dict[str, list[str]]
+    scopes: list[str]
 
 
 class RPCMethod(BaseModel):
-    """Hold information about a decorated Python function."""
+    """OpenRPC framework data for a registered method."""
+
+    context_arg: Optional[tuple[str, int]] = None
+    """Argument name and position in the method."""
+
+    depends: dict[str, DependsModel]
+    """Schema model needed to support Undefined."""
 
     function: Callable[..., Any]
+    """Function associated with the method."""
+
     metadata: MethodMetaData
-    depends: dict[str, DependsModel]
-    # Schema model needed to support Undefined.
+    """OpenRPC method data."""
+
     params_schema_model: Type[BaseModel]
+    """Model used for method schema, excludes context and dependencies."""
+
     params_model: Type[BaseModel]
-    result_model: Type[BaseModel]
+    """Model of the method parameters type."""
+
     required: list[str]
+    """Required parameters."""
+
+    result_model: Type[BaseModel]
+    """Model of the method result type."""
 
 
 @dataclasses.dataclass
@@ -89,7 +105,7 @@ def resolved_annotation(annotation: Any, function: Callable[..., Any]) -> Any:
     return type(None) if annotation is None else annotation
 
 
-def get_schema(value: Optional[SchemaType]) -> Schema:
+def get_schema(value: SchemaType | None) -> Schema:
     if value is None:
         msg = "Failed to find schema."
         raise ValueError(msg)

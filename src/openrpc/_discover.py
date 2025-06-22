@@ -1,9 +1,11 @@
 """Module for `rpc.discover` related functions."""
 
+from __future__ import annotations
+
 __all__ = ("get_openrpc_doc",)
 
 import re
-from typing import Any, Iterable, Optional, Union
+from typing import Any, Iterable
 
 import lorem_pysum
 from pydantic import create_model
@@ -30,7 +32,7 @@ return_pattern = re.compile(r"\w*:return: (.*?)(?=:\w|$)")
 
 
 def get_openrpc_doc(
-    info: Info, rpc_methods: Iterable[RPCMethod], servers: Union[list[Server], Server]
+    info: Info, rpc_methods: Iterable[RPCMethod], servers: list[Server] | Server
 ) -> OpenRPC:
     """Get an Open RPC document describing the RPC server.
 
@@ -169,7 +171,7 @@ def _get_example(rpc_method: RPCMethod) -> ExamplePairing:
     return ExamplePairing(name="Generated example", params=params, result=result)
 
 
-def _get_summary(rpc_method: RPCMethod) -> Optional[str]:
+def _get_summary(rpc_method: RPCMethod) -> str | None:
     summary = rpc_method.metadata.summary
     if not summary:
         summary = rpc_method.function.__doc__
@@ -179,7 +181,7 @@ def _get_summary(rpc_method: RPCMethod) -> Optional[str]:
     return summary
 
 
-def _get_description(rpc_method: RPCMethod) -> Optional[str]:
+def _get_description(rpc_method: RPCMethod) -> str | None:
     description = rpc_method.metadata.description
     if not description and (
         (doc_string := rpc_method.function.__doc__)
@@ -205,10 +207,10 @@ def _get_used_references(
 
 
 def _get_references(
-    schema: Optional[SchemaType],
+    schema: SchemaType | None,
     schemas: dict[str, SchemaType],
     references: list[str],
-    processed: Optional[list[Schema]] = None,
+    processed: list[Schema] | None = None,
 ) -> list[str]:
     if isinstance(schema, bool) or schema is None:
         return references
@@ -228,7 +230,7 @@ def _get_references(
         + (schema.prefix_items or [])
     ):
         references = _get_references(list_schema, schemas, references, processed)
-    # Recersively check child dict schemas.
+    # Recursively check child dict schemas.
     for dict_schema in (
         (schema.defs or {}),
         (schema.properties or {}),

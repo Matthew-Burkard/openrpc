@@ -1,16 +1,19 @@
 """Module providing method registrar interface."""
 
+from __future__ import annotations
+
 __all__ = ("MethodRegistrar", "CallableType")
 
 import inspect
 import logging
 import typing
-from typing import Any, Callable, Optional, TypeVar, Union
+from typing import Any, Callable, TypeVar, Union
 
 from py_undefined import Undefined
 from pydantic import create_model
 
 from openrpc._common import MethodMetaData, RPCMethod, resolved_annotation
+from openrpc._context import ContextBase
 from openrpc._depends import DependsModel
 from openrpc._objects import (
     ContentDescriptor,
@@ -47,45 +50,41 @@ class MethodRegistrar:
     def debug(self, debug: bool) -> None:
         self._request_processor.debug = debug
 
-    def method(
+    def method(  # noqa: PLR0913
         self,
-        name: Optional[str] = None,
-        params: Optional[list[ContentDescriptor]] = None,
-        result: Optional[ContentDescriptor] = None,
-        tags: Optional[list[Union[Tag, str]]] = None,
-        summary: Optional[str] = None,
-        description: Optional[str] = None,
-        external_docs: Optional[ExternalDocumentation] = None,
-        deprecated: Optional[bool] = None,
-        servers: Optional[list[Server]] = None,
-        errors: Optional[list[Error]] = None,
-        links: Optional[list[Link]] = None,
-        param_structure: Optional[ParamStructure] = None,
-        examples: Optional[list[ExamplePairing]] = None,
-        security: Optional[dict[str, list[str]]] = None,
+        name: str | None = None,
+        params: list[ContentDescriptor] | None = None,
+        result: ContentDescriptor | None = None,
+        tags: list[Tag | str] | None = None,
+        summary: str | None = None,
+        description: str | None = None,
+        external_docs: ExternalDocumentation | None = None,
+        deprecated: bool | None = None,
+        servers: list[Server] | None = None,
+        errors: list[Error] | None = None,
+        links: list[Link] | None = None,
+        param_structure: ParamStructure | None = None,
+        examples: list[ExamplePairing] | None = None,
+        security: dict[str, list[str]] | None = None,
+        scopes: list[str] | None = None,
     ) -> Callable[[CallableType], CallableType]:
         """Register a method with this OpenRPC server.
 
         :param name: The canonical name for the method.
-        :param params: A list of parameters that are applicable for this
-            method.
-        :param result: The description of the result returned by the
-            method.
+        :param params: A list of parameters that are applicable for this method.
+        :param result: The description of the result returned by the method.
         :param tags: A list of tags for API documentation control.
         :param summary: A short summary of what the method does.
-        :param description: A verbose explanation of the method
-            behavior.
-        :param external_docs: Additional external documentation for this
-            method.
+        :param description: A verbose explanation of the method behavior.
+        :param external_docs: Additional external documentation for this method.
         :param deprecated: Declares this method to be deprecated.
-        :param servers: An alternative servers array to service this
-            method.
-        :param errors: A list of custom application defined errors that
-            MAY be returned.
+        :param servers: An alternative servers array to service this method.
+        :param errors: A list of custom application defined errors that MAY be returned.
         :param links: A list of possible links from this method call.
         :param param_structure: The expected format of the parameters
         :param examples: Array of Example Pairing Objects.
         :param security: Scheme and scopes required to call this method.
+        :param scopes: Permissions required to call this method.
         :return: The method decorator.
         """
         tag_objects = (
@@ -112,6 +111,7 @@ class MethodRegistrar:
                     param_structure=param_structure,
                     examples=examples,
                     security=security or {},
+                    scopes=scopes or [],
                 ),
             )
 
@@ -134,12 +134,21 @@ class MethodRegistrar:
         fields: dict[str, Any] = {}
         schema_fields: dict[str, Any] = {}
         required: list[str] = []
-        for param_name, param in signature.parameters.items():
+        context_arg: tuple[str, int] | None = None
+        type_hints = typing.get_type_hints(function)
+        for key in signature.parameters:
+            if key not in type_hints:
+                type_hints[key] = Any
+        for i, param_name in enumerate([t for t in type_hints if t != "return"]):
+            param = signature.parameters[param_name]
             default: Any = param.default
             annotation: Any = param.annotation
             if isinstance(param.default, DependsModel):
                 depends[param_name] = param.default
                 continue
+            # If multiple args have a type subclassing context, only use the first.
+            if issubclass(type_hints[param_name], ContextBase) and context_arg is None:
+                context_arg = param_name, i
             if Undefined in (args := typing.get_args(annotation)):
                 default = Undefined
                 # Remove `Undefined` from annotation for Pydantic.
@@ -178,13 +187,14 @@ class MethodRegistrar:
 
         # Add method to processor method list.
         rpc_method = RPCMethod(
+            context_arg=context_arg,
+            depends=depends,
             function=function,
             metadata=metadata,
-            depends=depends,
             params_model=param_model,
             params_schema_model=param_schema_model,
-            result_model=result_model,
             required=required,
+            result_model=result_model,
         )
         self._rpc_methods[metadata.name] = rpc_method
         log.debug(

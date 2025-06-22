@@ -1,13 +1,21 @@
 """Module providing RPCServer class."""
 
-__all__ = ("RPCServer", "MethodRegistrar")
+from __future__ import annotations
 
 import inspect
 import logging
-from typing import Any, Callable, Mapping, Optional, Union
+from typing import Any, Awaitable, Callable, Mapping, Union
 
 from jsonrpcobjects.errors import INTERNAL_ERROR
-from jsonrpcobjects.objects import DataError, Error, ErrorResponse
+from jsonrpcobjects.objects import (
+    DataError,
+    Error,
+    ErrorResponse,
+    ErrorType,
+    NotificationType,
+    RequestType,
+    ResponseType,
+)
 
 from openrpc import RPCRouter
 from openrpc._common import MethodMetaData, SecurityFunction, SecurityFunctionDetails
@@ -29,8 +37,16 @@ from openrpc._objects import (
 from ._depends import DependsModel
 from ._discover import get_openrpc_doc
 
+__all__ = ("RPCServer", "MethodRegistrar")
+
 log = logging.getLogger("openrpc")
 _META_REF = "https://raw.githubusercontent.com/open-rpc/meta-schema/master/schema.json"
+
+AnyRequest = Union[RequestType, NotificationType]
+AnyResponse = Union[ResponseType, ErrorType]
+
+RequestHook = Callable[[AnyRequest], Awaitable[AnyRequest]]
+ResponseHook = Callable[[AnyResponse], Awaitable[None]]
 
 
 class RPCServer(MethodRegistrar):
@@ -38,17 +54,15 @@ class RPCServer(MethodRegistrar):
 
     def __init__(
         self,
-        title: Optional[str] = None,
-        version: Optional[str] = None,
-        description: Optional[str] = None,
-        terms_of_service: Optional[str] = None,
-        contact: Optional[Contact] = None,
-        license_: Optional[License] = None,
-        servers: Optional[Union[list[Server], Server]] = None,
-        security_schemes: Optional[
-            Mapping[str, Union[OAuth2, BearerAuth, APIKeyAuth]]
-        ] = None,
-        security_function: Optional[SecurityFunction] = None,
+        title: str | None = None,
+        version: str | None = None,
+        description: str | None = None,
+        terms_of_service: str | None = None,
+        contact: Contact | None = None,
+        license_: License | None = None,
+        servers: list[Server] | Server | None = None,
+        security_schemes: Mapping[str, OAuth2 | BearerAuth | APIKeyAuth] | None = None,
+        security_function: SecurityFunction | None = None,
         *,
         debug: bool = False,
     ) -> None:
@@ -87,9 +101,8 @@ class RPCServer(MethodRegistrar):
         self.security_schemes = security_schemes
 
         # Security function.
-        self._security_function_details: Optional[SecurityFunctionDetails] = None
-        # Type ignore because mypy is wrong again.
-        self.security_function = security_function  # type: ignore
+        self._security_function_details: SecurityFunctionDetails | None = None
+        self.security_function = security_function
 
         # Register discover method.
         schema = Schema()
@@ -119,7 +132,7 @@ class RPCServer(MethodRegistrar):
         self._info.version = version
 
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         """Verbose description of the application."""
         return self._info.description
 
@@ -128,7 +141,7 @@ class RPCServer(MethodRegistrar):
         self._info.description = description
 
     @property
-    def terms_of_service(self) -> Optional[str]:
+    def terms_of_service(self) -> str | None:
         """URL to the Terms of Service for the API."""
         return self._info.terms_of_service
 
@@ -137,7 +150,7 @@ class RPCServer(MethodRegistrar):
         self._info.terms_of_service = terms_of_service
 
     @property
-    def contact(self) -> Optional[Contact]:
+    def contact(self) -> Contact | None:
         """Contact information for the exposed API."""
         return self._info.contact
 
@@ -146,7 +159,7 @@ class RPCServer(MethodRegistrar):
         self._info.contact = contact
 
     @property
-    def license_(self) -> Optional[License]:
+    def license_(self) -> License | None:
         """License information for the exposed API."""
         return self._info.license_
 
@@ -155,12 +168,12 @@ class RPCServer(MethodRegistrar):
         self._info.license_ = license_
 
     @property
-    def servers(self) -> Union[list[Server], Server]:
+    def servers(self) -> list[Server] | Server:
         """Server Objects, which provide connectivity information to a target server."""
         return self._servers
 
     @servers.setter
-    def servers(self, servers: Union[list[Server], Server]) -> None:
+    def servers(self, servers: list[Server] | Server) -> None:
         self._servers = servers
 
     @property
@@ -192,14 +205,14 @@ class RPCServer(MethodRegistrar):
             router.debug = debug
 
     @property
-    def security_function(self) -> Optional[SecurityFunction]:
+    def security_function(self) -> SecurityFunction | None:
         """Function that accepts caller details and returns security schemes."""
         if self._security_function_details:
             return self._security_function_details.function
         return None
 
     @security_function.setter
-    def security_function(self, value: Optional[SecurityFunction]) -> None:
+    def security_function(self, value: SecurityFunction | None) -> None:
         if value is None:
             return
         signature = inspect.signature(value)
@@ -219,8 +232,8 @@ class RPCServer(MethodRegistrar):
     def include_router(
         self,
         router: RPCRouter,
-        prefix: Optional[str] = None,
-        tags: Optional[list[Union[Tag, str]]] = None,
+        prefix: str | None = None,
+        tags: list[Tag | str] | None = None,
     ) -> None:
         """Add an RPC method router to this server.
 
@@ -266,15 +279,13 @@ class RPCServer(MethodRegistrar):
         self._routers.append(router)
 
     def process_request(
-        self, data: Union[bytes, str], caller_details: Optional[Any] = None
-    ) -> Optional[str]:
+        self, data: bytes | str, caller_details: Any | None = None
+    ) -> str | None:
         """Process a JSON-RPC2 request and get the response.
 
         :param data: A JSON-RPC2 request.
-        :param caller_details: Values passed to `Depends` and security
-            functions.
-        :return: A JSON-RPC2 response or None if the request was a
-            notification.
+        :param caller_details: Values passed to `Depends` and security functions.
+        :return: A JSON-RPC2 response or None if the request was a notification.
         """
         try:
             log.debug("Processing request: %s", data)
@@ -289,17 +300,15 @@ class RPCServer(MethodRegistrar):
             return resp
 
     async def process_request_async(
-        self, data: Union[bytes, str], caller_details: Optional[Any] = None
-    ) -> Optional[str]:
+        self, data: bytes | str, caller_details: Any | None = None
+    ) -> str | None:
         """Process a JSON-RPC2 request and get the response.
 
         If the method called by the request is async it will be awaited.
 
         :param data: A JSON-RPC2 request.
-        :param caller_details: Values passed to `Depends` and security
-            functions.
-        :return: A JSON-RPC2 response or None if the request was a
-            notification.
+        :param caller_details: Values passed to `Depends` and security functions.
+        :return: A JSON-RPC2 response or None if the request was a notification.
         """
         try:
             log.debug("Processing request: %s", data)
@@ -332,7 +341,7 @@ class RPCServer(MethodRegistrar):
         if self._debug:
             error_dict = INTERNAL_ERROR.model_dump()
             error_dict["data"] = f"{type(error).__name__}: {error}"
-            error_object: Union[Error, DataError] = DataError(**error_dict)
+            error_object: Error | DataError = DataError(**error_dict)
         else:
             error_object = Error(**INTERNAL_ERROR.model_dump())
         return ErrorResponse(id=None, error=error_object)
