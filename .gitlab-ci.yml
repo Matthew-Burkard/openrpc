@@ -8,15 +8,14 @@ variables:
   # Change pip's cache directory to be inside the project directory
   # since we can only cache local items.
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-  PROJECT_SRC_DIR: "$CI_PROJECT_DIR/openrpc/"
+  PROJECT_SRC_DIR: "$CI_PROJECT_DIR/src/openrpc/"
 
 .setup_environment: &setup_env
   before_script:
     - python --version
-    - pip install poetry
-    - poetry --version
-    - poetry config virtualenvs.in-project true
-    - poetry install -vv
+    - pip install uv
+    - uv --version
+    - uv sync
     - source ./.venv/bin/activate
 
 cache:
@@ -59,7 +58,7 @@ pytest:
     - if: '$CI_COMMIT_BRANCH == "main"'
   <<: *setup_env
   script:
-    - poetry run pytest tests/
+    - pytest tests/
 
 deploy:
   stage: deploy
@@ -67,5 +66,5 @@ deploy:
     - if: '$CI_COMMIT_BRANCH == "main"'
   <<: *setup_env
   script:
-    - poetry build
-    - poetry publish -u "$PYPI_USERNAME" -p "$PYPI_TOKEN"
+    - uv build
+    - uv publish --username "$PYPI_USERNAME" --password "$PYPI_TOKEN"
