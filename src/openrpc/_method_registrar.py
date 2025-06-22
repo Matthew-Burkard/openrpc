@@ -155,6 +155,7 @@ class MethodRegistrar:
                 new_args = tuple(arg for arg in args if arg is not Undefined)
                 origin = typing.get_origin(annotation)
                 if hasattr(origin, "__name__") and origin.__name__ == "UnionType":
+                    # This line is not covered in python 3.9 but later versions need it.
                     annotation = Union[new_args]  # type: ignore
                 else:
                     annotation = origin[new_args]

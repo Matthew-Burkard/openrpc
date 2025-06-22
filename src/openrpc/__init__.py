@@ -20,6 +20,7 @@ __all__ = (
     "OAuth2FlowType",
     "OpenRPC",
     "ParamStructure",
+    "RPCApp",
     "RPCPermissionError",
     "RPCRouter",
     "RPCServer",
@@ -66,3 +67,4 @@ from openrpc._objects import (
 )
 from openrpc._router import RPCRouter
 from openrpc._server import RPCServer
+from openrpc._app import RPCApp

@@ -1,6 +1,6 @@
 [project]
 name = "openrpc"
-version = "10.4.2"
+version = "10.5.0"
 description = "Transport agnostic framework for developing OpenRPC servers."
 readme = "README.md"
 repository = "https://gitlab.com/mburkard/openrpc"
