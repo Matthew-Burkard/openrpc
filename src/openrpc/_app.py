@@ -26,7 +26,7 @@ from jsonrpcobjects.objects import (
 from jsonrpcobjects.parse import ParseResult, parse_request
 
 from openrpc._common import RPCMethod
-from openrpc._context import ContextBase
+from openrpc._context import Context
 from openrpc._discover import get_openrpc_doc
 from openrpc._method_registrar import MethodRegistrar
 from openrpc._objects import ContentDescriptor, Info, RPCPermissionError, Schema, Server
@@ -91,7 +91,7 @@ class RPCApp(MethodRegistrar):
             result=ContentDescriptor(name="OpenRPC Schema", schema=schema),
         )(self.discover)
 
-    async def process(self, request: str, context: ContextBase) -> str | None:
+    async def process(self, request: str, context: Context) -> str | None:
         """Process a JSON-RPC2 request.
 
         :param request: JSON-RPC request string.
@@ -113,16 +113,25 @@ class RPCApp(MethodRegistrar):
         else:
             return response
 
-    async def handle_request(
-        self, parse_result: ParseResult, context: ContextBase
+    # This exists in addition to `process` so that this can be easily overridden.
+    async def handle_request(  # noqa: PLR0911
+        self, parse_result: ParseResult, context: Context
     ) -> str | None:
+        """Handle a parsed JSON RPC request.
+
+        :param parse_result: Parsed JSON-RPC 2.0 request.
+        :param context: Context of the request.
+        :return: A JSON-RPC response or None.
+        """
         """Handle a parsed JSON-RPC request."""
-        if isinstance(parse_result, ErrorType):
-            return ErrorResponse(id=None, error=parse_result).model_dump_json()
+        # `hasattr` and type ignore because python can't check `isinstance` on
+        #  subscripted generics.
+        if hasattr(parse_result, "code"):
+            return ErrorResponse(id=None, error=parse_result).model_dump_json()  # type: ignore
         # NOTE: May want to change types in `jsonrpcobjects`, pyright has no clue.
         if parse_result.method not in self._rpc_methods:  # type: ignore
             return _get_method_not_found_error(parse_result)  # type: ignore
-        if isinstance(parse_result, ParamsNotification):
+        if isinstance(parse_result, (ParamsNotification, Notification)):
             try:
                 if isinstance(parse_result, Notification):
                     await self.call_method(parse_result.method, [], context)
@@ -148,6 +157,8 @@ class RPCApp(MethodRegistrar):
             return ResultResponse(id=parsed_request.id, result=result).model_dump_json(
                 by_alias=True
             )
+        except MethodNotFound:
+            return _get_method_not_found_error(parse_result)  # type: ignore
         except Exception as error:
             return _get_server_error(
                 parsed_request, error, debug=self.debug
@@ -157,7 +168,7 @@ class RPCApp(MethodRegistrar):
         self,
         method: str,
         params: Params,
-        context: ContextBase | None = None,
+        context: Context | None = None,
     ) -> Any:
         """Call a method by name with given params and context.
 
@@ -184,7 +195,7 @@ class RPCApp(MethodRegistrar):
         return await rpc_method.function(**params)
 
     def _resovle_context(
-        self, method: RPCMethod, params: Params, context: ContextBase
+        self, method: RPCMethod, params: Params, context: Context
     ) -> Params:
         if method.context_arg is not None:
             if isinstance(params, list):

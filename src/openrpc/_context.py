@@ -11,7 +11,7 @@ from jsonrpcobjects.parse import ParseResult
 from pydantic import BaseModel
 
 
-class ContextBase(BaseModel):
+class Context(BaseModel):
     """Request context base class.
 
     Request context will optionally be passed to any method.
@@ -29,7 +29,7 @@ class ContextBase(BaseModel):
     """Deserialized request, or parse error."""
 
 
-ContextBase.model_rebuild()
+Context.model_rebuild()
 Notification.model_rebuild()
 ParamsNotification.model_rebuild()
 ParamsRequest.model_rebuild()

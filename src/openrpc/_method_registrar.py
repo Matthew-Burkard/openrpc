@@ -13,7 +13,7 @@ from py_undefined import Undefined
 from pydantic import create_model
 
 from openrpc._common import MethodMetaData, RPCMethod, resolved_annotation
-from openrpc._context import ContextBase
+from openrpc._context import Context
 from openrpc._depends import DependsModel
 from openrpc._objects import (
     ContentDescriptor,
@@ -147,7 +147,7 @@ class MethodRegistrar:
                 depends[param_name] = param.default
                 continue
             # If multiple args have a type subclassing context, only use the first.
-            if issubclass(type_hints[param_name], ContextBase) and context_arg is None:
+            if issubclass(type_hints[param_name], Context) and context_arg is None:
                 context_arg = param_name, i
             if Undefined in (args := typing.get_args(annotation)):
                 default = Undefined
