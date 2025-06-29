@@ -1,5 +1,12 @@
 """Request context module."""
 
+from typing import Union
+from jsonrpcobjects.objects import (
+    Notification,
+    ParamsNotification,
+    ParamsRequest,
+    Request,
+)
 from jsonrpcobjects.parse import ParseResult
 from pydantic import BaseModel
 
@@ -15,6 +22,15 @@ class ContextBase(BaseModel):
     scopes: list[str] = []
     """Permissions of this request."""
 
-    def __init__(self) -> None:
-        self.request: str
-        self.parsed_request: ParseResult
+    request: Union[str, None] = None
+    """Raw request string."""
+
+    parsed_request: Union[ParseResult, None] = None
+    """Deserialized request, or parse error."""
+
+
+ContextBase.model_rebuild()
+Notification.model_rebuild()
+ParamsNotification.model_rebuild()
+ParamsRequest.model_rebuild()
+Request.model_rebuild()

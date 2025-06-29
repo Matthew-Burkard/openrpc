@@ -8,7 +8,7 @@ import traceback
 from pathlib import Path
 from typing import Any, Awaitable, Callable, Union
 
-from jsonrpcobjects.errors import INTERNAL_ERROR, METHOD_NOT_FOUND
+from jsonrpcobjects.errors import INTERNAL_ERROR, METHOD_NOT_FOUND, MethodNotFound
 from jsonrpcobjects.objects import (
     DataError,
     Error,
@@ -29,7 +29,7 @@ from openrpc._common import RPCMethod
 from openrpc._context import ContextBase
 from openrpc._discover import get_openrpc_doc
 from openrpc._method_registrar import MethodRegistrar
-from openrpc._objects import ContentDescriptor, Info, Schema, Server
+from openrpc._objects import ContentDescriptor, Info, RPCPermissionError, Schema, Server
 
 __all__ = ("RPCApp",)
 
@@ -157,7 +157,7 @@ class RPCApp(MethodRegistrar):
         self,
         method: str,
         params: Params,
-        context: ContextBase,
+        context: ContextBase | None = None,
     ) -> Any:
         """Call a method by name with given params and context.
 
@@ -167,7 +167,18 @@ class RPCApp(MethodRegistrar):
         :return: The result of the method call.
         """
         rpc_method = self._rpc_methods[method]
-        params = self._resovle_context(rpc_method, params, context)
+        if rpc_method.metadata.scopes:
+            required = rpc_method.metadata.scopes
+            scopes = context.scopes if context else []
+            missing = [scope for scope in required if scope not in scopes]
+            if missing:
+                if self.debug:
+                    msg = f"Request scopes {scopes} is missing scopes {missing}"
+                    raise RPCPermissionError(msg)
+                raise MethodNotFound()
+        params = (
+            self._resovle_context(rpc_method, params, context) if context else params
+        )
         if isinstance(params, list):
             return await rpc_method.function(*params)
         return await rpc_method.function(**params)
@@ -175,7 +186,6 @@ class RPCApp(MethodRegistrar):
     def _resovle_context(
         self, method: RPCMethod, params: Params, context: ContextBase
     ) -> Params:
-        print(method.context_arg)
         if method.context_arg is not None:
             if isinstance(params, list):
                 params.insert(method.context_arg[1], context)
