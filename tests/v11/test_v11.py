@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-from jsonrpcobjects.errors import MethodNotFound
 import pytest
-from jsonrpcobjects.parse import ParseResult, parse_request
+from jsonrpcobjects.errors import MethodNotFoundError
+from jsonrpcobjects.parse import parse_request
 
-from openrpc import Info
 from openrpc._app import RPCApp
 from openrpc._context import Context
 from openrpc._objects import RPCPermissionError
@@ -22,29 +21,7 @@ class Scope:
     WRITE_COFFEE = "write_coffee"
 
 
-class ConnectionRPCServer(RPCApp):
-    """RPC server that provides a database connection."""
-
-    def __init__(self, config: Info | None = None, *, debug: bool = False) -> None:
-        """Instantiate RPC server with database connection."""
-        super().__init__(config, debug=debug)
-
-    async def handle_request(
-        self, parse_result: ParseResult, context: Context
-    ) -> str | None:
-        """Handle a JSON-RPC request.
-
-        :param parse_result: Parsed JSON-RPC request.
-        :param context: Context data regarding the request.
-        :return: JSON-RPC response string or null if request was a notification.
-        """
-        print("Pre call hook")
-        result = await super().handle_request(parse_result, context)
-        print("Post call hook")
-        return result
-
-
-rpc = ConnectionRPCServer()
+rpc = RPCApp()
 
 
 @rpc.method(scopes=[Scope.READ_SUSHI, Scope.WRITE_COFFEE])
@@ -98,9 +75,9 @@ async def test_context_injection() -> None:
 @pytest.mark.asyncio
 async def test_scopes_missing() -> None:
     context = Context(scopes=[Scope.READ_SUSHI])
-    with pytest.raises(MethodNotFound):
+    with pytest.raises(MethodNotFoundError):
         await rpc.call_method(cucumber.__name__, [1, 0], context)
-    with pytest.raises(MethodNotFound):
+    with pytest.raises(MethodNotFoundError):
         await rpc.call_method(cucumber.__name__, [1, 0])
     app = RPCApp(debug=True)
     app.method(scopes=[Scope.READ_SUSHI, Scope.WRITE_COFFEE])(cucumber)
@@ -141,6 +118,22 @@ async def test_process_params_notification() -> None:
 
 @pytest.mark.asyncio
 async def test_process_notification() -> None:
-    notify_str = util.notify_str(cauliflower.__name__)
+    params = [1, 0]
+    notify_str = util.notify_str(spinach.__name__, params)
     result = await rpc.process(notify_str, Context())
     assert result is None
+
+
+@pytest.mark.asyncio
+async def test_process_batch() -> None:
+    params = [0, 1]
+    notify_param_str = util.notify_str(spinach.__name__, params)
+    notify_str = util.notify_str(cauliflower.__name__)
+    req_str = util.req_str(cauliflower.__name__)
+    req_param_str = util.req_str(spinach.__name__, params)
+    batch = f"[{notify_param_str},{notify_str},{req_str},{req_param_str}]"
+    result = await rpc.process(batch, Context())
+    assert (
+        result
+        == '[{"id":0,"result":1,"jsonrpc":"2.0"},{"id":0,"result":1,"jsonrpc":"2.0"}]'
+    )

@@ -8,7 +8,7 @@ import traceback
 from pathlib import Path
 from typing import Any, Awaitable, Callable, Union
 
-from jsonrpcobjects.errors import INTERNAL_ERROR, METHOD_NOT_FOUND, MethodNotFound
+from jsonrpcobjects.errors import INTERNAL_ERROR, METHOD_NOT_FOUND, MethodNotFoundError
 from jsonrpcobjects.objects import (
     DataError,
     Error,
@@ -123,14 +123,10 @@ class RPCApp(MethodRegistrar):
         :param context: Context of the request.
         :return: A JSON-RPC response or None.
         """
-        """Handle a parsed JSON-RPC request."""
         # `hasattr` and type ignore because python can't check `isinstance` on
         #  subscripted generics.
-        if hasattr(parse_result, "code"):
-            return ErrorResponse(id=None, error=parse_result).model_dump_json()  # type: ignore
-        # NOTE: May want to change types in `jsonrpcobjects`, pyright has no clue.
-        if parse_result.method not in self._rpc_methods:  # type: ignore
-            return _get_method_not_found_error(parse_result)  # type: ignore
+        if hasattr(parse_result, "error"):
+            return ErrorResponse(id=None, error=parse_result.error).model_dump_json()  # type: ignore
         if isinstance(parse_result, (ParamsNotification, Notification)):
             try:
                 if isinstance(parse_result, Notification):
@@ -157,7 +153,7 @@ class RPCApp(MethodRegistrar):
             return ResultResponse(id=parsed_request.id, result=result).model_dump_json(
                 by_alias=True
             )
-        except MethodNotFound:
+        except MethodNotFoundError:
             return _get_method_not_found_error(parse_result)  # type: ignore
         except Exception as error:
             return _get_server_error(
@@ -167,7 +163,7 @@ class RPCApp(MethodRegistrar):
     async def call_method(
         self,
         method: str,
-        params: Params,
+        params: Params | None = None,
         context: Context | None = None,
     ) -> Any:
         """Call a method by name with given params and context.
@@ -177,7 +173,9 @@ class RPCApp(MethodRegistrar):
         :param context: Request context.
         :return: The result of the method call.
         """
-        rpc_method = self._rpc_methods[method]
+        params = params or []
+        if not (rpc_method := self._rpc_methods.get(method)):
+            raise MethodNotFoundError()
         if rpc_method.metadata.scopes:
             required = rpc_method.metadata.scopes
             scopes = context.scopes if context else []
@@ -186,7 +184,7 @@ class RPCApp(MethodRegistrar):
                 if self.debug:
                     msg = f"Request scopes {scopes} is missing scopes {missing}"
                     raise RPCPermissionError(msg)
-                raise MethodNotFound()
+                raise MethodNotFoundError()
         params = (
             self._resovle_context(rpc_method, params, context) if context else params
         )
@@ -221,10 +219,10 @@ class RPCApp(MethodRegistrar):
 
 
 def _get_method_not_found_error(request: RequestType | NotificationType) -> str | None:
-    if isinstance(request, NotificationType):
+    if not hasattr(request, "id"):
         return None
     return ErrorResponse(
-        id=request.id,
+        id=request.id,  # type: ignore
         error=DataError(
             code=METHOD_NOT_FOUND.code,
             message=METHOD_NOT_FOUND.message,
