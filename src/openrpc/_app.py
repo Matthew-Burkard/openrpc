@@ -52,7 +52,7 @@ class RPCApp(MethodRegistrar):
 
     def __init__(
         self,
-        config: Info | None = None,
+        info: Info | None = None,
         servers: Server | list[Server] | None = None,
         *,
         debug: bool = False,
@@ -63,24 +63,24 @@ class RPCApp(MethodRegistrar):
         :param debug: Include internal error details in error responses.
         """
         super().__init__()
-        config = config or Info(title="RPC Server", version="0.1.0")
+        info = info or Info(title="RPC Server", version="0.1.0")
         self._routers: list[MethodRegistrar] = []
         self._request_processor.debug = debug
         # Set OpenRPC server info.
         self._debug = debug
         self._info = Info(
-            title=config.title or "RPC Server", version=config.version or "0.1.0"
+            title=info.title or "RPC Server", version=info.version or "0.1.0"
         )
         # Don't pass `None` values to constructor for sake of
         # `exclude_unset` in discover.
-        if config.description is not None:
-            self._info.description = config.description
-        if config.terms_of_service is not None:
-            self._info.terms_of_service = config.terms_of_service
-        if config.contact is not None:
-            self._info.contact = config.contact
-        if config.license_ is not None:
-            self._info.license_ = config.license_
+        if info.description is not None:
+            self._info.description = info.description
+        if info.terms_of_service is not None:
+            self._info.terms_of_service = info.terms_of_service
+        if info.contact is not None:
+            self._info.contact = info.contact
+        if info.license_ is not None:
+            self._info.license_ = info.license_
         self._servers = servers or Server(name="default", url="127.0.0.1")
         # Register discover method.
         schema = Schema()

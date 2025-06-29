@@ -8,7 +8,7 @@ from jsonrpcobjects.parse import parse_request
 
 from openrpc._app import RPCApp
 from openrpc._context import Context
-from openrpc._objects import RPCPermissionError
+from openrpc._objects import Contact, Info, License, RPCPermissionError
 from tests.v11 import util
 
 OAUTH2 = "OAUTH2"
@@ -137,3 +137,19 @@ async def test_process_batch() -> None:
         result
         == '[{"id":0,"result":1,"jsonrpc":"2.0"},{"id":0,"result":1,"jsonrpc":"2.0"}]'
     )
+
+
+@pytest.mark.asyncio
+async def test_discover_info() -> None:
+    app = RPCApp(
+        info=Info(
+            title="title",
+            version="version",
+            description="description",
+            termsOfService="terms_of_service",
+            contact=Contact(),
+            license=License(name="name"),
+        )
+    )
+    result = app.discover()
+    assert result["info"]["license"]["name"] == "name"
