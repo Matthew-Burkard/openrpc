@@ -218,11 +218,9 @@ class RPCApp(MethodRegistrar):
         return ErrorResponse(id=None, error=error_object)
 
 
-def _get_method_not_found_error(request: RequestType | NotificationType) -> str | None:
-    if not hasattr(request, "id"):
-        return None
+def _get_method_not_found_error(request: RequestType) -> str | None:
     return ErrorResponse(
-        id=request.id,  # type: ignore
+        id=request.id,
         error=DataError(
             code=METHOD_NOT_FOUND.code,
             message=METHOD_NOT_FOUND.message,

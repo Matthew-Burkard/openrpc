@@ -22,6 +22,9 @@ async def test_method_not_found_raw() -> None:
     result = await rpc.process(req_str, Context())
     e = '{"id":0,"error":{"code":-32601,"message":"Method not found","data":"cabbage"},"jsonrpc":"2.0"}'  # noqa: E501
     assert result == e
+    notify_str = util.notify_str("cabbage")
+    result = await rpc.process(notify_str, Context())
+    assert result is None
 
 
 @pytest.mark.asyncio
@@ -45,6 +48,34 @@ async def test_internal_error() -> None:
     result = await app.process(req_str, Context())
     e = '{"id":0,"error":{"code":-32000,"message":"Server error"},"jsonrpc":"2.0"}'
     assert result == e
+    notify_str = util.notify_str(raise_error.__name__)
+    result = await app.process(notify_str, Context())
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_internal_error_debug() -> None:
+    app = RPCApp(debug=True)
+
+    async def raise_error() -> None:
+        msg = "rice"
+        raise ValueError(msg)
+
+    app.method()(raise_error)
+    req_str = util.req_str(raise_error.__name__)
+    result = await app.process(req_str, Context())
+    expected = "\\n".join(  # noqa: FLY002
+        [
+            '{"id":0,"error":{"code":-32000,"message":"Server error","data":'
+            '"ValueError',
+            '  File \\"/home/matthew/Projects/Python/openrpc/tests/v11/'
+            'test_errors.py\\", line 62, in raise_error',
+            "    raise ValueError(msg)",
+            "ValueError: rice",
+            '"},"jsonrpc":"2.0"}',
+        ]
+    )
+    assert result == expected
     notify_str = util.notify_str(raise_error.__name__)
     result = await app.process(notify_str, Context())
     assert result is None
