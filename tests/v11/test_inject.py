@@ -9,7 +9,7 @@ from openrpc.app import RPCApp
 from openrpc.context import Context
 from tests.v11 import util
 
-rpc = RPCApp(Info(title="Test Depends", version="0.1.0"), debug=True)
+rpc = RPCApp(Info(title="Test Dependency Injection", version="0.1.0"), debug=True)
 
 
 class Scope:
