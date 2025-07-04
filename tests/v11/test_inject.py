@@ -45,8 +45,10 @@ async def test_depends() -> None:
 
 @pytest.mark.asyncio
 async def test_depends_no_dependency_args() -> None:
-    result = await util.get_result(rpc, method_with_dep, {"arg": 1})
+    result = await util.get_result(rpc, method_with_dep, {"arg": 1}, Context())
     assert result == "1-0"
+    result = await util.get_result(rpc, method_with_dep, {"arg": 1})
+    assert result["error"]["data"].startswith("ValueError")
 
 
 @pytest.mark.asyncio

@@ -32,11 +32,21 @@ from jsonrpcobjects.objects import (
 from jsonrpcobjects.parse import ParseResult, parse_request
 from pydantic import ValidationError
 
-from openrpc._common import RPCMethod
+from openrpc._common import MethodMetaData, RPCMethod
 from openrpc._depends import InjectModel
 from openrpc._discover import get_openrpc_doc
 from openrpc._method_registrar import MethodRegistrar
-from openrpc._objects import ContentDescriptor, Info, RPCPermissionError, Schema, Server
+from openrpc._objects import (
+    CallableType,
+    ContentDescriptor,
+    Info,
+    Method,
+    ParamStructure,
+    RPCPermissionError,
+    Schema,
+    Server,
+    Tag,
+)
 from openrpc.context import Context
 
 __all__ = ("RPCApp",)
@@ -53,6 +63,22 @@ RequestHook = Callable[[AnyRequest], Awaitable[AnyRequest]]
 ResponseHook = Callable[[AnyResponse], Awaitable[None]]
 
 Params = Union[list[Any], dict[str, Any]]
+
+
+class AppRouter(MethodRegistrar):
+    """RPC method router."""
+
+    def __init__(
+        self, prefix: str | None = None, tags: list[Tag | str] | None = None
+    ) -> None:
+        """Instantiate a new method router.
+
+        :param prefix: Prefix to add to the name of each method of this router.
+        :param tags: Tags to apply to every method of this router.
+        """
+        self.prefix = prefix
+        self.tags = tags or []
+        super().__init__()
 
 
 class RPCApp(MethodRegistrar):
@@ -98,6 +124,48 @@ class RPCApp(MethodRegistrar):
             params=[],
             result=ContentDescriptor(name="OpenRPC Schema", schema=schema),
         )(self.discover)
+
+    @property
+    def methods(self) -> list[Method]:
+        """Get all methods of this server."""
+        return get_openrpc_doc(
+            self.info, self._rpc_methods.values(), self._servers
+        ).methods
+
+    def include_router(self, router: AppRouter) -> None:
+        """Add a method router to this app.
+
+        :param router: Router to add to this RPC app.
+        """
+
+        def _add_router_method(
+            func: CallableType, metadata: MethodMetaData
+        ) -> CallableType:
+            new_data = metadata.model_copy()
+            if router.prefix:
+                new_data.name = f"{router.prefix}{metadata.name}"
+            if router.tags:
+                tag_objects = [
+                    t if isinstance(t, Tag) else Tag(name=t) for t in router.tags
+                ]
+                if new_data.tags:
+                    new_data.tags.extend(tag_objects)
+                else:
+                    new_data.tags = tag_objects
+            return self._method(func, new_data)
+
+        def _router_method_decorator(
+            func: CallableType,
+        ) -> Callable[[CallableType, MethodMetaData], CallableType]:
+            def _wrapper(fun: CallableType, metadata: MethodMetaData) -> CallableType:
+                _add_router_method(fun, metadata)
+                return func(fun, metadata)
+
+            return _wrapper
+
+        router._method = _router_method_decorator(router._method)  # type: ignore
+        for rpc_method in router._rpc_methods.values():
+            _add_router_method(rpc_method.function, rpc_method.metadata)
 
     async def process(self, request: str, context: Context | None = None) -> str | None:
         """Process a JSON-RPC2 request.
@@ -202,8 +270,12 @@ class RPCApp(MethodRegistrar):
         )
         params = await self._resovle_dependencies(params, rpc_method.inject, context)
         if isinstance(params, list):
+            if rpc_method.metadata.param_structure is ParamStructure.BY_NAME:
+                raise InvalidParamsError(data="Params must be passed by name.")
             result = rpc_method.function(*params)
         else:
+            if rpc_method.metadata.param_structure is ParamStructure.BY_POSITION:
+                raise InvalidParamsError(data="Params must be passed by position.")
             result = rpc_method.function(**params)
         return await result if isawaitable(result) else result
 
@@ -246,6 +318,13 @@ class RPCApp(MethodRegistrar):
     ) -> Params:
         for dependency in injected_params:
             if dependency.requires_context:
+                if context is None:
+                    msg = (
+                        f"Injected dependency {dependency.name} requires context but"
+                        " none was provided. `Context` needs to be passed to"
+                        " `RPCApp.process`"
+                    )
+                    raise ValueError(msg)
                 value = dependency.function(context)  # type: ignore
             else:
                 value = dependency.function()  # type: ignore

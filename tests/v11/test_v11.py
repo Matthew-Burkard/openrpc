@@ -153,3 +153,15 @@ async def test_discover_info() -> None:
     )
     result = app.discover()
     assert result["info"]["license"]["name"] == "name"
+
+
+def test_remove() -> None:
+    rpc = RPCApp(Info(title="Test JSON RPC", version="1.0.0"))
+
+    def add(a: int, b: int) -> int:
+        """Add two integers."""
+        return a + b
+
+    rpc.method()(add)
+    rpc.remove("add")
+    assert len(rpc.methods) == 0

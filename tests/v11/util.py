@@ -25,12 +25,13 @@ def notify_str(method: str, params: dict[str, Any] | list[Any] | None = None) ->
 
 async def get_result(
     app: RPCApp,
-    method: Callable[[Any], Any],
-    params: list[Any] | dict[str, Any],
+    method: Callable[..., Any] | str,
+    params: list[Any] | dict[str, Any] | None = None,
     context: Context | None = None,
 ) -> Any:
-    request = req_str(method.__name__, params)
-    response = await app.process(request, context=context or Context())
+    method_name = method if isinstance(method, str) else method.__name__
+    request = req_str(method_name, params)
+    response = await app.process(request, context=context)
     data = json.loads(response or "")
     if "result" in data:
         return data["result"]
