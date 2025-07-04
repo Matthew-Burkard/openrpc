@@ -1,9 +1,11 @@
 """Module providing class to handle middleware dependencies."""
 
 import inspect
-from typing import Any, Callable
+from typing import Any, Callable, Union
 
 from pydantic import BaseModel
+
+from openrpc.context import Context
 
 
 class DependsModel(BaseModel):
@@ -28,3 +30,20 @@ def Depends(function: Callable[..., Any]) -> Any:  # noqa: N802
         depends_params=depends_params,
         accepts_caller_details=accepts_caller_details,
     )
+
+
+InjectFunction = Union[Callable[[], Any], Callable[[Context], Any]]
+
+
+class InjectModel(BaseModel):
+    """Supply with function used to return a dependent argument."""
+
+    name: str = ""
+    index: int = -1
+    function: InjectFunction
+    requires_context: bool
+
+
+def Inject(function: Callable[..., Any]) -> Any:  # noqa: N802
+    requires_context = len(inspect.signature(function).parameters) > 0
+    return InjectModel(function=function, requires_context=requires_context)

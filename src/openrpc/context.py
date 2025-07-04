@@ -1,6 +1,7 @@
 """Request context module."""
 
 from typing import Union
+
 from jsonrpcobjects.objects import (
     Notification,
     ParamsNotification,

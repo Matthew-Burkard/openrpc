@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import traceback
+from inspect import isawaitable
 from pathlib import Path
 from typing import Any, Awaitable, Callable, Union
 
@@ -26,10 +27,11 @@ from jsonrpcobjects.objects import (
 from jsonrpcobjects.parse import ParseResult, parse_request
 
 from openrpc._common import RPCMethod
-from openrpc._context import Context
+from openrpc._depends import InjectModel
 from openrpc._discover import get_openrpc_doc
 from openrpc._method_registrar import MethodRegistrar
 from openrpc._objects import ContentDescriptor, Info, RPCPermissionError, Schema, Server
+from openrpc.context import Context
 
 __all__ = ("RPCApp",)
 
@@ -113,7 +115,6 @@ class RPCApp(MethodRegistrar):
         else:
             return response
 
-    # This exists in addition to `process` so that this can be easily overridden.
     async def handle_request(  # noqa: PLR0911
         self, parse_result: ParseResult, context: Context
     ) -> str | None:
@@ -188,9 +189,12 @@ class RPCApp(MethodRegistrar):
         params = (
             self._resovle_context(rpc_method, params, context) if context else params
         )
+        params = await self._resovle_dependencies(params, rpc_method.inject, context)
         if isinstance(params, list):
-            return await rpc_method.function(*params)
-        return await rpc_method.function(**params)
+            result = rpc_method.function(*params)
+        else:
+            result = rpc_method.function(**params)
+        return await result if isawaitable(result) else result
 
     def _resovle_context(
         self, method: RPCMethod, params: Params, context: Context
@@ -200,6 +204,25 @@ class RPCApp(MethodRegistrar):
                 params.insert(method.context_arg[1], context)
             else:
                 params[method.context_arg[0]] = context
+        return params
+
+    async def _resovle_dependencies(
+        self,
+        params: Params,
+        injected_params: list[InjectModel],
+        context: Context | None,
+    ) -> Params:
+        for dependency in injected_params:
+            if dependency.requires_context:
+                value = dependency.function(context)  # type: ignore
+            else:
+                value = dependency.function()  # type: ignore
+            if isawaitable(value):
+                value = await value
+            if isinstance(params, list):
+                params.insert(dependency.index, value)
+            else:
+                params[dependency.name] = value
         return params
 
     def discover(self) -> dict[str, Any]:

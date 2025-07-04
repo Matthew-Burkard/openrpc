@@ -6,9 +6,9 @@ import pytest
 from jsonrpcobjects.errors import MethodNotFoundError
 from jsonrpcobjects.parse import parse_request
 
-from openrpc._app import RPCApp
-from openrpc._context import Context
-from openrpc._objects import Contact, Info, License, RPCPermissionError
+from openrpc import Contact, Info, License, RPCPermissionError
+from openrpc.app import RPCApp
+from openrpc.context import Context
 from tests.v11 import util
 
 OAUTH2 = "OAUTH2"

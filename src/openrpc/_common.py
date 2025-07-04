@@ -17,7 +17,7 @@ from typing import Any, Awaitable, Callable, ForwardRef, Mapping, Optional, Type
 from pydantic import BaseModel
 from pydantic.v1.typing import evaluate_forwardref
 
-from openrpc._depends import DependsModel
+from openrpc._depends import DependsModel, InjectModel
 from openrpc._objects import (
     ContentDescriptor,
     Error,
@@ -64,7 +64,10 @@ class RPCMethod(BaseModel):
     """Argument name and position in the method."""
 
     depends: dict[str, DependsModel]
-    """Schema model needed to support Undefined."""
+    """Injected dependencies using v10 and below `Depends` syntax."""
+
+    inject: list[InjectModel]
+    """Injected dependencies."""
 
     function: Callable[..., Any]
     """Function associated with the method."""

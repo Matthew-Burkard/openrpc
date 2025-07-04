@@ -25,6 +25,7 @@ from openrpc._common import RPCMethod, SecurityFunctionDetails
 from openrpc._method_processor import MethodProcessor
 
 log = logging.getLogger("openrpc")
+
 NotificationTypes = (Notification, ParamsNotification)
 RequestTypes = (Request, ParamsRequest)
 _DEFAULT_ERROR_CODE = -32000

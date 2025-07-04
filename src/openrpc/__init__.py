@@ -12,6 +12,7 @@ __all__ = (
     "ExamplePairing",
     "ExternalDocumentation",
     "Info",
+    "Inject",
     "License",
     "Link",
     "Method",
@@ -20,7 +21,6 @@ __all__ = (
     "OAuth2FlowType",
     "OpenRPC",
     "ParamStructure",
-    "RPCApp",
     "RPCPermissionError",
     "RPCRouter",
     "RPCServer",
@@ -37,7 +37,7 @@ __all__ = (
 from py_undefined import Undefined
 
 from openrpc._common import SecurityFunction
-from openrpc._depends import Depends
+from openrpc._depends import Depends, Inject
 from openrpc._objects import (
     APIKeyAuth,
     BearerAuth,
@@ -67,4 +67,3 @@ from openrpc._objects import (
 )
 from openrpc._router import RPCRouter
 from openrpc._server import RPCServer
-from openrpc._app import RPCApp

@@ -1,11 +1,12 @@
 """Test error handling."""
 
 import json
+
 import pytest
 from jsonrpcobjects.errors import MethodNotFoundError
 
-from openrpc._app import RPCApp
-from openrpc._context import Context
+from openrpc.app import RPCApp
+from openrpc.context import Context
 from tests.util import INTERNAL_ERROR
 from tests.v11 import util
 
@@ -68,16 +69,8 @@ async def test_internal_error_debug() -> None:
     result = await app.process(req_str, Context())
     assert result is not None
     parsed = json.loads(result)
-    expected = "\n".join(  # noqa: FLY002
-        [
-            "ValueError",
-            '  File "/home/matthew/Projects/Python/openrpc/tests/v11/test_errors.py", '
-            "line 64, in raise_error",
-            "    raise ValueError(msg)",
-            "ValueError: rice\n",
-        ]
-    )
-    assert parsed["error"]["data"] == expected
+    assert str(parsed["error"]["data"]).startswith("ValueError\n")
+    assert str(parsed["error"]["data"]).endswith("ValueError: rice\n")
     notify_str = util.notify_str(raise_error.__name__)
     result = await app.process(notify_str, Context())
     assert result is None

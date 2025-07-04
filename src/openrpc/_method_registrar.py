@@ -7,15 +7,15 @@ __all__ = ("MethodRegistrar", "CallableType")
 import inspect
 import logging
 import typing
-from typing import Any, Callable, TypeVar, Union
+from typing import Any, Callable, Union
 
 from py_undefined import Undefined
 from pydantic import create_model
 
 from openrpc._common import MethodMetaData, RPCMethod, resolved_annotation
-from openrpc._context import Context
-from openrpc._depends import DependsModel
+from openrpc._depends import DependsModel, InjectModel
 from openrpc._objects import (
+    CallableType,
     ContentDescriptor,
     Error,
     ExamplePairing,
@@ -26,10 +26,9 @@ from openrpc._objects import (
     Tag,
 )
 from openrpc._request_processor import RequestProcessor
+from openrpc.context import Context
 
 log = logging.getLogger("openrpc")
-
-CallableType = TypeVar("CallableType", bound=Callable[..., Any])
 
 
 class MethodRegistrar:
@@ -131,6 +130,7 @@ class MethodRegistrar:
 
         # Get field information from each method parameter.
         depends: dict[str, DependsModel] = {}
+        inject: list[InjectModel] = []
         fields: dict[str, Any] = {}
         schema_fields: dict[str, Any] = {}
         required: list[str] = []
@@ -145,6 +145,12 @@ class MethodRegistrar:
             annotation: Any = param.annotation
             if isinstance(param.default, DependsModel):
                 depends[param_name] = param.default
+                continue
+            if isinstance(param.default, InjectModel):
+                inject_param = param.default
+                inject_param.index = i
+                inject_param.name = param_name
+                inject.append(inject_param)
                 continue
             # If multiple args have a type subclassing context, only use the first.
             if issubclass(type_hints[param_name], Context) and context_arg is None:
@@ -190,6 +196,7 @@ class MethodRegistrar:
         rpc_method = RPCMethod(
             context_arg=context_arg,
             depends=depends,
+            inject=inject,
             function=function,
             metadata=metadata,
             params_model=param_model,
