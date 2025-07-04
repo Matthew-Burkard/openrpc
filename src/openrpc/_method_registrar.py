@@ -155,6 +155,7 @@ class MethodRegistrar:
             # If multiple args have a type subclassing context, only use the first.
             if issubclass(type_hints[param_name], Context) and context_arg is None:
                 context_arg = param_name, i
+                continue
             if Undefined in (args := typing.get_args(annotation)):
                 default = Undefined
                 # Remove `Undefined` from annotation for Pydantic.

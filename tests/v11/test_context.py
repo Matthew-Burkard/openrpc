@@ -1,4 +1,5 @@
 import pytest
+
 from openrpc._depends import Inject
 from openrpc._objects import Info
 from openrpc.app import RPCApp

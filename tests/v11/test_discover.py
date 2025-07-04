@@ -6,22 +6,23 @@ from decimal import Decimal
 from enum import Enum
 from typing import Any, List, Optional, Union
 
+import pytest
 from jsonrpcobjects.objects import Request
 from pydantic import BaseModel, Field
 
 from openrpc import (
     Contact,
+    Depends,
     Error,
     ExternalDocumentation,
     License,
     Link,
     ParamStructure,
-    RPCServer,
     Server,
 )
 from openrpc._common import get_schema
-from openrpc._depends import Inject
-from openrpc._objects import OpenRPC
+from openrpc._objects import Info, OpenRPC
+from openrpc.app import RPCApp
 from tests.util import Vector3, dump, resolve, validate_references
 
 
@@ -88,15 +89,18 @@ class CollectionsModel(BaseModel):
     dict_union: dict[str, Union[str, int]]
 
 
-def test_open_rpc_info() -> None:
-    rpc = RPCServer(
-        title="Test OpenRPC",
-        version="1.0.0",
+@pytest.mark.asyncio
+async def test_open_rpc_info() -> None:
+    rpc = RPCApp(
+        info=Info(
+            title="Test OpenRPC",
+            version="1.0.0",
+            description="description",
+            termsOfService="http://example.com/terms_of_service",
+            contact=Contact(),
+            license=License(name="name"),
+        ),
         debug=True,
-        description="description",
-        terms_of_service="http://example.com/terms_of_service",
-        contact=Contact(),
-        license_=License(name="name"),
     )
     rpc.method()(increment)
     rpc.method()(get_distance)
@@ -108,17 +112,10 @@ def test_open_rpc_info() -> None:
     rpc.method()(typed_dict_and_list)  # type: ignore
     rpc.method()(list_model_result)
     rpc.method()(no_annotations)  # type: ignore
-    rpc.title = rpc.title or "Test OpenRPC"
-    rpc.version = rpc.version or "1.0.0"
-    rpc.description = rpc.description or "Testing rpc.discover"
-    rpc.terms_of_service = rpc.terms_of_service or "Coffee"
-    rpc.contact = rpc.contact or Contact(name="mocha")
-    rpc.license_ = rpc.license_ or License(name="AGPLv3")
-    rpc.servers = rpc.servers or Server(name="default", url="localhost")
     request = Request(id=1, method="rpc.discover")
-    resp = json.loads(rpc.process_request(request.model_dump_json()))  # type: ignore
+    resp = json.loads(await rpc.process(request.model_dump_json()))  # type: ignore
     discover_result = resp["result"]
-    assert "1.3.2" == discover_result["openrpc"]  # noqa: SIM300
+    assert discover_result["openrpc"] == "1.3.2"
     assert discover_result["info"] == {
         "contact": {},
         "description": "description",
@@ -127,7 +124,6 @@ def test_open_rpc_info() -> None:
         "title": "Test OpenRPC",
         "version": "1.0.0",
     }
-
     # Once had problem where state was wrongfully mutated causing
     # discover to only work right the first time.
     assert rpc.discover() == rpc.discover()
@@ -587,8 +583,8 @@ def test_schema_cleanup() -> None:
     assert not doc["components"]["schemas"]
 
 
-def _rpc() -> RPCServer:
-    return RPCServer(title="Test OpenRPC", version="1.0.0", debug=True)
+def _rpc() -> RPCApp:
+    return RPCApp(Info(title="Test OpenRPC", version="1.0.0"), debug=True)
 
 
 # noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
@@ -623,7 +619,7 @@ def return_none(optional_param: Optional[str]) -> None:  # noqa: ARG001
 # noinspection PyUnusedLocal
 def take_any_get_any(
     any_param: Any,
-    dep: str = Inject(lambda x: x),  # type: ignore  # noqa: ARG001
+    dep: str = Depends(lambda x: x),  # type: ignore  # noqa: ARG001
 ) -> Any:
     """Function that takes and returns any type, uses Dep argument."""
 

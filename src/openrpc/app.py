@@ -9,7 +9,12 @@ from inspect import isawaitable
 from pathlib import Path
 from typing import Any, Awaitable, Callable, Union
 
-from jsonrpcobjects.errors import INTERNAL_ERROR, METHOD_NOT_FOUND, MethodNotFoundError
+from jsonrpcobjects.errors import (
+    INTERNAL_ERROR,
+    METHOD_NOT_FOUND,
+    InvalidParamsError,
+    MethodNotFoundError,
+)
 from jsonrpcobjects.objects import (
     DataError,
     Error,
@@ -25,6 +30,7 @@ from jsonrpcobjects.objects import (
     ResultResponse,
 )
 from jsonrpcobjects.parse import ParseResult, parse_request
+from pydantic import ValidationError
 
 from openrpc._common import RPCMethod
 from openrpc._depends import InjectModel
@@ -70,19 +76,19 @@ class RPCApp(MethodRegistrar):
         self._request_processor.debug = debug
         # Set OpenRPC server info.
         self._debug = debug
-        self._info = Info(
+        self.info = Info(
             title=info.title or "RPC Server", version=info.version or "0.1.0"
         )
         # Don't pass `None` values to constructor for sake of
         # `exclude_unset` in discover.
         if info.description is not None:
-            self._info.description = info.description
+            self.info.description = info.description
         if info.terms_of_service is not None:
-            self._info.terms_of_service = info.terms_of_service
+            self.info.terms_of_service = info.terms_of_service
         if info.contact is not None:
-            self._info.contact = info.contact
+            self.info.contact = info.contact
         if info.license_ is not None:
-            self._info.license_ = info.license_
+            self.info.license_ = info.license_
         self._servers = servers or Server(name="default", url="127.0.0.1")
         # Register discover method.
         schema = Schema()
@@ -93,7 +99,7 @@ class RPCApp(MethodRegistrar):
             result=ContentDescriptor(name="OpenRPC Schema", schema=schema),
         )(self.discover)
 
-    async def process(self, request: str, context: Context) -> str | None:
+    async def process(self, request: str, context: Context | None = None) -> str | None:
         """Process a JSON-RPC2 request.
 
         :param request: JSON-RPC request string.
@@ -116,7 +122,7 @@ class RPCApp(MethodRegistrar):
             return response
 
     async def handle_request(  # noqa: PLR0911
-        self, parse_result: ParseResult, context: Context
+        self, parse_result: ParseResult, context: Context | None
     ) -> str | None:
         """Handle a parsed JSON RPC request.
 
@@ -154,6 +160,10 @@ class RPCApp(MethodRegistrar):
             return ResultResponse(id=parsed_request.id, result=result).model_dump_json(
                 by_alias=True
             )
+        except InvalidParamsError as e:
+            return ErrorResponse(id=parse_result.id, error=e.rpc_error).model_dump_json(
+                by_alias=True
+            )
         except MethodNotFoundError:
             return _get_method_not_found_error(parse_result)  # type: ignore
         except Exception as error:
@@ -186,6 +196,7 @@ class RPCApp(MethodRegistrar):
                     msg = f"Request scopes {scopes} is missing scopes {missing}"
                     raise RPCPermissionError(msg)
                 raise MethodNotFoundError()
+        params = self._get_validated_params(params, rpc_method)
         params = (
             self._resovle_context(rpc_method, params, context) if context else params
         )
@@ -195,6 +206,27 @@ class RPCApp(MethodRegistrar):
         else:
             result = rpc_method.function(**params)
         return await result if isawaitable(result) else result
+
+    def _get_validated_params(self, params: Params, method: RPCMethod) -> Params:
+        try:
+            if isinstance(params, list):
+                params_dict: dict[str, Any] = {}
+                for i, field_name in enumerate(method.params_model.model_fields):
+                    # Params may have default values.
+                    if i < len(params):
+                        params_dict[field_name] = params[i]
+                validated_params = method.params_model(**params_dict)
+                return [
+                    getattr(validated_params, field_name)
+                    for field_name in type(validated_params).model_fields
+                ]
+            params_model = method.params_model(**params)
+            return {
+                field: getattr(params_model, field)
+                for field in type(params_model).model_fields
+            }
+        except ValidationError as e:
+            raise InvalidParamsError(data=str(e)) from e
 
     def _resovle_context(
         self, method: RPCMethod, params: Params, context: Context
@@ -227,7 +259,7 @@ class RPCApp(MethodRegistrar):
 
     def discover(self) -> dict[str, Any]:
         """Execute "rpc.discover" method defined in OpenRPC spec."""
-        openrpc = get_openrpc_doc(self._info, self._rpc_methods.values(), self._servers)
+        openrpc = get_openrpc_doc(self.info, self._rpc_methods.values(), self._servers)
         return openrpc.model_dump(by_alias=True, exclude_unset=True)
 
     def _get_error_response(self, error: Exception) -> ErrorResponse:
@@ -249,7 +281,7 @@ def _get_method_not_found_error(request: RequestType) -> str | None:
             message=METHOD_NOT_FOUND.message,
             data=request.method,
         ),
-    ).model_dump_json()
+    ).model_dump_json(by_alias=True)
 
 
 def _get_server_error(

@@ -1,6 +1,9 @@
 """Test error handling."""
 
+import inspect
 import json
+from pathlib import Path
+from typing import Any
 
 import pytest
 from jsonrpcobjects.errors import MethodNotFoundError
@@ -11,6 +14,8 @@ from tests.util import INTERNAL_ERROR
 from tests.v11 import util
 
 rpc = RPCApp()
+
+error_message = "Custom error message"
 
 
 @pytest.mark.asyncio
@@ -103,3 +108,43 @@ async def test_top_level_error_handling_debug() -> None:
     assert result is not None
     parsed = json.loads(result)
     assert parsed["error"]["code"] == INTERNAL_ERROR
+
+
+@rpc.method()
+def method_with_error(*_args: Any) -> None:
+    """That raises an error."""
+    current_frame: Any = inspect.currentframe()  # type: ignore
+    try:
+        msg = f"{error_message}-{current_frame.f_lineno}"
+        raise ValueError(msg)
+    finally:
+        del current_frame
+
+
+@pytest.mark.asyncio
+async def test_method_errors_debug() -> None:
+    rpc.debug = True
+    result = await util.get_result(rpc, method_with_error, [])
+    absolute_path = Path(__file__).resolve()
+    line = int(result["error"]["data"][-4:-1])
+    error = (
+        inspect.cleandoc(
+            f"""
+            ValueError
+              File "{absolute_path}", line {line + 1}, in method_with_error
+                raise ValueError(msg)
+            ValueError: Custom error message-{line}
+            """
+        )
+        + "\n"
+    )
+    assert result["error"]["data"] == error
+    assert rpc.debug is True
+
+
+@pytest.mark.asyncio
+async def test_method_errors() -> None:
+    rpc.debug = False
+    result = await util.get_result(rpc, method_with_error, [])
+    assert "data" not in result["error"]
+    assert rpc.debug is False
