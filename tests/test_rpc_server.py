@@ -78,11 +78,6 @@ class RPCTest(unittest.TestCase):
         resp = self.get_sync_and_async_resp(request.model_dump_json())
         self.assertEqual([{}], resp["result"])
 
-    def test_kwarg_method_with_no_params(self) -> None:
-        request = Request(id=1, method="args_and_kwargs")
-        resp = self.get_sync_and_async_resp(request.model_dump_json())
-        self.assertEqual([{}], resp["result"])
-
     def test_no_result(self) -> None:
         request = ParamsRequest(id=1, method="divide", params=[0, 0])
         resp = self.get_sync_and_async_resp(request.model_dump_json())

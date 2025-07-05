@@ -115,7 +115,6 @@ class MethodProcessor:
             return ResultResponse(id=self.request.id, result=result).model_dump_json(
                 by_alias=True
             )
-
         except Exception as error:
             return self._get_error_response(error)
 

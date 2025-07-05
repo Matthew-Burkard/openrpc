@@ -264,7 +264,8 @@ class RPCApp(MethodRegistrar):
                     msg = f"Request scopes {scopes} is missing scopes {missing}"
                     raise RPCPermissionError(msg)
                 raise MethodNotFoundError()
-        params = self._get_validated_params(params, rpc_method)
+        if params:
+            params = self._get_validated_params(params, rpc_method)
         params = (
             self._resovle_context(rpc_method, params, context) if context else params
         )

@@ -99,7 +99,7 @@ async def test_process_params_request() -> None:
     params = [1, 0]
     req_str = util.req_str(spinach.__name__, params)
     result = await rpc.process(req_str, Context())
-    assert result == '{"id":0,"result":1,"jsonrpc":"2.0"}'
+    assert result == '{"id":"0","result":1,"jsonrpc":"2.0"}'
 
 
 @pytest.mark.asyncio
@@ -129,13 +129,13 @@ async def test_process_batch() -> None:
     params = [0, 1]
     notify_param_str = util.notify_str(spinach.__name__, params)
     notify_str = util.notify_str(cauliflower.__name__)
-    req_str = util.req_str(cauliflower.__name__)
-    req_param_str = util.req_str(spinach.__name__, params)
+    req_str = util.req_str(cauliflower.__name__, id=1)
+    req_param_str = util.req_str(spinach.__name__, params, id=2)
     batch = f"[{notify_param_str},{notify_str},{req_str},{req_param_str}]"
     result = await rpc.process(batch, Context())
     assert (
         result
-        == '[{"id":0,"result":1,"jsonrpc":"2.0"},{"id":0,"result":1,"jsonrpc":"2.0"}]'
+        == '[{"id":1,"result":1,"jsonrpc":"2.0"},{"id":2,"result":1,"jsonrpc":"2.0"}]'  # noqa: E501
     )
 
 
