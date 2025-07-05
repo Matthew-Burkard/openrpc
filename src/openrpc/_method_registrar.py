@@ -58,7 +58,7 @@ class MethodRegistrar:
         summary: str | None = None,
         description: str | None = None,
         external_docs: ExternalDocumentation | None = None,
-        deprecated: bool | None = None,
+        deprecated: bool | None = None,  # noqa: FBT001
         servers: list[Server] | None = None,
         errors: list[Error] | None = None,
         links: list[Link] | None = None,
