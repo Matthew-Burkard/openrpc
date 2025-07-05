@@ -31,6 +31,7 @@ from jsonrpcobjects.objects import (
 )
 from jsonrpcobjects.parse import ParseResult, parse_request
 from pydantic import ValidationError
+from pydantic_core import PydanticUndefined
 
 from openrpc._common import MethodMetaData, RPCMethod
 from openrpc._depends import InjectModel
@@ -266,6 +267,13 @@ class RPCApp(MethodRegistrar):
                 raise MethodNotFoundError()
         if params:
             params = self._get_validated_params(params, rpc_method)
+        elif rpc_method.params_model.model_fields:
+            # Get defaults in case of `Undefined` params.
+            params = {
+                k: v.default
+                for k, v in rpc_method.params_model.model_fields.items()
+                if v.default is not PydanticUndefined
+            }
         params = (
             self._resovle_context(rpc_method, params, context) if context else params
         )
