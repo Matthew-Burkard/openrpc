@@ -5,7 +5,16 @@ __all__ = ("MethodRegistrar", "CallableType")
 import inspect
 import logging
 import typing
-from typing import Any, Callable, Optional, TypeVar, Union
+from typing import (
+    Annotated,
+    Any,
+    Callable,
+    Optional,
+    TypeVar,
+    Union,
+    get_args,
+    get_origin,
+)
 
 from py_undefined import Undefined
 from pydantic import create_model
@@ -56,7 +65,7 @@ class MethodRegistrar:
         summary: Optional[str] = None,
         description: Optional[str] = None,
         external_docs: Optional[ExternalDocumentation] = None,
-        deprecated: Optional[bool] = None,
+        deprecated: Optional[bool] = None,  # noqa: FBT001
         servers: Optional[list[Server]] = None,
         errors: Optional[list[Error]] = None,
         links: Optional[list[Link]] = None,
@@ -139,6 +148,11 @@ class MethodRegistrar:
             annotation: Any = param.annotation
             if isinstance(param.default, DependsModel):
                 depends[param_name] = param.default
+                continue
+            if get_origin(annotation) is Annotated and isinstance(
+                (inject_fun := get_args(annotation)[1]), DependsModel
+            ):
+                depends[param_name] = inject_fun
                 continue
             if Undefined in (args := typing.get_args(annotation)):
                 default = Undefined
