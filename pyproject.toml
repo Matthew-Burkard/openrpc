@@ -1,44 +1,43 @@
 [project]
 name = "openrpc"
-version = "10.5.0"
+version = "11.0.0"
 description = "Transport agnostic framework for developing OpenRPC servers."
 readme = "README.md"
-repository = "https://gitlab.com/mburkard/openrpc"
-homepage = "https://python-openrpc.burkard.cloud"
+requires-python = ">=3.9"
 license = "MIT"
-authors = [
-    { name = "Matthew Burkard", email = "matthewjburkard@gmail.com" }
-]
+authors = [{ name = "Matthew Burkard", email = "matthewjburkard@gmail.com" }]
 classifiers = [
-    "Topic :: Software Development :: Libraries :: Python Modules",
-    "Topic :: Software Development :: Libraries",
-    "Topic :: Software Development",
-    "Typing :: Typed",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Software Development",
+  "Topic :: Software Development :: Libraries",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Typing :: Typed",
+]
+dependencies = [
+  "jsonrpc2-objects>=4.3.2",
+  "lorem-pysum>=1.4.11",
+  "py-undefined>=0.1.7",
+  "pydantic>=2.11.7",
 ]
 
-requires-python = ">=3.9"
-dependencies = [
-    "jsonrpc2-objects>=4.3.2",
-    "lorem-pysum>=1.4.11",
-    "py-undefined>=0.1.7",
-    "pydantic>=2.11.7",
+[project.urls]
+homepage = "https://python-openrpc.burkard.cloud"
+repository = "https://gitlab.com/mburkard/openrpc"
+
+[dependency-groups]
+dev = [
+  "pytest-asyncio>=1.0.0",
+  "pytest-cov>=6.2.1",
+  "pytest>=8.4.1",
 ]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
-
-[dependency-groups]
-dev = [
-    "pytest>=8.4.1",
-    "pytest-asyncio>=1.0.0",
-    "pytest-cov>=6.2.1",
-]
 
 [tool.coverage.run]
 source = ["src/openrpc"]
@@ -50,44 +49,44 @@ venv = ".venv"
 
 [tool.ruff]
 lint.select = [
-    "ARG",
-    "ASYNC",
-    "B",
-    "C4",
-    "D",
-    "E",
-    "EM",
-    "ERA",
-    "F",
-    "FBT",
-    "FA",
-    "FLY",
-    "FIX",
-    "ICN",
-    "INT",
-    "ISC",
-    "N",
-    "PL",
-    "PTH",
-    "PYI",
-    "Q",
-    "RET",
-    "S",
-    "SIM",
-    "T10",
-    "TD",
-    "TRY",
+  "ARG",
+  "ASYNC",
+  "B",
+  "C4",
+  "D",
+  "E",
+  "EM",
+  "ERA",
+  "F",
+  "FBT",
+  "FA",
+  "FLY",
+  "FIX",
+  "ICN",
+  "INT",
+  "ISC",
+  "N",
+  "PL",
+  "PTH",
+  "PYI",
+  "Q",
+  "RET",
+  "S",
+  "SIM",
+  "T10",
+  "TD",
+  "TRY",
 ]
 lint.ignore = [
-    "PLR0913",
-    "FA102",
-    "FA100",
-    "D203",  # Requires blank line before class doc-string.
-    "D213",  # Requires first doc string line on a new line.
-    "F841",  # Covered by pyright
-    "B007",  # Covered by pyright
-    "TD003",  # TODO require issue link.
-    "TD002",  # TODO require author.
+  "PLR0913",
+  "FA102",
+  "FA100",
+  "D203",  # Requires blank line before class doc-string.
+  "D213",  # Requires first doc string line on a new line.
+  "F841",  # Covered by pyright
+  "B007",  # Covered by pyright
+  "TD003",  # TODO require issue link.
+  "TD002",  # TODO require author.
 ]
 
 [tool.ruff.lint.per-file-ignores]

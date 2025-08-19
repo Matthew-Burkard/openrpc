@@ -6,7 +6,7 @@ import pytest
 from pydantic import BaseModel, Field
 
 from openrpc.app import RPCApp
-from openrpc.context import Context
+from openrpc.context import BaseContext
 from tests.v11 import util
 
 
@@ -24,5 +24,5 @@ async def test_alias() -> None:
         return Model(calories=type_)
 
     request = util.req_str("method", {"type_": "philly cheese steak"})
-    response = json.loads(await rpc.process(request, Context()) or "")
+    response = json.loads(await rpc.process(request, BaseContext()) or "")
     assert response["result"]["calories"] == "philly cheese steak"

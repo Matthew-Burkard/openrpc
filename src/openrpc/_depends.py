@@ -5,7 +5,7 @@ from typing import Any, Callable, Union
 
 from pydantic import BaseModel
 
-from openrpc.context import Context
+from openrpc.context import BaseContext
 
 
 class DependsModel(BaseModel):
@@ -32,7 +32,7 @@ def Depends(function: Callable[..., Any]) -> Any:  # noqa: N802
     )
 
 
-InjectFunction = Union[Callable[[], Any], Callable[[Context], Any]]
+InjectFunction = Union[Callable[[], Any], Callable[[BaseContext], Any]]
 
 
 class InjectModel(BaseModel):

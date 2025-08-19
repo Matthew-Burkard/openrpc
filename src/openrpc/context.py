@@ -12,25 +12,20 @@ from jsonrpcobjects.parse import ParseResult
 from pydantic import BaseModel
 
 
-class Context(BaseModel):
-    """Request context base class.
-
-    Request context will optionally be passed to any method.
-    It will carry RPC request data as well as any other properties suppllied by the
-    context factory.
-    """
+class BaseContext(BaseModel):
+    """Request context base class."""
 
     scopes: list[str] = []
     """Permissions of this request."""
 
-    request: Union[str, None] = None
+    raw_request: Union[str, None] = None
     """Raw request string."""
 
     parsed_request: Union[ParseResult, None] = None
     """Deserialized request, or parse error."""
 
 
-Context.model_rebuild()
+BaseContext.model_rebuild()
 Notification.model_rebuild()
 ParamsNotification.model_rebuild()
 ParamsRequest.model_rebuild()

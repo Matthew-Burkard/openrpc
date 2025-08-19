@@ -48,7 +48,7 @@ from openrpc._objects import (
     Server,
     Tag,
 )
-from openrpc.context import Context
+from openrpc.context import BaseContext
 
 __all__ = ("RPCApp",)
 
@@ -168,7 +168,9 @@ class RPCApp(MethodRegistrar):
         for rpc_method in router._rpc_methods.values():
             _add_router_method(rpc_method.function, rpc_method.metadata)
 
-    async def process(self, request: str, context: Context | None = None) -> str | None:
+    async def process(
+        self, request: str, context: BaseContext | None = None
+    ) -> str | None:
         """Process a JSON-RPC2 request.
 
         :param request: JSON-RPC request string.
@@ -191,7 +193,7 @@ class RPCApp(MethodRegistrar):
             return response
 
     async def handle_request(  # noqa: PLR0911
-        self, parse_result: ParseResult, context: Context | None
+        self, parse_result: ParseResult, context: BaseContext | None
     ) -> str | None:
         """Handle a parsed JSON RPC request.
 
@@ -244,7 +246,7 @@ class RPCApp(MethodRegistrar):
         self,
         method: str,
         params: Params | None = None,
-        context: Context | None = None,
+        context: BaseContext | None = None,
     ) -> Any:
         """Call a method by name with given params and context.
 
@@ -310,7 +312,7 @@ class RPCApp(MethodRegistrar):
             raise InvalidParamsError(data=str(e)) from e
 
     def _resovle_context(
-        self, method: RPCMethod, params: Params, context: Context
+        self, method: RPCMethod, params: Params, context: BaseContext
     ) -> Params:
         if method.context_arg is not None:
             if isinstance(params, list):
@@ -323,7 +325,7 @@ class RPCApp(MethodRegistrar):
         self,
         params: Params,
         injected_params: list[InjectModel],
-        context: Context | None,
+        context: BaseContext | None,
     ) -> Params:
         for dependency in injected_params:
             if dependency.requires_context:

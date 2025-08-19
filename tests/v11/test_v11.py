@@ -8,7 +8,7 @@ from jsonrpcobjects.parse import parse_request
 
 from openrpc import Contact, Info, License, RPCPermissionError
 from openrpc.app import RPCApp
-from openrpc.context import Context
+from openrpc.context import BaseContext
 from tests.v11 import util
 
 OAUTH2 = "OAUTH2"
@@ -30,13 +30,13 @@ async def cucumber(a: int, b: int) -> int:
 
 
 @rpc.method()
-async def spinach(context: Context, a: int, b: int) -> int:
+async def spinach(context: BaseContext, a: int, b: int) -> int:
     await broccoli(context, a, b)
     return a + b
 
 
 @rpc.method()
-async def broccoli(context: Context, a: int, b: int) -> int:
+async def broccoli(context: BaseContext, a: int, b: int) -> int:
     print(context)
     return a - b
 
@@ -65,7 +65,7 @@ async def test_context_injection() -> None:
     req_str = util.req_str(broccoli.__name__, params)
     parsed = parse_request(req_str, debug=rpc.debug)
     assert not isinstance(parsed, list)
-    context = Context(request=req_str, parsed_request=parsed)
+    context = BaseContext(raw_request=req_str, parsed_request=parsed)
     result: int = await rpc.call_method(broccoli.__name__, params, context)
     assert result == 1
     result: int = await rpc.call_method(broccoli.__name__, {"a": 1, "b": 0}, context)
@@ -74,7 +74,7 @@ async def test_context_injection() -> None:
 
 @pytest.mark.asyncio
 async def test_scopes_missing() -> None:
-    context = Context(scopes=[Scope.READ_SUSHI])
+    context = BaseContext(scopes=[Scope.READ_SUSHI])
     with pytest.raises(MethodNotFoundError):
         await rpc.call_method(cucumber.__name__, [1, 0], context)
     with pytest.raises(MethodNotFoundError):
@@ -89,7 +89,7 @@ async def test_scopes_missing() -> None:
 
 @pytest.mark.asyncio
 async def test_scopes_present() -> None:
-    context = Context(scopes=[Scope.READ_SUSHI, Scope.WRITE_COFFEE])
+    context = BaseContext(scopes=[Scope.READ_SUSHI, Scope.WRITE_COFFEE])
     result: int = await rpc.call_method(cucumber.__name__, [1, 0], context)
     assert result == 1
 
@@ -98,21 +98,21 @@ async def test_scopes_present() -> None:
 async def test_process_params_request() -> None:
     params = [1, 0]
     req_str = util.req_str(spinach.__name__, params)
-    result = await rpc.process(req_str, Context())
+    result = await rpc.process(req_str, BaseContext())
     assert result == '{"id":"0","result":1,"jsonrpc":"2.0"}'
 
 
 @pytest.mark.asyncio
 async def test_process_request() -> None:
     req_str = util.req_str(cauliflower.__name__)
-    result = await rpc.process(req_str, Context())
+    result = await rpc.process(req_str, BaseContext())
     assert result == '{"id":0,"result":1,"jsonrpc":"2.0"}'
 
 
 @pytest.mark.asyncio
 async def test_process_params_notification() -> None:
     notify_str = util.notify_str(cauliflower.__name__)
-    result = await rpc.process(notify_str, Context())
+    result = await rpc.process(notify_str, BaseContext())
     assert result is None
 
 
@@ -120,7 +120,7 @@ async def test_process_params_notification() -> None:
 async def test_process_notification() -> None:
     params = [1, 0]
     notify_str = util.notify_str(spinach.__name__, params)
-    result = await rpc.process(notify_str, Context())
+    result = await rpc.process(notify_str, BaseContext())
     assert result is None
 
 
@@ -132,7 +132,7 @@ async def test_process_batch() -> None:
     req_str = util.req_str(cauliflower.__name__, id=1)
     req_param_str = util.req_str(spinach.__name__, params, id=2)
     batch = f"[{notify_param_str},{notify_str},{req_str},{req_param_str}]"
-    result = await rpc.process(batch, Context())
+    result = await rpc.process(batch, BaseContext())
     assert (
         result
         == '[{"id":1,"result":1,"jsonrpc":"2.0"},{"id":2,"result":1,"jsonrpc":"2.0"}]'  # noqa: E501

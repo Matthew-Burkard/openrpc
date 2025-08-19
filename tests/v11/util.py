@@ -8,7 +8,7 @@ from typing import Any, Callable
 from jsonrpcobjects.objects import ParamsRequest
 
 from openrpc.app import RPCApp
-from openrpc.context import Context
+from openrpc.context import BaseContext
 
 
 def req_str(
@@ -33,7 +33,7 @@ async def get_result(
     app: RPCApp,
     method: Callable[..., Any] | str,
     params: list[Any] | dict[str, Any] | None = None,
-    context: Context | None = None,
+    context: BaseContext | None = None,
 ) -> Any:
     method_name = method if isinstance(method, str) else method.__name__
     request = req_str(method_name, params)

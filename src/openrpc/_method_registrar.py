@@ -7,7 +7,7 @@ __all__ = ("MethodRegistrar", "CallableType")
 import inspect
 import logging
 import typing
-from typing import Any, Callable, Union
+from typing import Annotated, Any, Callable, Union, get_args, get_origin
 
 from py_undefined import Undefined
 from pydantic import create_model
@@ -26,7 +26,7 @@ from openrpc._objects import (
     Tag,
 )
 from openrpc._request_processor import RequestProcessor
-from openrpc.context import Context
+from openrpc.context import BaseContext
 
 log = logging.getLogger("openrpc")
 
@@ -146,14 +146,21 @@ class MethodRegistrar:
             if isinstance(param.default, DependsModel):
                 depends[param_name] = param.default
                 continue
-            if isinstance(param.default, InjectModel):
-                inject_param = param.default
+            if get_origin(annotation) is Annotated and isinstance(
+                get_args(annotation)[1], DependsModel
+            ):
+                depends[param_name] = param.default
+                continue
+            if get_origin(annotation) is Annotated and isinstance(
+                (inject_fun := get_args(annotation)[1]), InjectModel
+            ):
+                inject_param = inject_fun
                 inject_param.index = i
                 inject_param.name = param_name
                 inject.append(inject_param)
                 continue
             # If multiple args have a type subclassing context, only use the first.
-            if issubclass(type_hints[param_name], Context) and context_arg is None:
+            if issubclass(type_hints[param_name], BaseContext) and context_arg is None:
                 context_arg = param_name, i
                 continue
             if Undefined in (args := typing.get_args(annotation)):

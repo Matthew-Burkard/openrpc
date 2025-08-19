@@ -8,7 +8,7 @@ from jsonrpcobjects.objects import Request
 
 from openrpc import Info
 from openrpc.app import RPCApp
-from openrpc.context import Context
+from openrpc.context import BaseContext
 
 
 class RPCTest(unittest.TestCase):
@@ -18,7 +18,7 @@ class RPCTest(unittest.TestCase):
 
     def get_result_async(self, request: str) -> Optional[str]:
         loop = asyncio.new_event_loop()
-        resp = loop.run_until_complete(self.server.process(request, Context()))
+        resp = loop.run_until_complete(self.server.process(request, BaseContext()))
         loop.close()
         return resp
 
