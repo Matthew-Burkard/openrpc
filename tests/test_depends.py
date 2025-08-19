@@ -1,7 +1,7 @@
 """Test depends."""
 
 import json
-from typing import Any
+from typing import Annotated, Any
 
 import pytest
 
@@ -9,7 +9,7 @@ from openrpc import Depends, RPCServer
 from tests import util
 from tests.util import get_response, get_response_async
 
-rpc = RPCServer(title="Test Depends", version="0.1.0")
+rpc = RPCServer(title="Test Depends", version="0.1.0", debug=True)
 
 
 def _echo(x: Any) -> Any:
@@ -26,6 +26,23 @@ def method_with_dep(arg: int, dep: str = Depends(_echo)) -> str:
 async def async_method_with_dep(arg: int, dep: str = Depends(_echo)) -> str:
     """Method with dependency to test."""
     return f"{arg}-{dep}"
+
+
+@rpc.method()
+async def annotated_dep(arg: int, dep: Annotated[str, Depends(_echo)]) -> str:
+    """Method with dependency to test."""
+    return f"{arg}-{dep}"
+
+
+@pytest.mark.asyncio
+async def test_annotated_depends() -> None:
+    header = "Coffee"
+    req = {"id": 1, "method": "annotated_dep", "params": [1], "jsonrpc": "2.0"}
+    result = await get_response_async(rpc, json.dumps(req), header)
+    assert result["result"] == f"1-{header}"
+    req = {"id": 1, "method": "annotated_dep", "params": {"arg": 1}, "jsonrpc": "2.0"}
+    result = await get_response_async(rpc, json.dumps(req), header)
+    assert result["result"] == f"1-{header}"
 
 
 def test_depends() -> None:
