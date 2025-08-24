@@ -55,7 +55,7 @@ async def test_depends_no_dependency_args() -> None:
 @pytest.mark.asyncio
 async def test_depends_no_params() -> None:
     @rpc.method()
-    def method_no_params(depends: bool = Inject(lambda: True)) -> bool:  # type: ignore  # noqa: FBT001
+    def method_no_params(depends: Annotated[bool, Inject(lambda: True)]) -> bool:  # type: ignore  # noqa: FBT001
         """Method with depends argument and no other params."""
         return depends is True
 

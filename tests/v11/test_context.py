@@ -1,3 +1,5 @@
+from typing import Annotated
+
 import pytest
 
 from openrpc._depends import Inject
@@ -26,7 +28,7 @@ def method_with_context(context: Context) -> str:
 
 
 @rpc.method()
-def method_with_user(user: str = Inject(get_user)) -> str:
+def method_with_user(user: Annotated[str, Inject(get_user)]) -> str:
     return user
 
 

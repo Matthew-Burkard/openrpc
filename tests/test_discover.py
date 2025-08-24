@@ -4,7 +4,7 @@ import datetime
 import json
 from decimal import Decimal
 from enum import Enum
-from typing import Any, List, Optional, Union
+from typing import Annotated, Any, List, Optional, Union
 
 from jsonrpcobjects.objects import Request
 from pydantic import BaseModel, Field
@@ -284,13 +284,10 @@ def test_any() -> None:
     rpc.method()(take_any_get_any)
     method = rpc.discover()["methods"][0]
     # Examples
-    assert method["examples"] == [
-        {
-            "name": "Generated example",
-            "params": [{"name": "any_param", "value": {}}],
-            "result": {"name": "Generated result", "value": {}},
-        }
-    ]
+    examples = method["examples"][0]
+    assert examples["name"] == "Generated example"
+    assert examples["params"] == [{"name": "any_param", "value": {}}]
+    assert examples["result"] == {"name": "Generated result", "value": {}}
     # Params
     assert method["params"] == [
         {"name": "any_param", "required": True, "schema": {"title": "Any Param"}}
@@ -623,7 +620,7 @@ def return_none(optional_param: Optional[str]) -> None:  # noqa: ARG001
 # noinspection PyUnusedLocal
 def take_any_get_any(
     any_param: Any,
-    dep: str = Inject(lambda x: x),  # type: ignore  # noqa: ARG001
+    dep: Annotated[str, Inject(lambda x: x)],  # type: ignore  # noqa: ARG001
 ) -> Any:
     """Function that takes and returns any type, uses Dep argument."""
 

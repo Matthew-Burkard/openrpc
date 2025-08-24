@@ -149,7 +149,7 @@ class MethodRegistrar:
             if get_origin(annotation) is Annotated and isinstance(
                 (inject_fun := get_args(annotation)[1]), DependsModel
             ):
-                depends[param_name] = param.default
+                depends[param_name] = inject_fun
                 continue
             if get_origin(annotation) is Annotated and isinstance(
                 (inject_fun := get_args(annotation)[1]), InjectModel
