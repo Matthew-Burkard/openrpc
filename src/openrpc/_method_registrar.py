@@ -147,7 +147,7 @@ class MethodRegistrar:
                 depends[param_name] = param.default
                 continue
             if get_origin(annotation) is Annotated and isinstance(
-                get_args(annotation)[1], DependsModel
+                (inject_fun := get_args(annotation)[1]), DependsModel
             ):
                 depends[param_name] = param.default
                 continue
