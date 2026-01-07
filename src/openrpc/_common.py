@@ -12,7 +12,8 @@ __all__ = (
 
 import dataclasses
 import inspect
-from typing import Any, Awaitable, Callable, ForwardRef, Mapping, Optional, Type, Union
+from collections import Awaitable, Mapping
+from typing import Any, Callable, ForwardRef, Optional, Union
 
 from pydantic import BaseModel
 from pydantic.v1.typing import evaluate_forwardref
@@ -75,16 +76,16 @@ class RPCMethod(BaseModel):
     metadata: MethodMetaData
     """OpenRPC method data."""
 
-    params_schema_model: Type[BaseModel]
+    params_schema_model: type[BaseModel]
     """Model used for method schema, excludes context and dependencies."""
 
-    params_model: Type[BaseModel]
+    params_model: type[BaseModel]
     """Model of the method parameters type."""
 
     required: list[str]
     """Required parameters."""
 
-    result_model: Type[BaseModel]
+    result_model: type[BaseModel]
     """Model of the method result type."""
 
 

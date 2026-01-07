@@ -37,15 +37,15 @@ class RPCTest(unittest.TestCase):
             wait_short_started_second = True
             wait_long_finished_second = False
 
-        self.server.method()(wait_long)
-        self.server.method()(wait_short)
+        _ = self.server.method()(wait_long)
+        _ = self.server.method()(wait_short)
         requests = ",".join(
             [
                 Request(id=1, method="wait_long").model_dump_json(),
                 Request(id=2, method="wait_short").model_dump_json(),
             ]
         )
-        self.get_result_async(f"[{requests}]")
+        _ = self.get_result_async(f"[{requests}]")
         self.assertTrue(wait_short_started_second)
         self.assertTrue(wait_long_finished_second)
         # Again in reverse order.
@@ -57,6 +57,6 @@ class RPCTest(unittest.TestCase):
                 Request(id=1, method="wait_long").model_dump_json(),
             ]
         )
-        self.get_result_async(f"[{requests}]")
+        _ = self.get_result_async(f"[{requests}]")
         self.assertFalse(wait_short_started_second)
         self.assertTrue(wait_long_finished_second)

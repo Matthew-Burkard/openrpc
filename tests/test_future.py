@@ -12,8 +12,7 @@ def test_future() -> None:
     if sys.version_info < (3, 10):
         return
 
-    # noinspection PyUnusedLocal
-    def future(
+    def future(  # pyright: ignore[reportUnreachable]
         union_str_int: Union[str, int],  # noqa: ARG001
         list_str: Optional[list[str]] = None,  # noqa: ARG001
     ) -> list[str]:  # type: ignore

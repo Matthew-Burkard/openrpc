@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from collections import Awaitable, Mapping
 import inspect
 import logging
-from typing import Any, Awaitable, Callable, Mapping, Union
+from typing import Any, Callable, Union
+from typing_extensions import override
 
 from jsonrpcobjects.errors import INTERNAL_ERROR
 from jsonrpcobjects.objects import (
@@ -107,7 +109,7 @@ class RPCServer(MethodRegistrar):
         # Register discover method.
         schema = Schema()
         schema.ref = _META_REF
-        self.method(
+        _ = self.method(
             name="rpc.discover",
             params=[],
             result=ContentDescriptor(name="OpenRPC Schema", schema=schema),
@@ -193,6 +195,7 @@ class RPCServer(MethodRegistrar):
         ).methods
 
     @property
+    @override
     def debug(self) -> bool:
         """Include internal error details in responses if True."""
         return self._debug
@@ -261,20 +264,22 @@ class RPCServer(MethodRegistrar):
             func: CallableType,
         ) -> Callable[[CallableType, MethodMetaData], CallableType]:
             def _wrapper(fun: CallableType, metadata: MethodMetaData) -> CallableType:
-                _add_router_method(fun, metadata)
+                _ = _add_router_method(fun, metadata)
                 return func(fun, metadata)
 
             return _wrapper
 
         def _router_remove_partial(method: str) -> None:
             self.remove(f"{prefix}{method}") if prefix else self.remove(method)
-            router._rpc_methods.pop(method)
-            router._request_processor.methods.pop(method)
+            _ = router._rpc_methods.pop(method)
+            _ = router._request_processor.methods.pop(method)
 
         for rpc_method in router._rpc_methods.values():
-            _add_router_method(rpc_method.function, rpc_method.metadata)
-        router._method = _router_method_decorator(router._method)  # type: ignore
-        router.remove = _router_remove_partial  # type: ignore
+            _ = _add_router_method(rpc_method.function, rpc_method.metadata)
+        router._method = _router_method_decorator(
+            router._method
+        )  # pyright: ignore[reportAttributeAccessIssue]
+        router.remove = _router_remove_partial
         router.debug = self.debug
         self._routers.append(router)
 

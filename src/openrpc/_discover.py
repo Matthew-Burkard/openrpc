@@ -5,7 +5,8 @@ from __future__ import annotations
 __all__ = ("get_openrpc_doc",)
 
 import re
-from typing import Any, Iterable
+from collections import Iterable
+from typing import Any
 
 import lorem_pysum
 from pydantic import create_model
@@ -167,7 +168,7 @@ def _get_example(rpc_method: RPCMethod) -> ExamplePairing:
         for name in type(param_values).model_fields
     ]
     result_value = lorem_pysum.generate(rpc_method.result_model, explicit_default=True)
-    result = Example(name="Generated result", value=result_value.result)  # type: ignore
+    result = Example(name="Generated result", value=result_value.result)  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType, reportAttributeAccessIssue]
     return ExamplePairing(name="Generated example", params=params, result=result)
 
 

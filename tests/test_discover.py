@@ -3,7 +3,7 @@
 import datetime
 import json
 from decimal import Decimal
-from enum import Enum
+from enum import Enum, auto
 from typing import Annotated, Any, List, Optional, Union
 
 from jsonrpcobjects.objects import Request
@@ -30,6 +30,13 @@ class EnumAsModelField(Enum):
 
     A = "A"
     B = "B"
+
+
+class IntegerEnum(Enum):
+    """Enum with named integers."""
+
+    KALE = auto()
+    SPINACH = auto()
 
 
 class Vector2(BaseModel):
@@ -525,6 +532,12 @@ def test_param_descriptions() -> None:
         )
 
 
+def test_int_enum() -> None:
+    rpc = _rpc()
+    rpc.method()(accept_int_enum)
+    print(rpc.discover())
+
+
 def test_descriptions() -> None:
     rpc = _rpc()
 
@@ -732,3 +745,7 @@ def param_description_no_return(
     :param b: Second param.
     :param c: Third param.
     """
+
+
+def accept_int_enum(value: IntegerEnum) -> None:
+    pass

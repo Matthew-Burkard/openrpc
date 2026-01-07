@@ -40,7 +40,7 @@ class RecursiveModel(BaseModel):
     another_thing_no_future_annotations: Optional["RecursiveModel"] = None
 
 
-RecursiveModel.model_rebuild()
+_ = RecursiveModel.model_rebuild()
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -107,7 +107,7 @@ class RPCTest(unittest.TestCase):
         request = ParamsRequest(id=1, method="divide", params=[0, 0])
         server = RPCServer(title="Test JSON RPC", version="1.0.0")
         server.default_error_code = SERVER_ERROR
-        server.method()(divide)
+        _ = server.method()(divide)
         resp = self.get_sync_and_async_resp(request.model_dump_json())
         self.assertEqual(server.default_error_code, resp["error"]["code"])
 
@@ -147,7 +147,7 @@ class RPCTest(unittest.TestCase):
             ]
         )
         responses: list[dict[str, Any]]
-        responses = self.get_sync_and_async_resp(f"[{requests}]")  # type: ignore
+        responses = self.get_sync_and_async_resp(f"[{requests}]")  # pyright: ignore[reportAssignmentType]
         add_resp = [r for r in responses if r.get("id") == add_id][0]
         subtract_resp = [r for r in responses if r.get("id") == subtract_id][0]
         divide_resp = [r for r in responses if r.get("id") == divide_id][0]
@@ -170,10 +170,10 @@ class RPCTest(unittest.TestCase):
         self.assertEqual(len(responses), 6)
 
     def test_list_param(self) -> None:
-        def increment_list(numbers: list[Union[int, float]]) -> list:  # type: ignore
-            return [it + 1 for it in numbers]  # type: ignore
+        def increment_list(numbers: list[Union[int, float]]) -> list:  # pyright: ignore[reportUnknownParameterType, reportMissingTypeArgument]
+            return [it + 1 for it in numbers]  # pyright: ignore[reportUnknownVariableType]
 
-        self.method(increment_list)  # type: ignore
+        self.method(increment_list)  # pyright: ignore[reportUnknownArgumentType]
         request = ParamsRequest(id=1, method="increment_list", params=[[1, 2, 3]])
         resp = self.get_sync_and_async_resp(request.model_dump_json())
         self.assertEqual([2, 3, 4], resp["result"])
@@ -322,10 +322,10 @@ class RPCTest(unittest.TestCase):
         return json.loads(sync_resp)
 
     def method(self, func: Callable[..., Any], name: Optional[str] = None) -> None:
-        self.server.method(name=name)(func)
+        _ = self.server.method(name=name)(func)
         if name is not None:
             name = f"async_{name}"
-        self.server.method(name=name)(get_as_async(func))
+        _ = self.server.method(name=name)(get_as_async(func))
 
 
 def get_as_async(func: Callable[..., Any]) -> Callable[..., Any]:

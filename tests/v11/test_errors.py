@@ -51,7 +51,7 @@ async def test_internal_error() -> None:
         msg = "rice"
         raise ValueError(msg)
 
-    app.method()(raise_error)
+    _ = app.method()(raise_error)
     req_str = util.req_str(raise_error.__name__)
     result = await app.process(req_str, BaseContext())
     e = '{"id":0,"error":{"code":-32000,"message":"Server error"},"jsonrpc":"2.0"}'
@@ -69,7 +69,7 @@ async def test_internal_error_debug() -> None:
         msg = "rice"
         raise ValueError(msg)
 
-    app.method()(raise_error)
+    _ = app.method()(raise_error)
     req_str = util.req_str(raise_error.__name__)
     result = await app.process(req_str, BaseContext())
     assert result is not None
@@ -88,7 +88,7 @@ async def test_top_level_error_handling() -> None:
     async def raise_error() -> None:
         raise ValueError()
 
-    app.handle_request = raise_error  # type: ignore
+    app.handle_request = raise_error  # pyright: ignore[reportAttributeAccessIssue]
     req_str = util.req_str(raise_error.__name__)
     result = await app.process(req_str, BaseContext())
     e = '{"id":null,"error":{"code":-32603,"message":"Internal error"},"jsonrpc":"2.0"}'
@@ -102,7 +102,7 @@ async def test_top_level_error_handling_debug() -> None:
     async def raise_error() -> None:
         raise ValueError()
 
-    app.handle_request = raise_error  # type: ignore
+    app.handle_request = raise_error  # pyright: ignore[reportAttributeAccessIssue]
     req_str = util.req_str(raise_error.__name__)
     result = await app.process(req_str, BaseContext())
     assert result is not None

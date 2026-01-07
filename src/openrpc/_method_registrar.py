@@ -122,8 +122,8 @@ class MethodRegistrar:
         :param method: Name of the method to remove.
         :return: None.
         """
-        self._rpc_methods.pop(method)
-        self._request_processor.methods.pop(method)
+        _ = self._rpc_methods.pop(method)
+        _ = self._request_processor.methods.pop(method)
 
     def _method(self, function: CallableType, metadata: MethodMetaData) -> CallableType:
         signature = inspect.signature(function)
@@ -141,7 +141,7 @@ class MethodRegistrar:
                 type_hints[key] = Any
         for i, param_name in enumerate([t for t in type_hints if t != "return"]):
             param = signature.parameters[param_name]
-            default: Any = param.default
+            default: Any | Undefined = param.default
             annotation: Any = param.annotation
             if isinstance(param.default, DependsModel):
                 depends[param_name] = param.default
@@ -178,7 +178,7 @@ class MethodRegistrar:
             elif param.default is inspect.Signature.empty:
                 required.append(param_name)
                 # Pyright has an issue with this only when running in Python 3.9
-                default: Any = ...  # type: ignore
+                default = ...  # pyright: ignore[reportUnknownVariableType]
             fields[param_name] = (
                 resolved_annotation(annotation, function),
                 default,
@@ -197,7 +197,7 @@ class MethodRegistrar:
         result_model = create_model(
             f"{metadata.name}.result",
             # Pyright has an issue with this only when running in Python 3.9
-            result=(resolved_annotation(signature.return_annotation, function), ...),  # type: ignore
+            result=(resolved_annotation(signature.return_annotation, function), ...),  # pyright: ignore[reportUnknownArgumentType]
         )
 
         # Add method to processor method list.

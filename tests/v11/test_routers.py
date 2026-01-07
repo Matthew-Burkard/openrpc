@@ -42,7 +42,7 @@ def return_coffee() -> str:
 
 
 @router_with_tags_no_prefix.method(tags=["does_nothing"])
-def do_nothing() -> str:  # type: ignore
+def do_nothing() -> str:  # pyright: ignore[reportReturnType]
     """Do nothing."""
 
 
@@ -61,8 +61,8 @@ def test_tags() -> None:
 async def test_debug() -> None:
     rpc.include_router(auth_router)
     rpc.debug = True
-    for router in rpc._routers:  # type: ignore
+    for router in rpc._routers:  # pyright: ignore[reportPrivateUsage]
         assert router.debug is True
     rpc.debug = False
-    for router in rpc._routers:  # type: ignore
+    for router in rpc._routers:  # pyright: ignore[reportPrivateUsage]
         assert router.debug is False

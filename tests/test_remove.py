@@ -10,6 +10,6 @@ def test_remove() -> None:
         """Add two integers."""
         return a + b
 
-    rpc.method()(add)
+    _ = rpc.method()(add)
     rpc.remove("add")
     assert len(rpc.methods) == 0

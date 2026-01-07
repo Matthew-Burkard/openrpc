@@ -23,7 +23,7 @@ rpc = RPCServer(debug=True)
 
 
 @rpc.method()
-def method() -> Model:  # type: ignore
+def method() -> Model:  # pyright: ignore[reportReturnType]
     """Method returning model with optional enum field."""
 
 

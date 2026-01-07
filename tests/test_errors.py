@@ -26,10 +26,12 @@ def method_with_error(*_args: Any) -> None:
         del current_frame
 
 
-# noinspection PyProtectedMember
-rpc_catch_all._request_processor.process = method_with_error  # type: ignore
-# noinspection PyProtectedMember
-rpc_catch_all._request_processor.process_async = method_with_error  # type: ignore
+rpc_catch_all._request_processor.process = (  # pyright: ignore[reportPrivateUsage, reportAttributeAccessIssue]
+    method_with_error
+)
+rpc_catch_all._request_processor.process_async = (  # pyright: ignore[reportPrivateUsage, reportAttributeAccessIssue]
+    method_with_error
+)
 
 
 def test_method_errors_debug() -> None:

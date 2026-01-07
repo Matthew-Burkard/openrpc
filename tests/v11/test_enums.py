@@ -54,7 +54,9 @@ async def test_register_enum_using_method() -> None:
         "title": "EnumExampleWithNull",
     }
 
-    ref: str = methods[0]["params"][0]["schema"]["$ref"]
+    ref: str = methods[0]["params"][0][  # pyright: ignore[reportRedeclaration]
+        "schema"
+    ]["$ref"]
     assert schemas[ref.removeprefix("#/components/schemas/")] == param_schema
 
     ref: str = methods[0]["result"]["schema"]["$ref"]
@@ -85,9 +87,10 @@ async def test_enum_optional_param() -> None:
 
         OPTION = enum.auto()
 
-    # noinspection PyUnusedLocal
     @e_rpc.method()
-    def method(param: Optional[EnumOnlyUsedAsParam]) -> None:  # type: ignore  # noqa: ARG001
+    def method(  # pyright: ignore[reportUnusedFunction]
+        param: Optional[EnumOnlyUsedAsParam],  # pyright: ignore[reportUnusedParameter]
+    ) -> None:
         """Pass."""
 
     req = util.req_str("rpc.discover")

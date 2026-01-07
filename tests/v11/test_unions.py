@@ -18,7 +18,9 @@ class CustomB(BaseModel):
 
 def func(c: Union[CustomA, CustomB]) -> bool:
     """Test function."""
-    return isinstance(c, (CustomA, CustomB))  # type: ignore
+    return isinstance(
+        c, (CustomA, CustomB)
+    )  # pyright: ignore[reportUnnecessaryIsInstance]
 
 
 @pytest.mark.asyncio

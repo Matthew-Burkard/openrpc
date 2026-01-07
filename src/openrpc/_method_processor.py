@@ -7,8 +7,9 @@ __all__ = ("MethodProcessor",)
 import inspect
 import logging
 import traceback
+from collections import Mapping
 from pathlib import Path
-from typing import Any, Callable, Mapping
+from typing import Any, Callable
 
 from jsonrpcobjects.errors import InternalError, InvalidParamsError, JSONRPCError
 from jsonrpcobjects.objects import (
@@ -70,7 +71,7 @@ class MethodProcessor:
         """Execute the method and get the JSON-RPC2 response."""
         try:
             # Raise permission error if any problems with `security_scheme`.
-            self._check_permissions()
+            _ = self._check_permissions()
             # Get depends values from `Depends` functions.
             dependencies = self._resolve_depends_params(
                 self.method.depends, self.caller_details
@@ -96,7 +97,7 @@ class MethodProcessor:
         """
         try:
             # Raise permission error if any problems with `security_scheme`.
-            await self._check_permissions_async()
+            _ = await self._check_permissions_async()
             # Get depends values from `Depends` functions.
             dependencies = await self._resolve_depends_params_async(
                 self.method.depends, self.caller_details
@@ -224,8 +225,7 @@ class MethodProcessor:
             msg = "Must use `process_request_async` if security function is async."
             raise InternalError(data=msg)
 
-        # MyPy fails to understand `inspect.isawaitable(active_scheme)`.
-        error = self._get_permission_error_from_scheme(active_scheme)  # type: ignore
+        error = self._get_permission_error_from_scheme(active_scheme)
         if error:
             raise RPCPermissionError(error if self.debug else None)
         return None

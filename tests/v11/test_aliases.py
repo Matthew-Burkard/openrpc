@@ -11,7 +11,7 @@ from tests.v11 import util
 
 
 class Model(BaseModel):
-    pizza: str = Field(..., alias="calories")  # type: ignore
+    pizza: str = Field(alias="calories")
 
 
 @pytest.mark.asyncio
@@ -19,7 +19,7 @@ async def test_alias() -> None:
     rpc = RPCApp(debug=True)
 
     @rpc.method()
-    async def method(type_: str) -> Model:  # type: ignore
+    async def method(type_: str) -> Model:  # pyright: ignore[reportUnusedFunction]
         """Test method."""
         return Model(calories=type_)
 

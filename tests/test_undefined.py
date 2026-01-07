@@ -11,7 +11,9 @@ def test_undefined() -> None:
     rpc = RPCServer(debug=True)
 
     @rpc.method()
-    def method(param: str = Undefined) -> bool:  # type: ignore
+    def method(  # pyright: ignore[reportUnusedFunction]
+        param: str = Undefined,  # pyright: ignore[reportArgumentType]
+    ) -> bool:
         """Method with non-required param."""
         return param is Undefined
 
@@ -30,7 +32,9 @@ def test_undefined_type() -> None:
     rpc = RPCServer(debug=True)
 
     @rpc.method()
-    def undefined_type(param: Union[Undefined, str]) -> bool:  # type: ignore
+    def undefined_type(  # pyright: ignore[reportUnusedFunction]
+        param: Union[Undefined, str],
+    ) -> bool:
         """Method using undefined as a parameter type."""
         return param is Undefined
 
@@ -50,7 +54,10 @@ def test_undefined_with_required() -> None:
 
     # noinspection PyUnusedLocal
     @rpc.method()
-    def method(_req: str, param: Optional[str] = Undefined) -> bool:  # type: ignore
+    def method(  # pyright: ignore[reportUnusedFunction]
+        _req: str,
+        param: Optional[str] = Undefined,  # pyright: ignore[reportArgumentType]
+    ) -> bool:
         """Method with required and non-required params."""
         return param is Undefined
 
@@ -64,7 +71,9 @@ def test_undefined_discover() -> None:
 
     # noinspection PyUnusedLocal
     @rpc.method()
-    def method(param: str = Undefined) -> bool:  # type: ignore  # noqa: ARG001
+    def method(  # pyright: ignore[reportUnusedFunction]
+        param: str = Undefined,  # pyright: ignore[reportArgumentType, reportUnusedParameter]
+    ) -> bool:  # pyright: ignore[reportReturnType]
         """Method with non-required param."""
 
     schema_param = rpc.discover()["methods"][0]["params"][0]
@@ -75,7 +84,7 @@ def test_undefined_discover() -> None:
 def test_310_union() -> None:
     if sys.version_info < (3, 10):
         return
-    rpc = RPCServer(debug=True)
+    rpc = RPCServer(debug=True)  # pyright: ignore[reportUnreachable]
 
     @rpc.method()
     def method310(param: int | None | Undefined) -> bool:  # type: ignore
@@ -91,7 +100,9 @@ def test_union_default() -> None:
     rpc = RPCServer(debug=True)
 
     @rpc.method()
-    def method(param: Union[int, None, Undefined] = Undefined) -> bool:  # type: ignore
+    def method(  # pyright: ignore[reportUnusedFunction]
+        param: Union[int, None, Undefined] = Undefined,
+    ) -> bool:
         """Method with union and default undefined."""
         return param is Undefined
 

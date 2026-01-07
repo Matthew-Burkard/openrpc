@@ -24,7 +24,7 @@ class RecursiveModel(BaseModel):
     another_thing_no_future_annotations: Optional["RecursiveModel"] = None
 
 
-RecursiveModel.model_rebuild()
+_ = RecursiveModel.model_rebuild()
 
 rpc = RPCApp()
 
@@ -108,11 +108,11 @@ async def test_id_matching() -> None:
 
 @pytest.mark.asyncio
 async def test_list_param() -> None:
-    def increment_list(numbers: list[Union[int, float]]) -> list:  # type: ignore
-        return [it + 1 for it in numbers]  # type: ignore
+    def increment_list(numbers: list[Union[int, float]]) -> list:  # pyright: ignore[reportMissingTypeArgument, reportUnknownParameterType]
+        return [it + 1 for it in numbers]  # pyright: ignore[reportUnknownVariableType]
 
-    app = util.get_app_with_method(increment_list)  # type: ignore
-    result = await util.get_result(app, increment_list, [[1, 2, 3]])  # type: ignore
+    app = util.get_app_with_method(increment_list)  # pyright: ignore[reportUnknownArgumentType]
+    result = await util.get_result(app, increment_list, [[1, 2, 3]])  # pyright: ignore[reportUnknownArgumentType]
     expected = [2, 3, 4]
     assert result == expected
 

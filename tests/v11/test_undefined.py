@@ -11,7 +11,7 @@ from tests.v11 import util
 
 @pytest.mark.asyncio
 async def test_undefined() -> None:
-    def method(param: str = Undefined) -> bool:  # type: ignore
+    def method(param: str = Undefined) -> bool:  # pyright: ignore[reportArgumentType]
         """Method with non-required param."""
         return param is Undefined
 
@@ -52,7 +52,7 @@ async def test_undefined_with_required() -> None:
 
 
 def test_undefined_discover() -> None:
-    def method(param: str = Undefined) -> bool:  # type: ignore  # noqa: ARG001
+    def method(param: str = Undefined) -> bool:  # pyright: ignore[reportArgumentType]
         """Method with non-required param."""
         assert param is Undefined
 
@@ -67,7 +67,9 @@ async def test_310_union() -> None:
     if sys.version_info < (3, 10):
         return
 
-    def method310(param: int | None | Undefined) -> bool:  # type: ignore
+    def method310(
+        param: int | None | Undefined,
+    ) -> bool:  # pyright: ignore[reportUnreachable]
         """Method with py310 union syntax."""
         return param is Undefined
 
@@ -78,7 +80,7 @@ async def test_310_union() -> None:
 
 @pytest.mark.asyncio
 async def test_union_default() -> None:
-    def method(param: Union[int, None, Undefined] = Undefined) -> bool:  # type: ignore
+    def method(param: Union[int, None, Undefined] = Undefined) -> bool:
         """Method with union and default undefined."""
         return param is Undefined
 

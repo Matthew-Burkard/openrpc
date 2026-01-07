@@ -17,13 +17,19 @@ def _echo(x: Any) -> Any:
 
 
 @rpc.method()
-def method_with_dep(arg: int, dep: str = Depends(_echo)) -> str:
+def method_with_dep(
+    arg: int,
+    dep: str = Depends(_echo),  # pyright: ignore[reportCallInDefaultInitializer]
+) -> str:
     """Method with dependency to test."""
     return f"{arg}-{dep}"
 
 
 @rpc.method()
-async def async_method_with_dep(arg: int, dep: str = Depends(_echo)) -> str:
+async def async_method_with_dep(
+    arg: int,
+    dep: str = Depends(_echo),  # pyright: ignore[reportCallInDefaultInitializer]
+) -> str:
     """Method with dependency to test."""
     return f"{arg}-{dep}"
 
@@ -79,7 +85,11 @@ async def test_depends_async() -> None:
 
 def test_depends_no_params() -> None:
     @rpc.method()
-    def method_no_params(depends: bool = Depends(lambda: True)) -> bool:  # type: ignore  # noqa: FBT001
+    def method_no_params(  # pyright: ignore[reportUnusedFunction]
+        depends: bool = Depends(  # noqa: FBT001
+            lambda: True
+        ),  # noqa: FBT001  # pyright: ignore[reportCallInDefaultInitializer]
+    ) -> bool:
         """Method with depends argument and no other params."""
         return depends is True
 

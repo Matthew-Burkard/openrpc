@@ -30,22 +30,25 @@ repository = "https://gitlab.com/mburkard/openrpc"
 
 [dependency-groups]
 dev = [
+  "pytest>=8.4.1",
   "pytest-asyncio>=1.0.0",
   "pytest-cov>=6.2.1",
-  "pytest>=8.4.1",
 ]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.coverage.run]
-source = ["src/openrpc"]
-
-[tool.pyright]
+[tool.basedpyright]
 strict = ["**"]
 venvPath = "./"
 venv = ".venv"
+reportAny = "none"
+reportExplicitAny = "none"
+reportUnannotatedClassAttribute = "none"
+
+[tool.coverage.run]
+source = ["src/openrpc"]
 
 [tool.ruff]
 lint.select = [
@@ -91,4 +94,3 @@ lint.ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101", "D"]
-

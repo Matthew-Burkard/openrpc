@@ -30,7 +30,10 @@ def method_with_dep(arg: int, dep: Annotated[int, Inject(_echo)]) -> str:
 
 
 @rpc.method()
-async def async_method_with_dep(arg: int, dep: str = Depends(_echo)) -> str:
+async def async_method_with_dep(
+    arg: int,
+    dep: str = Depends(_echo),  # pyright: ignore[reportCallInDefaultInitializer]
+) -> str:
     """Method with dependency to test."""
     return f"{arg}-{dep}"
 

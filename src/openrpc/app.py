@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import asyncio
+from collections import Awaitable
 import logging
 import traceback
 from inspect import isawaitable
 from pathlib import Path
-from typing import Any, Awaitable, Callable, Union
+from typing import Any, Callable, Union
 
 from jsonrpcobjects.errors import (
     INTERNAL_ERROR,
@@ -120,7 +121,7 @@ class RPCApp(MethodRegistrar):
         # Register discover method.
         schema = Schema()
         schema.ref = _META_REF
-        self.method(
+        _ = self.method(
             name="rpc.discover",
             params=[],
             result=ContentDescriptor(name="OpenRPC Schema", schema=schema),
@@ -159,14 +160,14 @@ class RPCApp(MethodRegistrar):
             func: CallableType,
         ) -> Callable[[CallableType, MethodMetaData], CallableType]:
             def _wrapper(fun: CallableType, metadata: MethodMetaData) -> CallableType:
-                _add_router_method(fun, metadata)
+                _ = _add_router_method(fun, metadata)
                 return func(fun, metadata)
 
             return _wrapper
 
-        router._method = _router_method_decorator(router._method)  # type: ignore
+        router._method = _router_method_decorator(router._method)  # pyright: ignore[reportAttributeAccessIssue]
         for rpc_method in router._rpc_methods.values():
-            _add_router_method(rpc_method.function, rpc_method.metadata)
+            _ = _add_router_method(rpc_method.function, rpc_method.metadata)
 
     async def process(
         self, request: str, context: BaseContext | None = None
@@ -204,7 +205,7 @@ class RPCApp(MethodRegistrar):
         # `hasattr` and type ignore because python can't check `isinstance` on
         #  subscripted generics.
         if hasattr(parse_result, "error"):
-            return ErrorResponse(id=None, error=parse_result.error).model_dump_json()  # type: ignore
+            return ErrorResponse(id=None, error=parse_result.error).model_dump_json()  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType, reportAttributeAccessIssue]
         if isinstance(parse_result, (ParamsNotification, Notification)):
             try:
                 if isinstance(parse_result, Notification):
@@ -219,7 +220,7 @@ class RPCApp(MethodRegistrar):
                 return None
 
         # Type ignore because pyright fails to infer type.
-        parsed_request: RequestType = parse_result  # type: ignore
+        parsed_request: RequestType = parse_result  # pyright: ignore[reportAssignmentType]
         result: Any | None = None
         try:
             if isinstance(parse_result, ParamsRequest):
@@ -236,7 +237,7 @@ class RPCApp(MethodRegistrar):
                 by_alias=True
             )
         except MethodNotFoundError:
-            return _get_method_not_found_error(parse_result)  # type: ignore
+            return _get_method_not_found_error(parse_result)  # pyright: ignore[reportArgumentType]
         except Exception as error:
             return _get_server_error(
                 parsed_request, error, debug=self.debug
@@ -336,9 +337,9 @@ class RPCApp(MethodRegistrar):
                         " `RPCApp.process`"
                     )
                     raise ValueError(msg)
-                value = dependency.function(context)  # type: ignore
+                value = dependency.function(context)  # pyright: ignore[reportCallIssue]
             else:
-                value = dependency.function()  # type: ignore
+                value = dependency.function()  # pyright: ignore[reportCallIssue]
             if isawaitable(value):
                 value = await value
             if isinstance(params, list):
@@ -393,7 +394,7 @@ def _get_trimmed_traceback(error: Exception) -> str:
     # Remove framework inner workings from traceback.
     file_path = Path(__file__).resolve()
     external_tb = [frame for frame in tb if Path(frame.filename).resolve() != file_path]
-    # Format the external traceback into a string
+    # Format the external traceback into a string.
     external_traceback_string = "".join(traceback.format_list(external_tb))
     exception_message = "".join(traceback.format_exception_only(type(error), error))
     return f"{external_traceback_string}{exception_message}"
