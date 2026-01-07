@@ -165,7 +165,9 @@ class RPCApp(MethodRegistrar):
 
             return _wrapper
 
-        router._method = _router_method_decorator(router._method)  # pyright: ignore[reportAttributeAccessIssue]
+        router._method = _router_method_decorator(
+            router._method
+        )  # pyright: ignore[reportAttributeAccessIssue]
         for rpc_method in router._rpc_methods.values():
             _ = _add_router_method(rpc_method.function, rpc_method.metadata)
 
@@ -205,7 +207,10 @@ class RPCApp(MethodRegistrar):
         # `hasattr` and type ignore because python can't check `isinstance` on
         #  subscripted generics.
         if hasattr(parse_result, "error"):
-            return ErrorResponse(id=None, error=parse_result.error).model_dump_json()  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType, reportAttributeAccessIssue]
+            return ErrorResponse(
+                id=None,
+                error=parse_result.error,  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType, reportAttributeAccessIssue]
+            ).model_dump_json()
         if isinstance(parse_result, (ParamsNotification, Notification)):
             try:
                 if isinstance(parse_result, Notification):
@@ -220,7 +225,9 @@ class RPCApp(MethodRegistrar):
                 return None
 
         # Type ignore because pyright fails to infer type.
-        parsed_request: RequestType = parse_result  # pyright: ignore[reportAssignmentType]
+        parsed_request: RequestType = (
+            parse_result  # pyright: ignore[reportAssignmentType]
+        )
         result: Any | None = None
         try:
             if isinstance(parse_result, ParamsRequest):
@@ -237,7 +244,9 @@ class RPCApp(MethodRegistrar):
                 by_alias=True
             )
         except MethodNotFoundError:
-            return _get_method_not_found_error(parse_result)  # pyright: ignore[reportArgumentType]
+            return _get_method_not_found_error(
+                parse_result  # pyright: ignore[reportArgumentType]
+            )
         except Exception as error:
             return _get_server_error(
                 parsed_request, error, debug=self.debug

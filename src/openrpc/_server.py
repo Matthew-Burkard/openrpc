@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-from collections import Awaitable, Mapping
 import inspect
 import logging
+from collections import Awaitable, Mapping
 from typing import Any, Callable, Union
-from typing_extensions import override
 
 from jsonrpcobjects.errors import INTERNAL_ERROR
 from jsonrpcobjects.objects import (
@@ -18,9 +17,12 @@ from jsonrpcobjects.objects import (
     RequestType,
     ResponseType,
 )
+from typing_extensions import override
 
-from openrpc import RPCRouter
+from openrpc._router import RPCRouter
 from openrpc._common import MethodMetaData, SecurityFunction, SecurityFunctionDetails
+from openrpc._depends import DependsModel
+from openrpc._discover import get_openrpc_doc
 from openrpc._method_registrar import CallableType, MethodRegistrar
 from openrpc._objects import (
     APIKeyAuth,
@@ -35,9 +37,6 @@ from openrpc._objects import (
     Server,
     Tag,
 )
-
-from ._depends import DependsModel
-from ._discover import get_openrpc_doc
 
 __all__ = ("RPCServer", "MethodRegistrar")
 
