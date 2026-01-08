@@ -26,7 +26,7 @@ from openrpc._objects import (
     Tag,
 )
 from openrpc._request_processor import RequestProcessor
-from openrpc.context import BaseContext
+from openrpc._context import BaseContext
 
 log = logging.getLogger("openrpc")
 
@@ -197,7 +197,10 @@ class MethodRegistrar:
         result_model = create_model(
             f"{metadata.name}.result",
             # Pyright has an issue with this only when running in Python 3.9
-            result=(resolved_annotation(signature.return_annotation, function), ...),  # pyright: ignore[reportUnknownArgumentType]
+            result=(
+                resolved_annotation(signature.return_annotation, function),
+                ...,
+            ),  # pyright: ignore[reportUnknownArgumentType]
         )
 
         # Add method to processor method list.

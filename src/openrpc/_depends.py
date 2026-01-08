@@ -5,7 +5,7 @@ from typing import Any, Callable, Union
 
 from pydantic import BaseModel
 
-from openrpc.context import BaseContext
+from openrpc._context import BaseContext
 
 
 class DependsModel(BaseModel):

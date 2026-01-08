@@ -2,8 +2,7 @@ from typing import Annotated
 
 import pytest
 
-from openrpc import Info, Inject, RPCApp
-from openrpc.context import BaseContext
+from openrpc import BaseContext, Info, Inject, RPCApp
 from tests.v11 import util
 
 AUTHORIZATION = "Authorization"

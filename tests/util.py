@@ -81,7 +81,7 @@ def resolve(ref: Optional[SchemaType], components: Optional[Components]) -> Sche
     return schema
 
 
-def dump(model: Union[BaseModel, bool]) -> dict[str, Any]:
+def dump(model: Union[BaseModel, bool]) -> dict[str, Any]:  # noqa: FBT001
     assert not isinstance(model, bool)
     return model.model_dump(exclude_unset=True, by_alias=True)
 
@@ -101,7 +101,7 @@ def validate_references(
         processed.append(schema.ref)
         ref_schema = components.resolve_reference(schema.ref)
         validate_references(ref_schema, components, processed)
-    schema_item: Optional[SchemaType] = None
+    schema_item: Optional[SchemaType] = None  # pyright: ignore[reportRedeclaration]
     for attr in ["any_of", "all_of", "one_of", "prefix_items"]:
         schema_list: list[SchemaType] = getattr(schema, attr) or []
         for schema_item in schema_list:

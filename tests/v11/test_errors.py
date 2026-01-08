@@ -9,7 +9,7 @@ import pytest
 from jsonrpcobjects.errors import MethodNotFoundError
 
 from openrpc import RPCApp
-from openrpc.context import BaseContext
+from openrpc._context import BaseContext
 from tests.util import INTERNAL_ERROR
 from tests.v11 import util
 

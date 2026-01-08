@@ -49,7 +49,7 @@ from openrpc._objects import (
     Server,
     Tag,
 )
-from openrpc.context import BaseContext
+from openrpc._context import BaseContext
 
 __all__ = ("RPCApp",)
 
