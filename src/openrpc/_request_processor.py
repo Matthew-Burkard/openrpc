@@ -38,6 +38,7 @@ from pydantic_core import PydanticUndefined
 from openrpc._common import RPCMethod, SecurityFunctionDetails
 from openrpc._depends import DependsModel
 from openrpc._objects import ParamStructure, RPCPermissionError
+from openrpc._error import OpenRPCError
 
 log = logging.getLogger("openrpc")
 
@@ -326,6 +327,11 @@ class MethodProcessor:
                 message="Server error",
                 data=f"{type(error).__name__}\n{traceback_str}",
             )
+        elif isinstance(error, OpenRPCError):
+            error_object = Error(code=error.code, message=error.message)
+            return ErrorResponse(
+                id=self.request.id, error=error_object
+            ).model_dump_json()
         else:
             error_object = Error(code=self.uncaught_error_code, message="Server error")
 

@@ -22,6 +22,7 @@ __all__ = (
     "OAuth2Flow",
     "OAuth2FlowType",
     "OpenRPC",
+    "OpenRPCError",
     "ParamStructure",
     "RPCApp",
     "RPCPermissionError",
@@ -43,6 +44,7 @@ from openrpc._app import AppRouter, RPCApp
 from openrpc._common import SecurityFunction
 from openrpc._context import BaseContext
 from openrpc._depends import Depends, Inject
+from openrpc._error import OpenRPCError
 from openrpc._objects import (
     APIKeyAuth,
     BearerAuth,

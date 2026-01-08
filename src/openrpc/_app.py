@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import asyncio
-from collections import Awaitable
 import logging
 import traceback
+from collections import Awaitable
 from inspect import isawaitable
 from pathlib import Path
 from typing import Any, Callable, Union
@@ -35,8 +35,10 @@ from pydantic import ValidationError
 from pydantic_core import PydanticUndefined
 
 from openrpc._common import MethodMetaData, RPCMethod
+from openrpc._context import BaseContext
 from openrpc._depends import InjectModel
 from openrpc._discover import get_openrpc_doc
+from openrpc._error import OpenRPCError
 from openrpc._method_registrar import MethodRegistrar
 from openrpc._objects import (
     CallableType,
@@ -49,7 +51,6 @@ from openrpc._objects import (
     Server,
     Tag,
 )
-from openrpc._context import BaseContext
 
 __all__ = ("RPCApp",)
 
@@ -246,6 +247,15 @@ class RPCApp(MethodRegistrar):
         except MethodNotFoundError:
             return _get_method_not_found_error(
                 parse_result  # pyright: ignore[reportArgumentType]
+            )
+        except OpenRPCError as e:
+            error = (
+                DataError(code=e.code, message=e.message, data=e.data)
+                if e.data
+                else Error(code=e.code, message=e.message)
+            )
+            return ErrorResponse(id=parse_result.id, error=error).model_dump_json(
+                by_alias=True
             )
         except Exception as error:
             return _get_server_error(

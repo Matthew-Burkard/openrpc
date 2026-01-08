@@ -8,8 +8,7 @@ from typing import Any
 import pytest
 from jsonrpcobjects.errors import MethodNotFoundError
 
-from openrpc import RPCApp
-from openrpc._context import BaseContext
+from openrpc import BaseContext, OpenRPCError, RPCApp
 from tests.util import INTERNAL_ERROR
 from tests.v11 import util
 
@@ -148,3 +147,23 @@ async def test_method_errors() -> None:
     result = await util.get_result(rpc, method_with_error, [])
     assert "data" not in result["error"]
     assert rpc.debug is False
+
+
+class CustomError(OpenRPCError):
+    def __init__(self, *args: object) -> None:
+        self.message = "Spinach"
+        self.code = -32002
+        super().__init__(self.code, self.message, None, *args)
+
+
+@rpc.method()
+async def use_custom_error() -> None:
+    raise CustomError()
+
+
+@pytest.mark.asyncio
+async def test_custom_error() -> None:
+    rpc.debug = False
+    result = await util.get_result(rpc, use_custom_error, [])
+    assert result["error"]["code"] == -32002  # noqa: PLR2004
+    assert result["error"]["message"] == "Spinach"
