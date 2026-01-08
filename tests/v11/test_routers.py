@@ -2,8 +2,7 @@
 
 import pytest
 
-from openrpc._objects import Info
-from openrpc.app import AppRouter, RPCApp
+from openrpc import AppRouter, Info, RPCApp
 from tests.v11 import util
 
 METHOD_NOT_FOUND_CODE = -32601

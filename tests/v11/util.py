@@ -7,8 +7,7 @@ from typing import Any, Callable
 
 from jsonrpcobjects.objects import ParamsRequest
 
-from openrpc.app import RPCApp
-from openrpc.context import BaseContext
+from openrpc import BaseContext, RPCApp
 
 
 def req_str(
@@ -54,5 +53,5 @@ def get_app_with_method(
     """
     method_name = method_name or method.__name__
     app = RPCApp(debug=True)
-    app.method(method_name)(method)
+    _ = app.method(method_name)(method)
     return app

@@ -4,9 +4,8 @@ import json
 
 import pytest
 
+from openrpc import OpenRPC, RPCApp, Schema
 from openrpc._common import get_schema
-from openrpc._objects import OpenRPC, Schema
-from openrpc.app import RPCApp
 from tests.util import Vector3
 
 rpc = RPCApp(debug=True)

@@ -6,8 +6,7 @@ from typing import Optional
 
 import pytest
 
-from openrpc._objects import Info, OpenRPC
-from openrpc.app import RPCApp
+from openrpc import Info, OpenRPC, RPCApp
 from tests.util import resolve
 from tests.v11 import util
 

@@ -2,9 +2,7 @@
 
 import pytest
 
-from openrpc import ParamStructure
-from openrpc._objects import Info
-from openrpc.app import RPCApp
+from openrpc import Info, ParamStructure, RPCApp
 from tests.v11 import util
 
 rpc = RPCApp(Info(title="Test Depends", version="0.1.0"))

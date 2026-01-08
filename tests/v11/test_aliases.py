@@ -5,7 +5,7 @@ import json
 import pytest
 from pydantic import BaseModel, Field
 
-from openrpc.app import RPCApp
+from openrpc import RPCApp
 from openrpc.context import BaseContext
 from tests.v11 import util
 

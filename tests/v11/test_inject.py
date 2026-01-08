@@ -1,13 +1,10 @@
 """Test depends."""
 
 from typing import Annotated
+
 import pytest
 
-from openrpc import Depends
-from openrpc._depends import Inject
-from openrpc._objects import Info
-from openrpc.app import RPCApp
-from openrpc.context import BaseContext
+from openrpc import BaseContext, Depends, Info, Inject, RPCApp
 from tests.v11 import util
 
 rpc = RPCApp(Info(title="Test Dependency Injection", version="0.1.0"), debug=True)

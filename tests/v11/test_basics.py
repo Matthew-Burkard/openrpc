@@ -10,7 +10,7 @@ import pytest
 from jsonrpcobjects.objects import Notification
 from pydantic import BaseModel
 
-from openrpc.app import RPCApp
+from openrpc import RPCApp
 from tests.util import INVALID_REQUEST, METHOD_NOT_FOUND, PARSE_ERROR, Vector3
 from tests.v11 import util
 
@@ -108,11 +108,17 @@ async def test_id_matching() -> None:
 
 @pytest.mark.asyncio
 async def test_list_param() -> None:
-    def increment_list(numbers: list[Union[int, float]]) -> list:  # pyright: ignore[reportMissingTypeArgument, reportUnknownParameterType]
+    def increment_list(  # pyright: ignore[reportUnknownParameterType]
+        numbers: list[Union[int, float]],
+    ) -> list:  # pyright: ignore[reportMissingTypeArgument]
         return [it + 1 for it in numbers]  # pyright: ignore[reportUnknownVariableType]
 
-    app = util.get_app_with_method(increment_list)  # pyright: ignore[reportUnknownArgumentType]
-    result = await util.get_result(app, increment_list, [[1, 2, 3]])  # pyright: ignore[reportUnknownArgumentType]
+    app = util.get_app_with_method(
+        increment_list  # pyright: ignore[reportUnknownArgumentType]
+    )
+    result = await util.get_result(
+        app, increment_list, [[1, 2, 3]]  # pyright: ignore[reportUnknownArgumentType]
+    )
     expected = [2, 3, 4]
     assert result == expected
 

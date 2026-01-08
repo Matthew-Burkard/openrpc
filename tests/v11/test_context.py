@@ -2,9 +2,7 @@ from typing import Annotated
 
 import pytest
 
-from openrpc._depends import Inject
-from openrpc._objects import Info
-from openrpc.app import RPCApp
+from openrpc import Info, Inject, RPCApp
 from openrpc.context import BaseContext
 from tests.v11 import util
 

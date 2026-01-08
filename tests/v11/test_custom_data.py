@@ -1,7 +1,6 @@
 """Test custom method metadata."""
 
-from openrpc import ContentDescriptor, OpenRPC
-from openrpc.app import RPCApp
+from openrpc import ContentDescriptor, OpenRPC, RPCApp
 
 rpc = RPCApp()
 

@@ -5,9 +5,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from openrpc import OpenRPC
-from openrpc._objects import Schema
-from openrpc.app import RPCApp
+from openrpc import OpenRPC, RPCApp, Schema
 
 
 class SomeEnum(enum.Enum):

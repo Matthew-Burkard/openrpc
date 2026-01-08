@@ -8,7 +8,7 @@ from typing import Any
 import pytest
 from jsonrpcobjects.errors import MethodNotFoundError
 
-from openrpc.app import RPCApp
+from openrpc import RPCApp
 from openrpc.context import BaseContext
 from tests.util import INTERNAL_ERROR
 from tests.v11 import util

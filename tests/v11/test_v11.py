@@ -1,15 +1,14 @@
 """Test API hooks."""
 
 from __future__ import annotations
+
 from enum import Enum
 
 import pytest
 from jsonrpcobjects.errors import MethodNotFoundError
 from jsonrpcobjects.parse import parse_request
 
-from openrpc import Contact, Info, License, RPCPermissionError
-from openrpc.app import RPCApp
-from openrpc.context import BaseContext
+from openrpc import BaseContext, Contact, Info, License, RPCApp, RPCPermissionError
 from tests.v11 import util
 
 OAUTH2 = "OAUTH2"

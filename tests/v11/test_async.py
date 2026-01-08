@@ -6,8 +6,7 @@ from typing import Any, Optional
 
 from jsonrpcobjects.objects import Request
 
-from openrpc import Info
-from openrpc.app import RPCApp
+from openrpc import Info, RPCApp
 from openrpc.context import BaseContext
 
 

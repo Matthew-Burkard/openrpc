@@ -25,8 +25,8 @@ class BaseContext(BaseModel):
     """Deserialized request, or parse error."""
 
 
-BaseContext.model_rebuild()
-Notification.model_rebuild()
-ParamsNotification.model_rebuild()
-ParamsRequest.model_rebuild()
-Request.model_rebuild()
+_ = BaseContext.model_rebuild()
+_ = Notification.model_rebuild()
+_ = ParamsNotification.model_rebuild()
+_ = ParamsRequest.model_rebuild()
+_ = Request.model_rebuild()

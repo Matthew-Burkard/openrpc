@@ -2,6 +2,8 @@
 
 __all__ = (
     "APIKeyAuth",
+    "AppRouter",
+    "BaseContext",
     "BearerAuth",
     "Components",
     "Contact",
@@ -21,6 +23,7 @@ __all__ = (
     "OAuth2FlowType",
     "OpenRPC",
     "ParamStructure",
+    "RPCApp",
     "RPCPermissionError",
     "RPCRouter",
     "RPCServer",
@@ -36,7 +39,9 @@ __all__ = (
 
 from py_undefined import Undefined
 
+from openrpc._app import AppRouter, RPCApp
 from openrpc._common import SecurityFunction
+from openrpc._context import BaseContext
 from openrpc._depends import Depends, Inject
 from openrpc._objects import (
     APIKeyAuth,

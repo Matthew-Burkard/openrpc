@@ -15,14 +15,15 @@ from openrpc import (
     Depends,
     Error,
     ExternalDocumentation,
+    Info,
     License,
     Link,
+    OpenRPC,
     ParamStructure,
+    RPCApp,
     Server,
 )
 from openrpc._common import get_schema
-from openrpc._objects import Info, OpenRPC
-from openrpc.app import RPCApp
 from tests.util import Vector3, dump, resolve, validate_references
 
 
@@ -107,13 +108,23 @@ async def test_open_rpc_info() -> None:
     _ = rpc.method()(return_none)
     _ = rpc.method()(default_value)
     _ = rpc.method()(take_any_get_any)
-    _ = rpc.method()(dict_and_list)  # pyright: ignore[reportUnknownArgumentType, reportUnknownVariableType]
+    _ = rpc.method()(  # pyright: ignore[reportUnknownVariableType]
+        dict_and_list  # pyright: ignore[reportUnknownArgumentType]
+    )
     _ = rpc.method()(nested_model)
-    _ = rpc.method()(typed_dict_and_list)  # pyright: ignore[reportUnknownArgumentType, reportUnknownVariableType]
+    _ = rpc.method()(  # pyright: ignore[reportUnknownVariableType]
+        typed_dict_and_list  # pyright: ignore[reportUnknownArgumentType]
+    )
     _ = rpc.method()(list_model_result)
-    _ = rpc.method()(no_annotations)  # pyright: ignore[reportUnknownArgumentType, reportUnknownVariableType]
+    _ = rpc.method()(  # pyright: ignore[reportUnknownVariableType]
+        no_annotations  # pyright: ignore[reportUnknownArgumentType]
+    )
     request = Request(id=1, method="rpc.discover")
-    resp = json.loads(await rpc.process(request.model_dump_json()))  # pyright: ignore[reportArgumentType]
+    resp = json.loads(
+        await rpc.process(
+            request.model_dump_json()
+        )  # pyright: ignore[reportArgumentType]
+    )
     discover_result = resp["result"]
     assert discover_result["openrpc"] == "1.3.2"
     assert discover_result["info"] == {
@@ -297,7 +308,9 @@ def test_any() -> None:
 
 def test_no_annotations() -> None:
     rpc = _rpc()
-    _ = rpc.method()(no_annotations)  # pyright: ignore[reportUnknownArgumentType, reportUnknownVariableType]
+    _ = rpc.method()(  # pyright: ignore[reportUnknownVariableType]
+        no_annotations  # pyright: ignore[reportUnknownArgumentType]
+    )
     method = rpc.discover()["methods"][0]
     # Examples
     assert method["examples"] == [
@@ -363,7 +376,9 @@ def test_complex_objects() -> None:
 
 def test_collections() -> None:
     rpc = _rpc()
-    _ = rpc.method()(method_using_collections)  # pyright: ignore[reportUnknownArgumentType, reportUnknownVariableType]
+    _ = rpc.method()(  # pyright: ignore[reportUnknownVariableType]
+        method_using_collections  # pyright: ignore[reportUnknownArgumentType]
+    )
     doc = OpenRPC(**rpc.discover())
     method = doc.methods[0]
 
@@ -608,13 +623,17 @@ def default_value(
     """Function with default values for params."""
 
 
-def return_none(optional_param: Optional[str]) -> None:  # pyright: ignore[reportUnusedParameter]
+def return_none(
+    optional_param: Optional[str],  # pyright: ignore[reportUnusedParameter]
+) -> None:
     """Function with optional param that always returns None."""
 
 
 def take_any_get_any(
     any_param: Any,  # pyright: ignore[reportUnusedParameter]
-    dep: str = Depends(lambda x: x),  # pyright: ignore[reportCallInDefaultInitializer, reportUnknownArgumentType, reportUnknownLambdaType, reportUnusedParameter]
+    dep: str = Depends(  # pyright: ignore[reportCallInDefaultInitializer, reportUnusedParameter]
+        lambda x: x  # pyright: ignore[reportUnknownArgumentType, reportUnknownLambdaType]
+    ),
 ) -> Any:
     """Function that takes and returns any type, uses Dep argument."""
 
@@ -643,7 +662,10 @@ def list_model_result() -> list[ListResultModel]:  # pyright: ignore[reportRetur
     """Function returning a list of a model."""
 
 
-def no_annotations(a, b):  # pyright: ignore[reportUnknownParameterType, reportMissingParameterType, reportUnusedParameter]
+def no_annotations(
+    a,  # pyright: ignore[reportUnknownParameterType, reportMissingParameterType, reportUnusedParameter]
+    b,  # pyright: ignore[reportUnknownParameterType, reportMissingParameterType, reportUnusedParameter]
+):
     """To test discover for poorly written functions."""
 
 
@@ -664,12 +686,16 @@ def method_using_complex_objects(
 def method_using_collections(
     list_field: list,  # pyright: ignore[reportUnknownParameterType, reportMissingTypeArgument, reportUnusedParameter]
     list_str: list[str],  # pyright: ignore[reportUnusedParameter]
-    list_list: list[list],  # pyright: ignore[reportUnknownParameterType, reportMissingTypeArgument, reportUnusedParameter]
+    list_list: list[  # pyright: ignore[reportUnknownParameterType, reportUnusedParameter]
+        list  # pyright: ignore[reportMissingTypeArgument]
+    ],
     list_list_int: list[list[int]],  # pyright: ignore[reportUnusedParameter]
     list_union: list[Union[str, int]],  # pyright: ignore[reportUnusedParameter]
     tuple_field: tuple,  # pyright: ignore[reportUnknownParameterType, reportMissingTypeArgument, reportUnusedParameter]
     tuple_str: tuple[str],  # pyright: ignore[reportUnusedParameter]
-    tuple_tuple: tuple[tuple],  # pyright: ignore[reportMissingTypeArgument, reportUnknownParameterType, reportUnusedParameter]
+    tuple_tuple: tuple[  # pyright: ignore[reportUnknownParameterType, reportUnusedParameter]
+        tuple  # pyright: ignore[reportMissingTypeArgument]
+    ],
     tuple_tuple_int: tuple[tuple[int]],  # pyright: ignore[reportUnusedParameter]
     tuple_union: tuple[Union[str, int]],  # pyright: ignore[reportUnusedParameter]
     tuple_int_str_none: tuple[int, str, None],  # pyright: ignore[reportUnusedParameter]
@@ -677,7 +703,9 @@ def method_using_collections(
     set_union: set[Union[str, int]],  # pyright: ignore[reportUnusedParameter]
     dict_field: dict,  # pyright: ignore[reportMissingTypeArgument, reportUnknownParameterType, reportUnusedParameter]
     dict_str: dict[str, str],  # pyright: ignore[reportUnusedParameter]
-    dict_dict: dict[str, dict],  # pyright: ignore[reportUnknownParameterType, reportUnusedParameter, reportMissingTypeArgument]
+    dict_dict: dict[  # pyright: ignore[reportUnknownParameterType, reportUnusedParameter]
+        str, dict  # pyright: ignore[reportMissingTypeArgument]
+    ],
     dict_int_keys: dict[int, str],  # pyright: ignore[reportUnusedParameter]
     dict_union: dict[str, Union[str, int]],  # pyright: ignore[reportUnusedParameter]
 ) -> CollectionsModel:  # pyright: ignore[reportReturnType]
