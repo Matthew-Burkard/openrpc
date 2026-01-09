@@ -334,8 +334,10 @@ async def test_nested_depends_async() -> None:
     assert response.result == expected
 
 
+@pytest.mark.filterwarnings(
+    "ignore:coroutine 'test_async_security_error.<locals>._security' was never awaited"
+)
 def test_async_security_error() -> None:
-    # noinspection PyUnusedLocal
     async def _security() -> dict[str, list[str]]: ...
 
     async_error_rpc = RPCServer(security_function=_security, debug=True)
