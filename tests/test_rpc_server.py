@@ -147,7 +147,9 @@ class RPCTest(unittest.TestCase):
             ]
         )
         responses: list[dict[str, Any]]
-        responses = self.get_sync_and_async_resp(f"[{requests}]")  # pyright: ignore[reportAssignmentType]
+        responses = self.get_sync_and_async_resp(
+            f"[{requests}]"
+        )  # pyright: ignore[reportAssignmentType]
         add_resp = [r for r in responses if r.get("id") == add_id][0]
         subtract_resp = [r for r in responses if r.get("id") == subtract_id][0]
         divide_resp = [r for r in responses if r.get("id") == divide_id][0]
@@ -170,8 +172,12 @@ class RPCTest(unittest.TestCase):
         self.assertEqual(len(responses), 6)
 
     def test_list_param(self) -> None:
-        def increment_list(numbers: list[Union[int, float]]) -> list:  # pyright: ignore[reportUnknownParameterType, reportMissingTypeArgument]
-            return [it + 1 for it in numbers]  # pyright: ignore[reportUnknownVariableType]
+        def increment_list(  # pyright: ignore[reportUnknownParameterType]
+            numbers: list[Union[int, float]],
+        ) -> list:  # pyright: ignore[reportMissingTypeArgument]
+            return [
+                it + 1 for it in numbers
+            ]  # pyright: ignore[reportUnknownVariableType]
 
         self.method(increment_list)  # pyright: ignore[reportUnknownArgumentType]
         request = ParamsRequest(id=1, method="increment_list", params=[[1, 2, 3]])

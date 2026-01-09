@@ -1065,7 +1065,7 @@ class OpenRPC(BaseModel):
 
 
 class OAuth2FlowType(Enum):
-    """Types of OAuth 2.0 flows."""
+    """Type of OAuth 2.0 flows."""
 
     AUTHORIZATION_CODE = "authorizationCode"
     CLIENT_CREDENTIALS = "clientCredentials"

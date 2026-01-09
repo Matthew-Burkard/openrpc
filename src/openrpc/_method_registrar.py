@@ -125,7 +125,9 @@ class MethodRegistrar:
         _ = self._rpc_methods.pop(method)
         _ = self._request_processor.methods.pop(method)
 
-    def _method(self, function: CallableType, metadata: MethodMetaData) -> CallableType:
+    def _method(  # noqa: PLR0915
+        self, function: CallableType, metadata: MethodMetaData
+    ) -> CallableType:
         signature = inspect.signature(function)
 
         # Get field information from each method parameter.

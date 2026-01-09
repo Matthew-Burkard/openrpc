@@ -20,10 +20,10 @@ from typing import (
     Mapping,  # pyright: ignore[reportDeprecated]
     Optional,
     Union,
+    _eval_type,  # pyright: ignore[reportAttributeAccessIssue, reportUnknownVariableType]
 )
 
 from pydantic import BaseModel
-from pydantic.v1.typing import evaluate_forwardref
 
 from openrpc._depends import DependsModel, InjectModel
 from openrpc._objects import (
@@ -112,8 +112,12 @@ def resolved_annotation(annotation: Any, function: Callable[..., Any]) -> Any:
     globalns = getattr(function, "__globals__", {})
     if isinstance(annotation, str):
         annotation = ForwardRef(annotation)
-        annotation = evaluate_forwardref(annotation, globalns, globalns)
-    return type(None) if annotation is None else annotation
+        annotation = _eval_type(  # pyright: ignore[reportUnknownVariableType]
+            annotation, globalns, globalns
+        )
+    return (
+        type(None) if annotation is None else annotation
+    )  # pyright: ignore[reportUnknownVariableType]
 
 
 def get_schema(value: SchemaType | None) -> Schema:
