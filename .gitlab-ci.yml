@@ -9,6 +9,7 @@ variables:
   # since we can only cache local items.
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   PROJECT_SRC_DIR: "$CI_PROJECT_DIR/src/openrpc/"
+  UV_CACHE_DIR: "$CI_PROJECT_DIR/.uv-cache"
 
 .setup_environment: &setup_env
   before_script:
@@ -50,7 +51,7 @@ pyright:
     - if: '$CI_COMMIT_BRANCH == "main"'
   <<: *setup_env
   script:
-    - pyright $PROJECT_SRC_DIR
+    - basedpyright $PROJECT_SRC_DIR
 
 pytest:
   stage: test
