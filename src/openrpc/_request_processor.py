@@ -8,9 +8,8 @@ import asyncio
 import inspect
 import logging
 import traceback
-from collections import Mapping
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, Mapping  # pyright: ignore[reportDeprecated]
 
 from jsonrpcobjects.errors import (
     METHOD_NOT_FOUND,

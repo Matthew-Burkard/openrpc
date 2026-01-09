@@ -1,6 +1,6 @@
 [project]
 name = "openrpc"
-version = "11.0.0"
+version = "11.0.0b"
 description = "Transport agnostic framework for developing OpenRPC servers."
 readme = "README.md"
 requires-python = ">=3.9"

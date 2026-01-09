@@ -4,8 +4,13 @@ from __future__ import annotations
 
 import inspect
 import logging
-from collections import Awaitable, Mapping
-from typing import Any, Callable, Union
+from typing import (
+    Any,
+    Awaitable,  # pyright: ignore[reportDeprecated]
+    Callable,
+    Mapping,  # pyright: ignore[reportDeprecated]
+    Union,
+)
 
 from jsonrpcobjects.errors import INTERNAL_ERROR
 from jsonrpcobjects.objects import (
@@ -19,7 +24,6 @@ from jsonrpcobjects.objects import (
 )
 from typing_extensions import override
 
-from openrpc._router import RPCRouter
 from openrpc._common import MethodMetaData, SecurityFunction, SecurityFunctionDetails
 from openrpc._depends import DependsModel
 from openrpc._discover import get_openrpc_doc
@@ -37,6 +41,7 @@ from openrpc._objects import (
     Server,
     Tag,
 )
+from openrpc._router import RPCRouter
 
 __all__ = ("RPCServer", "MethodRegistrar")
 

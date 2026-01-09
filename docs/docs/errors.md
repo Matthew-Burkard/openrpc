@@ -45,7 +45,6 @@ You will likely want errors that preserve the error code and message.
 
 For that, create and error class that extends `OpenRPCError`.
 
-
 ```python
 from openrpc import OpenRPCError, RPCServer
 
@@ -78,7 +77,6 @@ print(rpc.process_request(req))
 
 Now error details are preserved.
 
-
 ```json
 {
     "id": 1,
@@ -93,7 +91,6 @@ Now error details are preserved.
     "jsonrpc": "2.0"
 }
 ```
-
 
 ## Debug
 

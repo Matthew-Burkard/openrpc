@@ -5,10 +5,9 @@ from __future__ import annotations
 import asyncio
 import logging
 import traceback
-from collections import Awaitable
 from inspect import isawaitable
 from pathlib import Path
-from typing import Any, Callable, Union
+from typing import Any, Awaitable, Callable, Union  # pyright: ignore[reportDeprecated]
 
 from jsonrpcobjects.errors import (
     INTERNAL_ERROR,
