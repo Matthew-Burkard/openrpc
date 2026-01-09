@@ -69,7 +69,6 @@ def test_undefined_with_required() -> None:
 def test_undefined_discover() -> None:
     rpc = RPCServer(debug=True)
 
-    # noinspection PyUnusedLocal
     @rpc.method()
     def method(  # pyright: ignore[reportUnusedFunction]
         param: str = Undefined,  # pyright: ignore[reportArgumentType, reportUnusedParameter]
@@ -87,7 +86,7 @@ def test_310_union() -> None:
     rpc = RPCServer(debug=True)  # pyright: ignore[reportUnreachable]
 
     @rpc.method()
-    def method310(param: int | None | Undefined) -> bool:  # type: ignore
+    def method310(param: int | None | Undefined) -> bool:  # noqa: FA102
         """Method with py310 union syntax."""
         return param is Undefined
 

@@ -68,7 +68,7 @@ async def test_310_union() -> None:
         return
 
     def method310(
-        param: int | None | Undefined,
+        param: int | None | Undefined,  # noqa: FA102
     ) -> bool:  # pyright: ignore[reportUnreachable]
         """Method with py310 union syntax."""
         return param is Undefined

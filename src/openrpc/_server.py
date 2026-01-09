@@ -53,7 +53,7 @@ ResponseHook = Callable[[AnyResponse], Awaitable[None]]
 class RPCServer(MethodRegistrar):
     """OpenRPC server to register methods with."""
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         title: str | None = None,
         version: str | None = None,

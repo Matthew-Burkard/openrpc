@@ -683,7 +683,7 @@ def method_using_complex_objects(
     """Method to test schema generation for complex objects."""
 
 
-def method_using_collections(
+def method_using_collections(  # noqa: PLR0913
     list_field: list,  # pyright: ignore[reportUnknownParameterType, reportMissingTypeArgument, reportUnusedParameter]
     list_str: list[str],  # pyright: ignore[reportUnusedParameter]
     list_list: list[  # pyright: ignore[reportUnknownParameterType, reportUnusedParameter]

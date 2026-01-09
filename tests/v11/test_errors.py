@@ -167,3 +167,26 @@ async def test_custom_error() -> None:
     result = await util.get_result(rpc, use_custom_error, [])
     assert result["error"]["code"] == -32002  # noqa: PLR2004
     assert result["error"]["message"] == "Spinach"
+
+
+class CustomDataError(OpenRPCError):
+    def __init__(self, kale: str, *args: object) -> None:
+        self.message = "Spinach"
+        self.code = -32003
+        self.data = kale
+        super().__init__(self.code, self.message, self.data, *args)
+
+
+@rpc.method()
+async def use_custom_data_error() -> None:
+    msg = "Kale"
+    raise CustomDataError(msg)
+
+
+@pytest.mark.asyncio
+async def test_custom_data_error() -> None:
+    rpc.debug = False
+    result = await util.get_result(rpc, use_custom_data_error, [])
+    assert result["error"]["code"] == -32003  # noqa: PLR2004
+    assert result["error"]["message"] == "Spinach"
+    assert result["error"]["data"] == "Kale"

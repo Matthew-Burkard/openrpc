@@ -197,7 +197,7 @@ class RequestProcessor:
 class MethodProcessor:
     """Execute a method passing it a parsed JSON RPC 2.0 request."""
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         method: RPCMethod,
         uncaught_error_code: int,
@@ -328,7 +328,11 @@ class MethodProcessor:
                 data=f"{type(error).__name__}\n{traceback_str}",
             )
         elif isinstance(error, OpenRPCError):
-            error_object = Error(code=error.code, message=error.message)
+            error_object = (
+                DataError(code=error.code, message=error.message, data=error.data)
+                if error.data
+                else Error(code=error.code, message=error.message)
+            )
             return ErrorResponse(
                 id=self.request.id, error=error_object
             ).model_dump_json()
