@@ -125,7 +125,7 @@ class MethodRegistrar:
         _ = self._rpc_methods.pop(method)
         _ = self._request_processor.methods.pop(method)
 
-    def _method(  # noqa: PLR0915
+    def _method(  # noqa: PLR0912, PLR0915
         self, function: CallableType, metadata: MethodMetaData
     ) -> CallableType:
         signature = inspect.signature(function)
@@ -162,9 +162,15 @@ class MethodRegistrar:
                 inject.append(inject_param)
                 continue
             # If multiple args have a type subclassing context, only use the first.
-            if issubclass(type_hints[param_name], BaseContext) and context_arg is None:
-                context_arg = param_name, i
-                continue
+            try:
+                if (
+                    issubclass(type_hints[param_name], BaseContext)
+                    and context_arg is None
+                ):
+                    context_arg = param_name, i
+                    continue
+            except TypeError:
+                pass  # Needed for python 3.14+
             if Undefined in (args := typing.get_args(annotation)):
                 default = Undefined
                 # Remove `Undefined` from annotation for Pydantic.

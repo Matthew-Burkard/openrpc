@@ -20,9 +20,9 @@ from typing import (
     Mapping,  # pyright: ignore[reportDeprecated]
     Optional,
     Union,
-    _eval_type,  # pyright: ignore[reportAttributeAccessIssue, reportUnknownVariableType]
 )
 
+import typing_extensions
 from pydantic import BaseModel
 
 from openrpc._depends import DependsModel, InjectModel
@@ -112,12 +112,10 @@ def resolved_annotation(annotation: Any, function: Callable[..., Any]) -> Any:
     globalns = getattr(function, "__globals__", {})
     if isinstance(annotation, str):
         annotation = ForwardRef(annotation)
-        annotation = _eval_type(  # pyright: ignore[reportUnknownVariableType]
-            annotation, globalns, globalns
+        annotation = typing_extensions.evaluate_forward_ref(
+            annotation, locals=globalns, globals=globalns
         )
-    return (
-        type(None) if annotation is None else annotation
-    )  # pyright: ignore[reportUnknownVariableType]
+    return type(None) if annotation is None else annotation
 
 
 def get_schema(value: SchemaType | None) -> Schema:
