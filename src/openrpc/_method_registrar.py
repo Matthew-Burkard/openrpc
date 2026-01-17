@@ -37,6 +37,7 @@ class MethodRegistrar:
     def __init__(self) -> None:
         """Initialize a new instance of the MethodRegistrar class."""
         self._rpc_methods: dict[str, RPCMethod] = {}
+        self._method_by_function: dict[Callable[..., Any], RPCMethod] = {}
         self._request_processor = RequestProcessor(debug=False)
         self._warn = True
 
@@ -122,7 +123,8 @@ class MethodRegistrar:
         :param method: Name of the method to remove.
         :return: None.
         """
-        _ = self._rpc_methods.pop(method)
+        rpc_method = self._rpc_methods.pop(method)
+        _ = self._method_by_function.pop(rpc_method.function)
         _ = self._request_processor.methods.pop(method)
 
     def _method(  # noqa: PLR0912, PLR0915
@@ -224,6 +226,7 @@ class MethodRegistrar:
             result_model=result_model,
         )
         self._rpc_methods[metadata.name] = rpc_method
+        self._method_by_function[function] = rpc_method
         log.debug(
             "Registering function [%s] as method [%s]", function.__name__, metadata.name
         )

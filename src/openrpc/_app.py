@@ -44,6 +44,7 @@ from openrpc._objects import (
     ContentDescriptor,
     Info,
     Method,
+    OpenRPC,
     ParamStructure,
     RPCPermissionError,
     Schema,
@@ -95,7 +96,8 @@ class RPCApp(MethodRegistrar):
     ) -> None:
         """Instantiate an OpenRPC app object.
 
-        :param config: Open RPC server config properties.
+        :param info: Open RPC server config properties.
+        :param servers: Servers hosting this RPC API.
         :param debug: Include internal error details in error responses.
         """
         super().__init__()
@@ -121,6 +123,7 @@ class RPCApp(MethodRegistrar):
         # Register discover method.
         schema = Schema()
         schema.ref = _META_REF
+        self._doc: OpenRPC | None = None
         _ = self.method(
             name="rpc.discover",
             params=[],
@@ -185,20 +188,22 @@ class RPCApp(MethodRegistrar):
             parsed_request = parse_request(request, debug=self.debug)
             if isinstance(parsed_request, list):
                 results = await asyncio.gather(
-                    *(self.handle_request(it, context) for it in parsed_request)
+                    *(self.process_parsed_request(it, context) for it in parsed_request)
                 )
                 response = f"[{','.join(r for r in results if r is not None)}]"
             else:
-                response = await self.handle_request(parsed_request, context)
+                response = await self.process_parsed_request(parsed_request, context)
         except Exception as error:
             return self._get_error_response(error).model_dump_json()
         else:
             return response
 
-    async def handle_request(  # noqa: PLR0911
+    async def process_parsed_request(  # noqa: PLR0911
         self, parse_result: ParseResult, context: BaseContext | None
     ) -> str | None:
         """Handle a parsed JSON RPC request.
+
+        This can be used to write middleware in conjunction with `parse_request`.
 
         :param parse_result: Parsed JSON-RPC 2.0 request.
         :param context: Context of the request.
@@ -214,9 +219,9 @@ class RPCApp(MethodRegistrar):
         if isinstance(parse_result, (ParamsNotification, Notification)):
             try:
                 if isinstance(parse_result, Notification):
-                    await self.call_method(parse_result.method, [], context)
+                    await self._call_method(parse_result.method, [], context)
                 else:
-                    await self.call_method(
+                    await self._call_method(
                         parse_result.method, parse_result.params, context
                     )
             except Exception:
@@ -231,11 +236,11 @@ class RPCApp(MethodRegistrar):
         result: Any | None = None
         try:
             if isinstance(parse_result, ParamsRequest):
-                result = await self.call_method(
+                result = await self._call_method(
                     parse_result.method, parse_result.params, context
                 )
             elif isinstance(parse_result, Request):
-                result = await self.call_method(parse_result.method, [], context)
+                result = await self._call_method(parse_result.method, [], context)
             return ResultResponse(id=parsed_request.id, result=result).model_dump_json(
                 by_alias=True
             )
@@ -261,7 +266,30 @@ class RPCApp(MethodRegistrar):
                 parsed_request, error, debug=self.debug
             ).model_dump_json(by_alias=True)
 
-    async def call_method(
+    def scoped(self, function: CallableType, scopes: list[str]) -> CallableType:
+        """Get a copy of function that will check permissions when called.
+
+        This is to enable manually calling a function, rather than through the framework
+        with a request, while still having a permissions check.
+
+        :param function: Function to check scopes against. This function must already be
+            registered with this `RPCApp` as a method.
+        :param scopes: Scopes to check against the given function.
+        :return: The provided function with a permissions check.
+        """
+
+        def _wrapper(*args: Any, **kwargs: Any) -> None:
+            method = self._method_by_function[function]
+            required = method.metadata.scopes
+            missing = [scope for scope in required if scope not in scopes]
+            if missing:
+                msg = f"Request scopes {scopes} is missing scopes {missing}"
+                raise RPCPermissionError(msg)
+            return function(*args, **kwargs)
+
+        return _wrapper  # pyright: ignore[reportReturnType]
+
+    async def _call_method(
         self,
         method: str,
         params: Params | None = None,
@@ -282,10 +310,8 @@ class RPCApp(MethodRegistrar):
             scopes = context.scopes if context else []
             missing = [scope for scope in required if scope not in scopes]
             if missing:
-                if self.debug:
-                    msg = f"Request scopes {scopes} is missing scopes {missing}"
-                    raise RPCPermissionError(msg)
-                raise MethodNotFoundError()
+                msg = f"Request scopes {scopes} is missing scopes {missing}"
+                raise RPCPermissionError(msg)
         if params:
             params = self._get_validated_params(params, rpc_method)
         elif rpc_method.params_model.model_fields:
@@ -368,8 +394,26 @@ class RPCApp(MethodRegistrar):
 
     def discover(self) -> dict[str, Any]:
         """Execute "rpc.discover" method defined in OpenRPC spec."""
-        openrpc = get_openrpc_doc(self.info, self._rpc_methods.values(), self._servers)
-        return openrpc.model_dump(by_alias=True, exclude_unset=True)
+        return self.openrpc().model_dump(by_alias=True, exclude_unset=True)
+
+    def openrpc(self) -> OpenRPC:
+        """Get the OpenRPC document describing this apps API."""
+        if self._doc is None:
+            self._doc = get_openrpc_doc(
+                self.info, self._rpc_methods.values(), self._servers
+            )
+        return self._doc
+
+    def rebuild_openrpc_doc(self) -> None:
+        """Re-build OpenRPC document if the API changed at run-time.
+
+        The `openrpc` method caches the document after the first call.
+        If the OpenRPC API is changed at run-time this will need to be called for
+        the discover result to be accurate.
+        """
+        self._doc = get_openrpc_doc(
+            self.info, self._rpc_methods.values(), self._servers
+        )
 
     def _get_error_response(self, error: Exception) -> ErrorResponse:
         log.exception("%s:", type(error).__name__)

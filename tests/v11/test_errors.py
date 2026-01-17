@@ -20,7 +20,7 @@ error_message = "Custom error message"
 @pytest.mark.asyncio
 async def test_method_not_found() -> None:
     with pytest.raises(MethodNotFoundError):
-        await rpc.call_method("")
+        await rpc._call_method("")  # pyright: ignore[reportPrivateUsage]
 
 
 @pytest.mark.asyncio
@@ -87,7 +87,9 @@ async def test_top_level_error_handling() -> None:
     async def raise_error() -> None:
         raise ValueError()
 
-    app.handle_request = raise_error  # pyright: ignore[reportAttributeAccessIssue]
+    app.process_parsed_request = (
+        raise_error  # pyright: ignore[reportAttributeAccessIssue]
+    )
     req_str = util.req_str(raise_error.__name__)
     result = await app.process(req_str, BaseContext())
     e = '{"id":null,"error":{"code":-32603,"message":"Internal error"},"jsonrpc":"2.0"}'
@@ -101,7 +103,9 @@ async def test_top_level_error_handling_debug() -> None:
     async def raise_error() -> None:
         raise ValueError()
 
-    app.handle_request = raise_error  # pyright: ignore[reportAttributeAccessIssue]
+    app.process_parsed_request = (
+        raise_error  # pyright: ignore[reportAttributeAccessIssue]
+    )
     req_str = util.req_str(raise_error.__name__)
     result = await app.process(req_str, BaseContext())
     assert result is not None

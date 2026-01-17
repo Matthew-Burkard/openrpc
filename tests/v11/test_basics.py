@@ -253,6 +253,21 @@ async def test_no_response_on_method_not_found_notify() -> None:
     assert response is None
 
 
+@pytest.mark.asyncio
+async def test_runtime_api_change() -> None:
+    _rpc = RPCApp()
+    _ = _rpc.method()(add)
+    methods_len = len(_rpc.openrpc().methods)
+    assert methods_len == 1
+    _rpc.remove("add")
+    new_len = len(_rpc.openrpc().methods)
+    assert methods_len == 1
+    assert new_len == 1
+    _rpc.rebuild_openrpc_doc()
+    updateed_len = len(_rpc.openrpc().methods)
+    assert updateed_len == 0
+
+
 @rpc.method()
 def add(x: float, y: float) -> float:
     """Add two floats."""

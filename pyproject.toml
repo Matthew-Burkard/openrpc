@@ -1,11 +1,11 @@
 [project]
 name = "openrpc"
-version = "11.0.0"
+version = "10.6.0"
 description = "Transport agnostic framework for developing OpenRPC servers."
 readme = "README.md"
 requires-python = ">=3.9"
 license = "MIT"
-authors = [{ name = "Matthew Burkard", email = "matthewjburkard@gmail.com" }]
+authors = [{ name = "Matthew Burkard", email = "matthew@burkard.cloud" }]
 classifiers = [
   "Intended Audience :: Developers",
   "License :: OSI Approved :: MIT License",
@@ -49,6 +49,7 @@ venv = ".venv"
 reportAny = "none"
 reportExplicitAny = "none"
 reportUnannotatedClassAttribute = "none"
+reportImplicitStringConcatenation = "none"  # In conflict with ruff `ISC003`
 
 [tool.coverage.run]
 source = ["src/openrpc"]

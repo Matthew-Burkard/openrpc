@@ -2,6 +2,7 @@
 
 import inspect
 from typing import Any, Callable, Union
+import warnings
 
 from pydantic import BaseModel
 
@@ -17,6 +18,12 @@ class DependsModel(BaseModel):
 
 
 def Depends(function: Callable[..., Any]) -> Any:  # noqa: N802
+    warnings.warn(
+        "`Depends` is deprecated and will be removed in a future version with"
+        "`RPCServer`. Use `Inject` with `RPCApp` instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     signature = inspect.signature(function)
     depends_params = {
         k: v.default

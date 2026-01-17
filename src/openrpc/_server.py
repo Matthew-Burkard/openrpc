@@ -11,6 +11,7 @@ from typing import (
     Mapping,  # pyright: ignore[reportDeprecated]
     Union,
 )
+import warnings
 
 from jsonrpcobjects.errors import INTERNAL_ERROR
 from jsonrpcobjects.objects import (
@@ -47,6 +48,11 @@ __all__ = ("RPCServer", "MethodRegistrar")
 
 log = logging.getLogger("openrpc")
 _META_REF = "https://raw.githubusercontent.com/open-rpc/meta-schema/master/schema.json"
+
+_deprecation_warning = (
+    "`RPCServer` is deprecated and will be removed in a future version."
+    "\nUse `RPCApp` instead."
+)
 
 AnyRequest = Union[RequestType, NotificationType]
 AnyResponse = Union[ResponseType, ErrorType]
@@ -87,6 +93,7 @@ class RPCServer(MethodRegistrar):
             arguments as a parameter and can use `Depends` params.
         :param debug: Include internal error details in error responses.
         """
+        warnings.warn(_deprecation_warning, DeprecationWarning, stacklevel=2)
         super().__init__()
         self._routers: list[MethodRegistrar] = []
         self._request_processor.debug = debug

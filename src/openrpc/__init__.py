@@ -36,8 +36,10 @@ __all__ = (
     "ServerVariable",
     "Tag",
     "Undefined",
+    "parse_request",
 )
 
+from jsonrpcobjects.parse import parse_request
 from py_undefined import Undefined
 
 from openrpc._app import AppRouter, RPCApp

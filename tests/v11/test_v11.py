@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 from enum import Enum
+from typing import Any
 
 import pytest
-from jsonrpcobjects.errors import MethodNotFoundError
 from jsonrpcobjects.parse import parse_request
 
 from openrpc import BaseContext, Contact, Info, License, RPCApp, RPCPermissionError
+from openrpc._app import Params
 from tests.v11 import util
 
 OAUTH2 = "OAUTH2"
@@ -51,11 +52,21 @@ async def cauliflower() -> int:
     return 1
 
 
+async def call_method(
+    method: str,
+    params: Params | None = None,
+    context: BaseContext | None = None,
+) -> Any:
+    return await rpc._call_method(  # pyright: ignore[reportPrivateUsage]
+        method, params, context
+    )
+
+
 @pytest.mark.asyncio
 async def test_method_call() -> None:
-    result: int = await rpc.call_method(kale.__name__, [1, 0])
+    result: int = await call_method(kale.__name__, [1, 0])
     assert result == 1
-    result_2: int = await rpc.call_method(kale.__name__, {"a": 1, "b": 0})
+    result_2: int = await call_method(kale.__name__, {"a": 1, "b": 0})
     assert result_2 == 1
 
 
@@ -66,31 +77,35 @@ async def test_context_injection() -> None:
     parsed = parse_request(req_str, debug=rpc.debug)
     assert not isinstance(parsed, list)
     context = BaseContext(raw_request=req_str, parsed_request=parsed)
-    result: int = await rpc.call_method(broccoli.__name__, params, context)
+    result: int = await call_method(broccoli.__name__, params, context)
     assert result == 1
-    result_1: int = await rpc.call_method(broccoli.__name__, {"a": 1, "b": 0}, context)
+    result_1: int = await call_method(broccoli.__name__, {"a": 1, "b": 0}, context)
     assert result_1 == 1
 
 
 @pytest.mark.asyncio
 async def test_scopes_missing() -> None:
     context = BaseContext(scopes=[Scope.READ_SUSHI.value])
-    with pytest.raises(MethodNotFoundError):
-        await rpc.call_method(cucumber.__name__, [1, 0], context)
-    with pytest.raises(MethodNotFoundError):
-        await rpc.call_method(cucumber.__name__, [1, 0])
+    with pytest.raises(RPCPermissionError):
+        await call_method(cucumber.__name__, [1, 0], context)
+    with pytest.raises(RPCPermissionError):
+        await call_method(cucumber.__name__, [1, 0])
     app = RPCApp(debug=True)
     _ = app.method(scopes=[Scope.READ_SUSHI.value, Scope.WRITE_COFFEE.value])(cucumber)
     with pytest.raises(RPCPermissionError):
-        await app.call_method(cucumber.__name__, [1, 0], context)
+        await app._call_method(  # pyright: ignore[reportPrivateUsage]
+            cucumber.__name__, [1, 0], context
+        )
     with pytest.raises(RPCPermissionError):
-        await app.call_method(cucumber.__name__, [1, 0])
+        await app._call_method(  # pyright: ignore[reportPrivateUsage]
+            cucumber.__name__, [1, 0]
+        )
 
 
 @pytest.mark.asyncio
 async def test_scopes_present() -> None:
     context = BaseContext(scopes=[Scope.READ_SUSHI.value, Scope.WRITE_COFFEE.value])
-    result: int = await rpc.call_method(cucumber.__name__, [1, 0], context)
+    result: int = await call_method(cucumber.__name__, [1, 0], context)
     assert result == 1
 
 

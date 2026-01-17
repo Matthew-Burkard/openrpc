@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Union
 
 from jsonrpcobjects.objects import (
     Notification,
@@ -11,23 +10,28 @@ from jsonrpcobjects.objects import (
     Request,
 )
 from jsonrpcobjects.parse import ParseResult
-from pydantic import BaseModel
 
 
-class BaseContext(BaseModel):
+class BaseContext:
     """Request context base class."""
 
-    scopes: list[str] = []
-    """Permissions of this request."""
+    def __init__(
+        self,
+        scopes: list[str] | None = None,
+        raw_request: str | None = None,
+        parsed_request: ParseResult | None = None,
+    ) -> None:
+        """Instantiate a base context object.
 
-    raw_request: Union[str, None] = None
-    """Raw request string."""
+        :param scopes: Permissions of this request.
+        :param raw_request: Raw request string.
+        :param parsed_request: Deserialized request, or parse error.
+        """
+        self.scopes = scopes or []
+        self.raw_request = raw_request
+        self.parsed_request = parsed_request
 
-    parsed_request: Union[ParseResult, None] = None
-    """Deserialized request, or parse error."""
 
-
-_ = BaseContext.model_rebuild()
 _ = Notification.model_rebuild()
 _ = ParamsNotification.model_rebuild()
 _ = ParamsRequest.model_rebuild()

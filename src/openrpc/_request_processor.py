@@ -44,6 +44,7 @@ log = logging.getLogger("openrpc")
 NotificationTypes = (Notification, ParamsNotification)
 RequestTypes = (Request, ParamsRequest)
 _DEFAULT_ERROR_CODE = -32000
+_SERVER_ERROR = "Server error"
 
 
 class RequestProcessor:
@@ -92,13 +93,13 @@ class RequestProcessor:
                 if isinstance(req, ErrorResponse):
                     results.append(req.model_dump_json())
                     continue
-                if req.method not in self.methods:
+                if not (method := self.methods.get(req.method)):
                     if isinstance(req, (Request, ParamsRequest)):
                         results.append(_get_method_not_found_error(req))
                     continue
 
                 resp = MethodProcessor(
-                    self.methods[req.method],
+                    method,
                     self.uncaught_error_code,
                     req,
                     caller_details,
@@ -111,12 +112,12 @@ class RequestProcessor:
             return f"[{','.join(results)}]"
 
         # Single Request
-        if parsed_request.method not in self.methods:
+        if not (method := self.methods.get(parsed_request.method)):
             if isinstance(parsed_request, (Request, ParamsRequest)):
                 return _get_method_not_found_error(parsed_request)
             return None
         result = MethodProcessor(
-            self.methods[parsed_request.method],
+            method,
             self.uncaught_error_code,
             parsed_request,
             caller_details,
@@ -311,7 +312,7 @@ class MethodProcessor:
     def _get_error_response(self, error: Exception) -> str | None:
         log.exception("%s:", type(error).__name__)
 
-        if not isinstance(self.request, (ParamsRequest, Request)):
+        if isinstance(self.request, (ParamsNotification, Notification)):
             return None
 
         if isinstance(error, JSONRPCError):
@@ -319,24 +320,21 @@ class MethodProcessor:
                 id=self.request.id, error=error.rpc_error
             ).model_dump_json()
 
-        if self.debug:
-            traceback_str = _get_trimmed_traceback(error)
-            error_object: ErrorType = DataError(
-                code=self.uncaught_error_code,
-                message="Server error",
-                data=f"{type(error).__name__}\n{traceback_str}",
-            )
-        elif isinstance(error, OpenRPCError):
+        if isinstance(error, OpenRPCError):
             error_object = (
                 DataError(code=error.code, message=error.message, data=error.data)
                 if error.data
                 else Error(code=error.code, message=error.message)
             )
-            return ErrorResponse(
-                id=self.request.id, error=error_object
-            ).model_dump_json()
+        elif self.debug:
+            traceback_str = _get_trimmed_traceback(error)
+            error_object: ErrorType = DataError(
+                code=self.uncaught_error_code,
+                message=_SERVER_ERROR,
+                data=f"{type(error).__name__}\n{traceback_str}",
+            )
         else:
-            error_object = Error(code=self.uncaught_error_code, message="Server error")
+            error_object = Error(code=self.uncaught_error_code, message=_SERVER_ERROR)
 
         return ErrorResponse(id=self.request.id, error=error_object).model_dump_json()
 
