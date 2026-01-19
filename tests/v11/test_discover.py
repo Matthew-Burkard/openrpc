@@ -4,7 +4,7 @@ import datetime
 import json
 from decimal import Decimal
 from enum import Enum
-from typing import Any, List, Optional, Union  # pyright: ignore[reportDeprecated]
+from typing import Any, Optional, Union
 
 import pytest
 from jsonrpcobjects.objects import Request
@@ -50,7 +50,7 @@ class NestedModels(BaseModel):
     position: Vector3
     path: list[Vector3]
     recursion: Optional["NestedModels"]
-    list_recursion: List[Optional["NestedModels"]]  # pyright: ignore[reportDeprecated]
+    list_recursion: list[Optional["NestedModels"]]
     any_of: Union[Vector3, "NestedModels"]
     dict_model_values: dict[int, Vector2] = Field(default_factory=lambda: {})
 

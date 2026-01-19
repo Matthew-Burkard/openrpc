@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Awaitable
 import logging
 import traceback
 from inspect import isawaitable
 from pathlib import Path
-from typing import Any, Awaitable, Callable, Union  # pyright: ignore[reportDeprecated]
+from typing import Any, Callable, Union
 
 from jsonrpcobjects.errors import (
     INTERNAL_ERROR,
@@ -24,7 +25,6 @@ from jsonrpcobjects.objects import (
     NotificationType,
     ParamsNotification,
     ParamsRequest,
-    Request,
     RequestType,
     ResponseType,
     ResultResponse,
@@ -190,17 +190,19 @@ class RPCApp(MethodRegistrar):
                 results = await asyncio.gather(
                     *(self.process_parsed_request(it, context) for it in parsed_request)
                 )
-                response = f"[{','.join(r for r in results if r is not None)}]"
-            else:
-                response = await self.process_parsed_request(parsed_request, context)
+                responses = ",".join(
+                    r.model_dump_json(by_alias=True) for r in results if r is not None
+                )
+                return f"[{responses}]"
+            response = await self.process_parsed_request(parsed_request, context)
         except Exception as error:
             return self._get_error_response(error).model_dump_json()
         else:
-            return response
+            return response.model_dump_json(by_alias=True) if response else None
 
     async def process_parsed_request(  # noqa: PLR0911
         self, parse_result: ParseResult, context: BaseContext | None
-    ) -> str | None:
+    ) -> ErrorResponse | ResultResponse | None:
         """Handle a parsed JSON RPC request.
 
         This can be used to write middleware in conjunction with `parse_request`.
@@ -209,13 +211,8 @@ class RPCApp(MethodRegistrar):
         :param context: Context of the request.
         :return: A JSON-RPC response or None.
         """
-        # `hasattr` and type ignore because python can't check `isinstance` on
-        #  subscripted generics.
-        if hasattr(parse_result, "error"):
-            return ErrorResponse(
-                id=None,
-                error=parse_result.error,  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType, reportAttributeAccessIssue]
-            ).model_dump_json()
+        if isinstance(parse_result, ErrorResponse):
+            return ErrorResponse(id=None, error=parse_result.error)
         if isinstance(parse_result, (ParamsNotification, Notification)):
             try:
                 if isinstance(parse_result, Notification):
@@ -229,42 +226,28 @@ class RPCApp(MethodRegistrar):
             else:
                 return None
 
-        # Type ignore because pyright fails to infer type.
-        parsed_request: RequestType = (
-            parse_result  # pyright: ignore[reportAssignmentType]
-        )
         result: Any | None = None
         try:
             if isinstance(parse_result, ParamsRequest):
                 result = await self._call_method(
                     parse_result.method, parse_result.params, context
                 )
-            elif isinstance(parse_result, Request):
+            else:
                 result = await self._call_method(parse_result.method, [], context)
-            return ResultResponse(id=parsed_request.id, result=result).model_dump_json(
-                by_alias=True
-            )
+            return ResultResponse(id=parse_result.id, result=result)
         except InvalidParamsError as e:
-            return ErrorResponse(id=parse_result.id, error=e.rpc_error).model_dump_json(
-                by_alias=True
-            )
+            return ErrorResponse(id=parse_result.id, error=e.rpc_error)
         except MethodNotFoundError:
-            return _get_method_not_found_error(
-                parse_result  # pyright: ignore[reportArgumentType]
-            )
+            return _get_method_not_found_error(parse_result)
         except OpenRPCError as e:
             error = (
                 DataError(code=e.code, message=e.message, data=e.data)
                 if e.data
                 else Error(code=e.code, message=e.message)
             )
-            return ErrorResponse(id=parse_result.id, error=error).model_dump_json(
-                by_alias=True
-            )
+            return ErrorResponse(id=parse_result.id, error=error)
         except Exception as error:
-            return _get_server_error(
-                parsed_request, error, debug=self.debug
-            ).model_dump_json(by_alias=True)
+            return _get_server_error(parse_result, error, debug=self.debug)
 
     def scoped(self, function: CallableType, scopes: list[str]) -> CallableType:
         """Get a copy of function that will check permissions when called.
@@ -426,7 +409,7 @@ class RPCApp(MethodRegistrar):
         return ErrorResponse(id=None, error=error_object)
 
 
-def _get_method_not_found_error(request: RequestType) -> str | None:
+def _get_method_not_found_error(request: RequestType) -> ErrorResponse:
     return ErrorResponse(
         id=request.id,
         error=DataError(
@@ -434,7 +417,7 @@ def _get_method_not_found_error(request: RequestType) -> str | None:
             message=METHOD_NOT_FOUND.message,
             data=request.method,
         ),
-    ).model_dump_json(by_alias=True)
+    )
 
 
 def _get_server_error(

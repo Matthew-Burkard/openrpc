@@ -1,6 +1,7 @@
 """Unit tests for permissions."""
 
-from typing import Mapping, Union  # pyright: ignore[reportDeprecated]
+from collections.abc import Mapping
+from typing import Union
 
 import pytest
 from jsonrpcobjects.objects import ErrorResponse, ResultResponse

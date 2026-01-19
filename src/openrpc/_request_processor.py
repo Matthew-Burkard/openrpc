@@ -8,8 +8,9 @@ import asyncio
 import inspect
 import logging
 import traceback
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Callable, Mapping  # pyright: ignore[reportDeprecated]
+from typing import Any, Callable
 
 from jsonrpcobjects.errors import (
     METHOD_NOT_FOUND,
@@ -36,8 +37,8 @@ from pydantic_core import PydanticUndefined
 
 from openrpc._common import RPCMethod, SecurityFunctionDetails
 from openrpc._depends import DependsModel
-from openrpc._objects import ParamStructure, RPCPermissionError
 from openrpc._error import OpenRPCError
+from openrpc._objects import ParamStructure, RPCPermissionError
 
 log = logging.getLogger("openrpc")
 

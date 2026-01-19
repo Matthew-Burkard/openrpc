@@ -5,7 +5,8 @@ from __future__ import annotations
 __all__ = ("get_openrpc_doc",)
 
 import re
-from typing import Any, Iterable  # pyright: ignore[reportDeprecated]
+from collections.abc import Iterable
+from typing import Any
 
 import lorem_pysum
 from pydantic import create_model

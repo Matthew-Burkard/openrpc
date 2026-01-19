@@ -4,13 +4,7 @@ import datetime
 import json
 from decimal import Decimal
 from enum import Enum, auto
-from typing import (
-    Annotated,
-    Any,
-    List,  # pyright: ignore[reportDeprecated]
-    Optional,
-    Union,
-)
+from typing import Annotated, Any, Optional, Union
 
 from jsonrpcobjects.objects import Request
 from pydantic import BaseModel, Field
@@ -61,7 +55,7 @@ class NestedModels(BaseModel):
     position: Vector3
     path: list[Vector3]
     recursion: Optional["NestedModels"]
-    list_recursion: List[Optional["NestedModels"]]  # pyright: ignore[reportDeprecated]
+    list_recursion: list[Optional["NestedModels"]]
     any_of: Union[Vector3, "NestedModels"]
     dict_model_values: dict[int, Vector2] = Field(default_factory=lambda: {})
 

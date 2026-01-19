@@ -4,14 +4,9 @@ from __future__ import annotations
 
 import inspect
 import logging
-from typing import (
-    Any,
-    Awaitable,  # pyright: ignore[reportDeprecated]
-    Callable,
-    Mapping,  # pyright: ignore[reportDeprecated]
-    Union,
-)
 import warnings
+from collections.abc import Awaitable, Mapping
+from typing import Any, Callable, Union
 
 from jsonrpcobjects.errors import INTERNAL_ERROR
 from jsonrpcobjects.objects import (

@@ -12,15 +12,8 @@ __all__ = (
 
 import dataclasses
 import inspect
-from typing import (
-    Any,
-    Awaitable,  # pyright: ignore[reportDeprecated]
-    Callable,
-    ForwardRef,
-    Mapping,  # pyright: ignore[reportDeprecated]
-    Optional,
-    Union,
-)
+from collections.abc import Awaitable, Mapping
+from typing import Any, Callable, ForwardRef, Optional, Union
 
 import typing_extensions
 from pydantic import BaseModel

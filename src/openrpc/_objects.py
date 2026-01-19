@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from openrpc._error import OpenRPCError
-
 __all__ = (
     "APIKeyAuth",
     "BearerAuth",
@@ -36,6 +34,8 @@ from enum import Enum
 from typing import Any, Callable, Literal, Optional, TypeVar, Union
 
 from pydantic import BaseModel, Field
+
+from openrpc._error import OpenRPCError
 
 SchemaType = Union["Schema", bool]
 CallableType = TypeVar("CallableType", bound=Callable[..., Any])
