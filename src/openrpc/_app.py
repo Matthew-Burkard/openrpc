@@ -257,13 +257,13 @@ class RPCApp(MethodRegistrar):
 
         :param function: Function to check scopes against. This function must already be
             registered with this `RPCApp` as a method.
-        :param scopes: Scopes to check against the given function.
+        :param scopes: Scope names to check against the given function.
         :return: The provided function with a permissions check.
         """
 
         def _wrapper(*args: Any, **kwargs: Any) -> None:
             method = self._method_by_function[function]
-            required = method.metadata.scopes
+            required = method.metadata.scope_names
             missing = [scope for scope in required if scope not in scopes]
             if missing:
                 msg = f"Request scopes {scopes} is missing scopes {missing}"
@@ -289,7 +289,7 @@ class RPCApp(MethodRegistrar):
         if not (rpc_method := self._rpc_methods.get(method)):
             raise MethodNotFoundError()
         if rpc_method.metadata.scopes:
-            required = rpc_method.metadata.scopes
+            required = rpc_method.metadata.scope_names
             scopes = context.scopes if context else []
             missing = [scope for scope in required if scope not in scopes]
             if missing:

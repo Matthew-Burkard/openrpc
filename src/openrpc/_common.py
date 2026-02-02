@@ -28,6 +28,7 @@ from openrpc._objects import (
     ParamStructure,
     Schema,
     SchemaType,
+    Scope,
     Server,
     Tag,
 )
@@ -55,7 +56,8 @@ class MethodMetaData(BaseModel):
     param_structure: Optional[ParamStructure] = None
     examples: Optional[list[ExamplePairing]] = None
     security: dict[str, list[str]]
-    scopes: list[str]
+    scopes: list[Scope]
+    scope_names: list[str]
 
 
 class RPCMethod(BaseModel):

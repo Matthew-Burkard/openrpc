@@ -82,6 +82,7 @@ def get_methods(rpc_methods: Iterable[RPCMethod], api_schema: Schema) -> list[Me
             params=_get_params(rpc_method, api_schema),
             result=_get_result(rpc_method, api_schema),
             examples=rpc_method.metadata.examples or [_get_example(rpc_method)],
+            x_scopes=rpc_method.metadata.scopes,
         )
         # Delete param and result schemas.
         # Their values have been pulled out.

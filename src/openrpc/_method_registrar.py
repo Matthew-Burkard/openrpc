@@ -22,6 +22,7 @@ from openrpc._objects import (
     ExternalDocumentation,
     Link,
     ParamStructure,
+    Scope,
     Server,
     Tag,
 )
@@ -66,7 +67,7 @@ class MethodRegistrar:
         param_structure: ParamStructure | None = None,
         examples: list[ExamplePairing] | None = None,
         security: dict[str, list[str]] | None = None,
-        scopes: list[str] | None = None,
+        scopes: list[Scope] | None = None,
     ) -> Callable[[CallableType], CallableType]:
         """Register a method with this OpenRPC server.
 
@@ -112,6 +113,7 @@ class MethodRegistrar:
                     examples=examples,
                     security=security or {},
                     scopes=scopes or [],
+                    scope_names=[s.name for s in scopes or []],
                 ),
             )
 

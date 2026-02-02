@@ -2,30 +2,34 @@
 
 from __future__ import annotations
 
-from enum import Enum
 from typing import Any
 
 import pytest
 from jsonrpcobjects.parse import parse_request
 
-from openrpc import BaseContext, Contact, Info, License, RPCApp, RPCPermissionError
+from openrpc import (
+    BaseContext,
+    Contact,
+    Info,
+    License,
+    RPCApp,
+    RPCPermissionError,
+    Scope,
+)
 from openrpc._app import Params
 from tests.v11 import util
 
 OAUTH2 = "OAUTH2"
 
 
-class Scope(Enum):
-    """OAUTH2 security scope."""
-
-    READ_SUSHI = "read_sushi"
-    WRITE_COFFEE = "write_coffee"
+read_sushi = Scope(name="sushi:read")
+read_coffee = Scope(name="coffee:read")
 
 
 rpc = RPCApp()
 
 
-@rpc.method(scopes=[Scope.READ_SUSHI.value, Scope.WRITE_COFFEE.value])
+@rpc.method(scopes=[read_coffee, read_sushi])
 async def cucumber(a: int, b: int) -> int:
     return a + b
 
@@ -85,13 +89,13 @@ async def test_context_injection() -> None:
 
 @pytest.mark.asyncio
 async def test_scopes_missing() -> None:
-    context = BaseContext(scopes=[Scope.READ_SUSHI.value])
+    context = BaseContext(scopes=[read_coffee.name])
     with pytest.raises(RPCPermissionError):
         await call_method(cucumber.__name__, [1, 0], context)
     with pytest.raises(RPCPermissionError):
         await call_method(cucumber.__name__, [1, 0])
     app = RPCApp(debug=True)
-    _ = app.method(scopes=[Scope.READ_SUSHI.value, Scope.WRITE_COFFEE.value])(cucumber)
+    _ = app.method(scopes=[read_coffee, read_sushi])(cucumber)
     with pytest.raises(RPCPermissionError):
         await app._call_method(  # pyright: ignore[reportPrivateUsage]
             cucumber.__name__, [1, 0], context
@@ -104,7 +108,7 @@ async def test_scopes_missing() -> None:
 
 @pytest.mark.asyncio
 async def test_scopes_present() -> None:
-    context = BaseContext(scopes=[Scope.READ_SUSHI.value, Scope.WRITE_COFFEE.value])
+    context = BaseContext(scopes=[read_coffee.name, read_sushi.name])
     result: int = await call_method(cucumber.__name__, [1, 0], context)
     assert result == 1
 

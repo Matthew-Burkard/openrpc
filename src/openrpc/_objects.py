@@ -250,6 +250,11 @@ class Method(BaseModel):
     Extension field describing security scheme and scopes required to call this method.
     """
 
+    x_scopes: list[Scope]
+    """
+    Extension listing required permission scopes to call this method.
+    """
+
 
 class ContentDescriptor(BaseModel):
     """Describes either parameters or result.
@@ -1061,6 +1066,18 @@ class OpenRPC(BaseModel):
         default=None, alias="externalDocs"
     )
     """Additional external documentation."""
+
+
+class Scope(BaseModel):
+    """Permission scope required to call a method."""
+
+    name: str
+    """Name identifying the scope, e.g. `users:read`."""
+
+    description: Optional[str] = None
+    """
+    Description of the purpose of the scope e.g. `Permission to read list of users.`.
+    """
 
 
 class OAuth2FlowType(Enum):
