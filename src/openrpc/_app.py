@@ -293,7 +293,7 @@ class RPCApp(MethodRegistrar):
             scopes = context.scopes if context else []
             missing = [scope for scope in required if scope not in scopes]
             if missing:
-                msg = f"Request scopes {scopes} is missing scopes {missing}"
+                msg = f"Request is missing scopes {missing}"
                 raise RPCPermissionError(msg)
         if params:
             params = self._get_validated_params(params, rpc_method)
