@@ -13,6 +13,7 @@ from py_undefined import Undefined
 from pydantic import create_model
 
 from openrpc._common import MethodMetaData, RPCMethod, resolved_annotation
+from openrpc._context import BaseContext
 from openrpc._depends import DependsModel, InjectModel
 from openrpc._objects import (
     CallableType,
@@ -27,7 +28,6 @@ from openrpc._objects import (
     Tag,
 )
 from openrpc._request_processor import RequestProcessor
-from openrpc._context import BaseContext
 
 log = logging.getLogger("openrpc")
 
@@ -136,7 +136,7 @@ class MethodRegistrar:
 
         # Get field information from each method parameter.
         depends: dict[str, DependsModel] = {}
-        inject: list[InjectModel] = []
+        injects: list[InjectModel] = []
         fields: dict[str, Any] = {}
         schema_fields: dict[str, Any] = {}
         required: list[str] = []
@@ -160,10 +160,13 @@ class MethodRegistrar:
             if get_origin(annotation) is Annotated and isinstance(
                 (inject_fun := get_args(annotation)[1]), InjectModel
             ):
-                inject_param = inject_fun
-                inject_param.index = i
-                inject_param.name = param_name
-                inject.append(inject_param)
+                inject = InjectModel(
+                    name=param_name,
+                    index=i,
+                    function=inject_fun.function,
+                    requires_context=inject_fun.requires_context,
+                )
+                injects.append(inject)
                 continue
             # If multiple args have a type subclassing context, only use the first.
             try:
@@ -219,7 +222,7 @@ class MethodRegistrar:
         rpc_method = RPCMethod(
             context_arg=context_arg,
             depends=depends,
-            inject=inject,
+            inject=injects,
             function=function,
             metadata=metadata,
             params_model=param_model,
