@@ -42,17 +42,6 @@ const config: Config = {
         docs: {
           sidebarPath: './sidebars.ts'
         },
-        blog: {
-          showReadingTime: true,
-          feedOptions: {
-            type: ['rss', 'atom'],
-            xslt: true,
-          },
-          // Useful options to enforce blogging best practices
-          onInlineTags: 'warn',
-          onInlineAuthors: 'warn',
-          onUntruncatedBlogPosts: 'warn',
-        },
         theme: {
           customCss: './src/css/custom.css',
         },
@@ -78,7 +67,6 @@ const config: Config = {
           label: 'GitLab',
           position: 'right',
         },
-        {to: '/blog', label: 'Blog', position: 'left'},
       ],
     },
     footer: {
@@ -89,19 +77,10 @@ const config: Config = {
           items: [
             {
               label: 'Documentation',
-              to: '/docs/intro',
+              to: '/docs',
             },
           ],
-        },
-        {
-          title: 'More',
-          items: [
-            {
-              label: 'Blog',
-              to: '/blog',
-            }
-          ],
-        },
+        }
       ],
       copyright: `Copyright © ${new Date().getFullYear()} Matthew Burkard. Built with Docusaurus.`,
     },
