@@ -137,6 +137,11 @@ class RPCApp(MethodRegistrar):
             self.info, self._rpc_methods.values(), self._servers
         ).methods
 
+    @property
+    def methods_metadata(self) -> dict[str, RPCMethod]:
+        """Get all method metadata of this server."""
+        return self._rpc_methods
+
     def include_router(self, router: AppRouter) -> None:
         """Add a method router to this app.
 
@@ -326,12 +331,12 @@ class RPCApp(MethodRegistrar):
                     # Params may have default values.
                     if i < len(params):
                         params_dict[field_name] = params[i]
-                validated_params = method.params_model(**params_dict)
+                validated_params = method.params_model.model_validate(params_dict)
                 return [
                     getattr(validated_params, field_name)
                     for field_name in type(validated_params).model_fields
                 ]
-            params_model = method.params_model(**params)
+            params_model = method.params_model.model_validate(params)
             return {
                 field: getattr(params_model, field)
                 for field in type(params_model).model_fields

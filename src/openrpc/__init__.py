@@ -25,6 +25,7 @@ __all__ = (
     "OpenRPCError",
     "ParamStructure",
     "RPCApp",
+    "RPCMethod",
     "RPCPermissionError",
     "RPCRouter",
     "RPCServer",
@@ -40,11 +41,14 @@ __all__ = (
     "parse_request",
 )
 
+import sys
+import warnings
+
 from jsonrpcobjects.parse import parse_request
 from py_undefined import Undefined
 
 from openrpc._app import AppRouter, RPCApp
-from openrpc._common import SecurityFunction
+from openrpc._common import RPCMethod, SecurityFunction
 from openrpc._context import BaseContext
 from openrpc._depends import Depends, Inject
 from openrpc._error import OpenRPCError
@@ -78,3 +82,10 @@ from openrpc._objects import (
 )
 from openrpc._router import RPCRouter
 from openrpc._server import RPCServer
+
+if sys.version_info.major == 3 and sys.version_info.minor == 9:  # noqa: PLR2004
+    warnings.warn(
+        "Python 3.9 will not be supported in future versions of `openrpc`.",
+        DeprecationWarning,
+        stacklevel=2,
+    )

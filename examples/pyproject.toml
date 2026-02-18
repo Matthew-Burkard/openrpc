@@ -1,0 +1,69 @@
+[project]
+name = "examples"
+version = "1.0.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+authors = [{ name = "Matthew Burkard", email = "matthew@burkard.cloud" }]
+dependencies = [
+  "aiohttp>=3.13.3",
+  "openrpc",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.26,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.basedpyright]
+strict = ["**"]
+venvPath = "./"
+venv = ".venv"
+reportAny = "none"
+reportExplicitAny = "none"
+reportUnannotatedClassAttribute = "none"
+reportImplicitStringConcatenation = "none"  # In conflict with ruff `ISC003`
+
+[tool.coverage.run]
+source = ["src/openrpc"]
+
+[tool.ruff]
+lint.select = [
+  "ARG",
+  "ASYNC",
+  "B",
+  "C4",
+  "E",
+  "EM",
+  "ERA",
+  "F",
+  "FBT",
+  "FA",
+  "FLY",
+  "FIX",
+  "ICN",
+  "INT",
+  "ISC",
+  "N",
+  "PL",
+  "PTH",
+  "PYI",
+  "Q",
+  "RET",
+  "S",
+  "SIM",
+  "T10",
+  "TD",
+  "TRY",
+]
+lint.ignore = [
+  "FA100",  # Require future annotations.
+  "D203",  # Requires blank line before class doc-string.
+  "D213",  # Requires first doc string line on a new line.
+  "F841",  # Covered by pyright
+  "B007",  # Covered by pyright
+  "TD003",  # TODO require issue link.
+  "TD002",  # TODO require author.
+]
+
+[tool.uv.sources]
+openrpc = { path = "../dist/openrpc-11.0.0.tar.gz" }

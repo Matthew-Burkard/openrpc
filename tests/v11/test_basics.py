@@ -201,6 +201,10 @@ async def test_json_rpc() -> None:
     request = util.req_str(add.__name__, [1, 2])
     response = json.loads(await rpc.process(request) or "")
     assert response["jsonrpc"] == "2.0"
+    # Param validation.
+    request = util.req_str(add.__name__, [1, 2])
+    response = json.loads(await rpc.process(request) or "")
+    assert response["jsonrpc"] == "2.0"
     # Error object.
     request = util.req_str(divide.__name__, [1, 0])
     response = json.loads(await rpc.process(request) or "")
