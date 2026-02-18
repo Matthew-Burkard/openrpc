@@ -46,4 +46,3 @@ if __name__ == "__main__":
     _ = app.router.add_post("/api", api)
     web.run_app(app)
 ```
-
