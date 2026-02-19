@@ -8,14 +8,22 @@ sidebar_position: 6
 ## Permission Scopes
 
 In order to define a permission scope use the `Scope` class.
-To require a permission in a method include the scope in the `method` annotation.
+To require a permission when calling a method include, the scope in the `method` annotation.
+
+```python
+add_numbers = Scope(name="numbers:add", description="Permission to add two numbers.")
+
+
+@rpc.method(scopes=[add_numbers])
+async def add(a: int, b: int) -> int:
+    return a + b
+```
 
 Then, when calling the `RPCApp.process` method, pass it a context object that
 includes the permission scopes of the given request.
 
-If every required scope name is in the context scopes method call will continue,
-otherwise an `RPCPermissionError` will be raised.
-
+If every required scope name is in the context scopes list, the method call will be
+called, otherwise an `RPCPermissionError` will be raised.
 
 ```python
 from aiohttp import web
