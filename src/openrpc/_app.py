@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+__all__ = ("RPCApp",)
+
 import asyncio
-from collections.abc import Awaitable
 import logging
 import traceback
+from collections.abc import Awaitable
 from inspect import isawaitable
 from pathlib import Path
 from typing import Any, Callable, Union
@@ -51,8 +53,6 @@ from openrpc._objects import (
     Server,
     Tag,
 )
-
-__all__ = ("RPCApp",)
 
 DEFAULT_ERROR_CODE = -32000
 

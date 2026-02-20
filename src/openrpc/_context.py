@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-
 from jsonrpcobjects.objects import (
     Notification,
     ParamsNotification,

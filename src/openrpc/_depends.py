@@ -1,8 +1,8 @@
 """Module providing class to handle middleware dependencies."""
 
 import inspect
-from typing import Any, Callable, Union
 import warnings
+from typing import Any, Callable, Union
 
 from pydantic import BaseModel
 
