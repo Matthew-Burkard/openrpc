@@ -14,8 +14,8 @@ from typing import Any, Callable, Union
 
 from jsonrpcobjects.errors import (
     INTERNAL_ERROR,
-    METHOD_NOT_FOUND,
     InvalidParamsError,
+    JSONRPCError,
     MethodNotFoundError,
 )
 from jsonrpcobjects.objects import (
@@ -240,10 +240,8 @@ class RPCApp(MethodRegistrar):
             else:
                 result = await self._call_method(parse_result.method, [], context)
             return ResultResponse(id=parse_result.id, result=result)
-        except InvalidParamsError as e:
+        except JSONRPCError as e:
             return ErrorResponse(id=parse_result.id, error=e.rpc_error)
-        except MethodNotFoundError:
-            return _get_method_not_found_error(parse_result)
         except OpenRPCError as e:
             error = (
                 DataError(code=e.code, message=e.message, data=e.data)
@@ -292,7 +290,7 @@ class RPCApp(MethodRegistrar):
         """
         params = params or []
         if not (rpc_method := self._rpc_methods.get(method)):
-            raise MethodNotFoundError()
+            raise MethodNotFoundError(method)
         if rpc_method.metadata.scopes:
             required = rpc_method.metadata.scope_names
             scopes = context.scopes if context else []
@@ -412,17 +410,6 @@ class RPCApp(MethodRegistrar):
         else:
             error_object = Error(**INTERNAL_ERROR.model_dump())
         return ErrorResponse(id=None, error=error_object)
-
-
-def _get_method_not_found_error(request: RequestType) -> ErrorResponse:
-    return ErrorResponse(
-        id=request.id,
-        error=DataError(
-            code=METHOD_NOT_FOUND.code,
-            message=METHOD_NOT_FOUND.message,
-            data=request.method,
-        ),
-    )
 
 
 def _get_server_error(

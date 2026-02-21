@@ -15,6 +15,7 @@ from tests.v11 import util
 rpc = RPCApp()
 
 error_message = "Custom error message"
+absolute_path = Path(__file__).resolve()
 
 
 @pytest.mark.asyncio
@@ -128,7 +129,6 @@ def method_with_error(*_args: Any) -> None:
 async def test_method_errors_debug() -> None:
     rpc.debug = True
     result = await util.get_result(rpc, method_with_error, [])
-    absolute_path = Path(__file__).resolve()
     line = int(result["error"]["data"][-4:-1])
     error = (
         inspect.cleandoc(

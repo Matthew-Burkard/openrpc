@@ -250,7 +250,7 @@ class Method(BaseModel):
     Extension field describing security scheme and scopes required to call this method.
     """
 
-    x_scopes: list[Scope]
+    x_scopes: list[Scope] = Field(default_factory=list, alias="x-scopes")
     """
     Extension listing required permission scopes to call this method.
     """

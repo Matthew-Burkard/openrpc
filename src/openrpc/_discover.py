@@ -77,12 +77,14 @@ def get_methods(rpc_methods: Iterable[RPCMethod], api_schema: Schema) -> list[Me
     for rpc_method in rpc_methods:
         if rpc_method.metadata.name == "rpc.discover":
             continue
-        method = Method(
-            name=rpc_method.metadata.name,
-            params=_get_params(rpc_method, api_schema),
-            result=_get_result(rpc_method, api_schema),
-            examples=rpc_method.metadata.examples or [_get_example(rpc_method)],
-            x_scopes=rpc_method.metadata.scopes,
+        method = Method.model_validate(
+            {
+                "name": rpc_method.metadata.name,
+                "params": _get_params(rpc_method, api_schema),
+                "result": _get_result(rpc_method, api_schema),
+                "examples": rpc_method.metadata.examples or [_get_example(rpc_method)],
+                "x-scopes": rpc_method.metadata.scopes,
+            }
         )
         # Delete param and result schemas.
         # Their values have been pulled out.
