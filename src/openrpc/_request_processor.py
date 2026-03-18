@@ -37,8 +37,7 @@ from pydantic_core import PydanticUndefined
 
 from openrpc._common import RPCMethod, SecurityFunctionDetails
 from openrpc._depends import DependsModel
-from openrpc._error import OpenRPCError
-from openrpc._objects import ParamStructure, RPCPermissionError
+from openrpc._objects import OpenRPCError, ParamStructure, RPCPermissionError
 
 log = logging.getLogger("openrpc")
 

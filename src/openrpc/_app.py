@@ -39,7 +39,6 @@ from openrpc._common import MethodMetaData, RPCMethod
 from openrpc._context import BaseContext
 from openrpc._depends import InjectModel
 from openrpc._discover import get_openrpc_doc
-from openrpc._error import OpenRPCError
 from openrpc._method_registrar import MethodRegistrar
 from openrpc._objects import (
     CallableType,
@@ -47,6 +46,7 @@ from openrpc._objects import (
     Info,
     Method,
     OpenRPC,
+    OpenRPCError,
     ParamStructure,
     RPCPermissionError,
     Schema,
@@ -250,6 +250,7 @@ class RPCApp(MethodRegistrar):
             )
             return ErrorResponse(id=parse_result.id, error=error)
         except Exception as error:
+            log.exception("Method error:")
             return _get_server_error(parse_result, error, debug=self.debug)
 
     def scoped(self, function: CallableType, scopes: list[str]) -> CallableType:
@@ -269,7 +270,7 @@ class RPCApp(MethodRegistrar):
             required = method.metadata.scope_names
             missing = [scope for scope in required if scope not in scopes]
             if missing:
-                msg = f"Request scopes {scopes} is missing scopes {missing}"
+                msg = f"Request is missing permission scopes {missing}"
                 raise RPCPermissionError(msg)
             return function(*args, **kwargs)
 
@@ -296,7 +297,7 @@ class RPCApp(MethodRegistrar):
             scopes = context.scopes if context else []
             missing = [scope for scope in required if scope not in scopes]
             if missing:
-                msg = f"Request is missing scopes {missing}"
+                msg = f"Request is missing permission scopes {missing}"
                 raise RPCPermissionError(msg)
         if params:
             params = self._get_validated_params(params, rpc_method)

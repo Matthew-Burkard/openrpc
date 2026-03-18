@@ -51,7 +51,6 @@ from openrpc._app import AppRouter, RPCApp
 from openrpc._common import RPCMethod, SecurityFunction
 from openrpc._context import BaseContext
 from openrpc._depends import Depends, Inject
-from openrpc._error import OpenRPCError
 from openrpc._objects import (
     APIKeyAuth,
     BearerAuth,
@@ -70,6 +69,7 @@ from openrpc._objects import (
     OAuth2Flow,
     OAuth2FlowType,
     OpenRPC,
+    OpenRPCError,
     ParamStructure,
     Reference,
     RPCPermissionError,

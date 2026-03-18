@@ -35,8 +35,6 @@ from typing import Any, Callable, Literal, Optional, TypeVar, Union
 
 from pydantic import BaseModel, Field
 
-from openrpc._error import OpenRPCError
-
 SchemaType = Union["Schema", bool]
 CallableType = TypeVar("CallableType", bound=Callable[..., Any])
 
@@ -842,6 +840,56 @@ class ExamplePairing(BaseModel):
     as a notification.
     """
 
+    @staticmethod
+    def example(
+        name: str,
+        params: list[Any] | dict[str, Any] | None,
+        result: Any | OpenRPCError,
+        summary: str | None = None,
+        description: str | None = None,
+    ) -> ExamplePairing:
+        """Get example pairing object for given params and result.
+
+        :param name: Name of the example pairing.
+        :param params: Params of the request.
+        :param result: Response value.
+        :param summary: Summary of the example.
+        :param description: Lengthy description of the example.
+        :return: The generated Example pairing object.
+        """
+        if isinstance(params, dict):
+            param_examples: list[Example] = []
+        elif isinstance(params, list):
+            param_examples = []
+        else:
+            param_examples = []
+        if isinstance(result, OpenRPCError):
+            summary, description = _get_summary_and_description(result)
+            result_example = Example(
+                name=result.__qualname__,
+                summary=summary,
+                description=description,
+                value=result.get_error_object().model_dump(),
+            )
+        else:
+            result_example = Example(name="Result", value=result)
+        return ExamplePairing(
+            name=name,
+            description=description,
+            summary=summary,
+            params=param_examples,
+            result=result_example,
+        )
+
+
+def _get_summary_and_description(error: OpenRPCError) -> tuple[str | None, str | None]:
+    doc_string = error.__doc__
+    if doc_string is None:
+        return None, None
+    if len(lines := doc_string.split("\n")) > 1:
+        return lines[0], "\n".join(lines[1:])
+    return doc_string, None
+
 
 class Example(BaseModel):
     """Example that is intended to match a given Content Descriptor Schema."""
@@ -1124,6 +1172,28 @@ class APIKeyAuth(BaseModel):
     name: str = "api_key"
     description: Optional[str] = None
     scopes: dict[str, str] = Field(default_factory=dict)
+
+
+class OpenRPCError(Exception):
+    """Base error for OpenRPC API."""
+
+    def __init__(
+        self, code: int, message: str, data: Any | None = None, *args: object
+    ) -> None:
+        """Instantiate OpenRPC error.
+
+        :param code: A Number that indicates the error type that occurred.
+        :param message: A short description of the error.
+        :param data: Value that contains additional information about the error.
+        :param args: Python `Exeption` arguments.
+        """
+        self.code = code
+        self.message = message
+        self.data = data
+        super().__init__(*args)
+
+    def get_error_object(self) -> Error:
+        return Error(code=self.code, message=self.message, data=self.data)
 
 
 class RPCPermissionError(OpenRPCError):
