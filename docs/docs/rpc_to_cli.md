@@ -1,5 +1,5 @@
 ---
-slug: /rpc_to_cli
+slug: /rpc-to-cli
 sidebar_position: 8
 title: RPC to CLI
 ---
@@ -12,13 +12,13 @@ server can easily be exposed as a CLI.
 RPC CLI is on PyPI and can be installed with:
 
 ```shell
-pip install rpc-cli
+uv add rpc-cli
 ```
 
-Or with [Poetry](https://python-poetry.org/)
+Or
 
 ```shell
-poetry add rpc-cli
+pip install rpc-cli
 ```
 
 ## Example
@@ -26,12 +26,11 @@ poetry add rpc-cli
 Given the following in a file `demo.py`.
 
 ```python
-from openrpc import RPCServer
+from openrpc import RPCApp
 from pydantic import BaseModel
-
 from rpc_cli import cli
 
-rpc = RPCServer()
+rpc = RPCApp()
 
 
 class Vector3(BaseModel):
@@ -59,7 +58,7 @@ def summation(numbers: list[int | float]) -> int | float:
 
 
 if __name__ == "__main__":
-    cli(rpc)
+    cli(rpc, exclude_discover=True).run()
 ```
 
 You now have a CLI.
@@ -68,8 +67,7 @@ You now have a CLI.
 
 ### Using the CLI
 
-Methods can be called as such, notice arrays and object parameters are passed as JSON
-strings.
+Methods can be called as such, notice arrays and object parameters are passed as JSON strings.
 
 ```shell
 python demo.py get_distance '{"x": 1, "y": 1, "z": 1}' '{"x": 1, "y": 1, "z": 1}'

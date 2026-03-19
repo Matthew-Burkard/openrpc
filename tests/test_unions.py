@@ -19,12 +19,14 @@ class CustomB(BaseModel):
 
 def func(c: Union[CustomA, CustomB]) -> bool:
     """Test function."""
-    return isinstance(c, (CustomA, CustomB))  # type: ignore
+    return isinstance(
+        c, (CustomA, CustomB)
+    )  # pyright: ignore[reportUnnecessaryIsInstance]
 
 
 def test_union_casting() -> None:
     rpc = RPCServer(title="Test Unions", version="1.0.0", debug=True)
-    rpc.method()(func)
+    _ = rpc.method()(func)
     req1 = {
         "id": 0,
         "method": "func",

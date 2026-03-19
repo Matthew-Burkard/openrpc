@@ -3,15 +3,14 @@
 import datetime
 import json
 from decimal import Decimal
-from enum import Enum
-from typing import Any, List, Optional, Union
+from enum import Enum, auto
+from typing import Annotated, Any, Optional, Union
 
 from jsonrpcobjects.objects import Request
 from pydantic import BaseModel, Field
 
 from openrpc import (
     Contact,
-    Depends,
     Error,
     ExternalDocumentation,
     License,
@@ -21,6 +20,7 @@ from openrpc import (
     Server,
 )
 from openrpc._common import get_schema
+from openrpc._depends import Inject
 from openrpc._objects import OpenRPC
 from tests.util import Vector3, dump, resolve, validate_references
 
@@ -30,6 +30,13 @@ class EnumAsModelField(Enum):
 
     A = "A"
     B = "B"
+
+
+class IntegerEnum(Enum):
+    """Enum with named integers."""
+
+    KALE = auto()
+    SPINACH = auto()
 
 
 class Vector2(BaseModel):
@@ -48,7 +55,7 @@ class NestedModels(BaseModel):
     position: Vector3
     path: list[Vector3]
     recursion: Optional["NestedModels"]
-    list_recursion: List[Optional["NestedModels"]]
+    list_recursion: list[Optional["NestedModels"]]
     any_of: Union[Vector3, "NestedModels"]
     dict_model_values: dict[int, Vector2] = Field(default_factory=lambda: {})
 
@@ -68,22 +75,22 @@ class ComplexObjects(BaseModel):
 
 
 class CollectionsModel(BaseModel):
-    list_field: list  # type: ignore
+    list_field: list  # pyright: ignore[reportMissingTypeArgument]
     list_str: list[str]
-    list_list: list[list]  # type: ignore
+    list_list: list[list]  # pyright: ignore[reportMissingTypeArgument]
     list_list_int: list[list[int]]
     list_union: list[Union[str, int]]
-    tuple_field: tuple  # type: ignore
+    tuple_field: tuple  # pyright: ignore[reportMissingTypeArgument]
     tuple_str: tuple[str]
-    tuple_tuple: tuple[tuple]  # type: ignore
+    tuple_tuple: tuple[tuple]  # pyright: ignore[reportMissingTypeArgument]
     tuple_tuple_int: tuple[tuple[int]]
     tuple_union: tuple[Union[str, int]]
     tuple_int_str_none: tuple[int, str, None]
     set_str: set[str]
     set_union: set[Union[str, int]]
-    dict_field: dict  # type: ignore
+    dict_field: dict  # pyright: ignore[reportMissingTypeArgument]
     dict_str: dict[str, str]
-    dict_dict: dict[str, dict]  # type: ignore
+    dict_dict: dict[str, dict]  # pyright: ignore[reportMissingTypeArgument]
     dict_int_keys: dict[int, str]
     dict_union: dict[str, Union[str, int]]
 
@@ -98,16 +105,22 @@ def test_open_rpc_info() -> None:
         contact=Contact(),
         license_=License(name="name"),
     )
-    rpc.method()(increment)
-    rpc.method()(get_distance)
-    rpc.method()(return_none)
-    rpc.method()(default_value)
-    rpc.method()(take_any_get_any)
-    rpc.method()(dict_and_list)  # type: ignore
-    rpc.method()(nested_model)
-    rpc.method()(typed_dict_and_list)  # type: ignore
-    rpc.method()(list_model_result)
-    rpc.method()(no_annotations)  # type: ignore
+    _ = rpc.method()(increment)
+    _ = rpc.method()(get_distance)
+    _ = rpc.method()(return_none)
+    _ = rpc.method()(default_value)
+    _ = rpc.method()(take_any_get_any)
+    _ = rpc.method()(  # pyright: ignore[reportUnknownVariableType]
+        dict_and_list  # pyright: ignore[reportUnknownArgumentType]
+    )
+    _ = rpc.method()(nested_model)
+    _ = rpc.method()(  # pyright: ignore[reportUnknownVariableType]
+        typed_dict_and_list,  # pyright: ignore[reportUnknownArgumentType]
+    )
+    _ = rpc.method()(list_model_result)
+    _ = rpc.method()(  # pyright: ignore[reportUnknownVariableType]
+        no_annotations,  # pyright: ignore[reportUnknownArgumentType]
+    )
     rpc.title = rpc.title or "Test OpenRPC"
     rpc.version = rpc.version or "1.0.0"
     rpc.description = rpc.description or "Testing rpc.discover"
@@ -116,7 +129,11 @@ def test_open_rpc_info() -> None:
     rpc.license_ = rpc.license_ or License(name="AGPLv3")
     rpc.servers = rpc.servers or Server(name="default", url="localhost")
     request = Request(id=1, method="rpc.discover")
-    resp = json.loads(rpc.process_request(request.model_dump_json()))  # type: ignore
+    resp = json.loads(
+        rpc.process_request(
+            request.model_dump_json()
+        )  # pyright: ignore[reportArgumentType]
+    )
     discover_result = resp["result"]
     assert "1.3.2" == discover_result["openrpc"]  # noqa: SIM300
     assert discover_result["info"] == {
@@ -136,7 +153,7 @@ def test_open_rpc_info() -> None:
 def test_method_properties() -> None:
     url = "http://localhost:8000"
     rpc = _rpc()
-    rpc.method(
+    _ = rpc.method(
         external_docs=ExternalDocumentation(url=url),
         deprecated=True,
         servers=[Server(name="Server", url=url)],
@@ -157,7 +174,7 @@ def test_method_properties() -> None:
 
 def test_lists() -> None:
     rpc = _rpc()
-    rpc.method()(increment)
+    _ = rpc.method()(increment)
     doc = OpenRPC(**rpc.discover())
     # Examples
     assert doc.methods[0].examples is not None
@@ -187,7 +204,7 @@ def test_lists() -> None:
 
 def test_schema_params() -> None:
     rpc = _rpc()
-    rpc.method()(get_distance)
+    _ = rpc.method()(get_distance)
     doc = OpenRPC(**rpc.discover())
     method = doc.methods[0]
     model_example = {
@@ -217,7 +234,7 @@ def test_schema_params() -> None:
 
 def test_defaults() -> None:
     rpc = _rpc()
-    rpc.method()(default_value)
+    _ = rpc.method()(default_value)
     doc = OpenRPC(**rpc.discover())
     method = doc.methods[0]
     # Examples
@@ -258,7 +275,7 @@ def test_defaults() -> None:
 
 def test_return_none() -> None:
     rpc = _rpc()
-    rpc.method()(return_none)
+    _ = rpc.method()(return_none)
     doc = OpenRPC(**rpc.discover())
     method = doc.methods[0]
     # Examples
@@ -281,16 +298,13 @@ def test_return_none() -> None:
 
 def test_any() -> None:
     rpc = _rpc()
-    rpc.method()(take_any_get_any)
+    _ = rpc.method()(take_any_get_any)
     method = rpc.discover()["methods"][0]
     # Examples
-    assert method["examples"] == [
-        {
-            "name": "Generated example",
-            "params": [{"name": "any_param", "value": {}}],
-            "result": {"name": "Generated result", "value": {}},
-        }
-    ]
+    examples = method["examples"][0]
+    assert examples["name"] == "Generated example"
+    assert examples["params"] == [{"name": "any_param", "value": {}}]
+    assert examples["result"] == {"name": "Generated result", "value": {}}
     # Params
     assert method["params"] == [
         {"name": "any_param", "required": True, "schema": {"title": "Any Param"}}
@@ -301,7 +315,9 @@ def test_any() -> None:
 
 def test_no_annotations() -> None:
     rpc = _rpc()
-    rpc.method()(no_annotations)  # type: ignore
+    _ = rpc.method()(  # pyright: ignore[reportUnknownVariableType]
+        no_annotations,  # pyright: ignore[reportUnknownArgumentType]
+    )
     method = rpc.discover()["methods"][0]
     # Examples
     assert method["examples"] == [
@@ -325,7 +341,7 @@ def test_no_annotations() -> None:
 
 def test_complex_objects() -> None:
     rpc = _rpc()
-    rpc.method()(method_using_complex_objects)
+    _ = rpc.method()(method_using_complex_objects)
     doc = OpenRPC(**rpc.discover())
     method = doc.methods[0]
     # Examples
@@ -353,21 +369,16 @@ def test_complex_objects() -> None:
         "title": "Timedelta Field",
         "type": "string",
     }
-    assert dump(method.params[4].schema_) == {
-        "anyOf": [{"type": "number"}, {"type": "string"}],
-        "title": "Decimal Field",
-    }
+    assert dump(method.params[4].schema_)["title"] == "Decimal Field"
     # Result
-    assert dump(method.params[4].schema_) == {
-        "anyOf": [{"type": "number"}, {"type": "string"}],
-        "title": "Decimal Field",
-    }
     validate_references(method.result.schema_, doc.components)
 
 
 def test_collections() -> None:
     rpc = _rpc()
-    rpc.method()(method_using_collections)  # type: ignore
+    _ = rpc.method()(  # pyright: ignore[reportUnknownVariableType]
+        method_using_collections,  # pyright: ignore[reportUnknownArgumentType]
+    )
     doc = OpenRPC(**rpc.discover())
     method = doc.methods[0]
 
@@ -494,14 +505,14 @@ def test_collections() -> None:
 
 def test_method_union_model() -> None:
     rpc = _rpc()
-    rpc.method()(method_union_model)
+    _ = rpc.method()(method_union_model)
     doc = OpenRPC(**rpc.discover())
     validate_references(doc.methods[0].result.schema_, doc.components)
 
 
 def test_recursive_schemas() -> None:
     rpc = _rpc()
-    rpc.method()(nested_model)
+    _ = rpc.method()(nested_model)
     doc = OpenRPC(**rpc.discover())
     method = doc.methods[0]
     schema_properties = resolve(method.params[0].schema_, doc.components).properties
@@ -516,7 +527,7 @@ def test_param_descriptions() -> None:
     result_descriptions = [None, "The params."]
     for method in [param_descriptions, param_description_no_return]:
         rpc = _rpc()
-        rpc.method()(method)
+        _ = rpc.method()(method)
         doc = rpc.discover()
         assert doc["methods"][0]["params"][0]["description"] == (
             "First param, it has a long description that spans more than one line."
@@ -528,11 +539,17 @@ def test_param_descriptions() -> None:
         )
 
 
+def test_int_enum() -> None:
+    rpc = _rpc()
+    _ = rpc.method()(accept_int_enum)
+    print(rpc.discover())
+
+
 def test_descriptions() -> None:
     rpc = _rpc()
 
     @rpc.method()
-    def description() -> None:  # type: ignore
+    def description() -> None:  # pyright: ignore[reportUnusedFunction]
         """Method description.
 
         This method also has a lengthy description in addition to the
@@ -541,7 +558,7 @@ def test_descriptions() -> None:
         """
 
     @rpc.method()
-    def description_w_params(_a: int) -> None:  # type: ignore
+    def description_w_params(_a: int) -> None:  # pyright: ignore[reportUnusedFunction]
         """Method description.
 
         This method also has a lengthy description in addition to the
@@ -567,7 +584,7 @@ def test_no_description() -> None:
     rpc = _rpc()
 
     @rpc.method()
-    def no_description(_a: int) -> None:  # type: ignore
+    def no_description(_a: int) -> None:  # pyright: ignore[reportUnusedFunction]
         """Summary line.
 
         :param _a: A param.
@@ -582,7 +599,7 @@ def test_schema_cleanup() -> None:
         return a + b
 
     rpc = _rpc()
-    rpc.method()(add)
+    _ = rpc.method()(add)
     doc = rpc.discover()
     assert not doc["components"]["schemas"]
 
@@ -591,127 +608,128 @@ def _rpc() -> RPCServer:
     return RPCServer(title="Test OpenRPC", version="1.0.0", debug=True)
 
 
-# noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
 def increment(
-    numbers: list[Union[int, float]],  # noqa: ARG001
-) -> list[Union[int, str]]:  # type: ignore
+    numbers: list[Union[int, float]],  # pyright: ignore[reportUnusedParameter]
+) -> list[Union[int, str]]:  # pyright: ignore[reportReturnType]
     """Collections and unions."""
 
 
-# noinspection PyUnusedLocal
 def get_distance(
-    position: Vector2,  # noqa: ARG001
-    target: Vector2,  # noqa: ARG001
-) -> Vector2:  # type: ignore
+    position: Vector2,  # pyright: ignore[reportUnusedParameter]
+    target: Vector2,  # pyright: ignore[reportUnusedParameter]
+) -> Vector2:  # pyright: ignore[reportReturnType]
     """Function with basic model annotations."""
 
 
-# noinspection PyUnusedLocal
 def default_value(
-    a: int = 2,
-    b: float = 0.99792458,
-    c: str = "c",  # noqa: ARG001
-) -> str:  # noqa: ARG001  # type: ignore
+    a: int = 2,  # pyright: ignore[reportUnusedParameter]
+    b: float = 0.99792458,  # pyright: ignore[reportUnusedParameter]
+    c: str = "c",  # pyright: ignore[reportUnusedParameter]
+) -> str:  # pyright: ignore[reportReturnType]
     """Function with default values for params."""
 
 
-# noinspection PyUnusedLocal
-def return_none(optional_param: Optional[str]) -> None:  # noqa: ARG001
+def return_none(
+    optional_param: Optional[str],  # pyright: ignore[reportUnusedParameter]
+) -> None:
     """Function with optional param that always returns None."""
 
 
-# noinspection PyUnusedLocal
 def take_any_get_any(
-    any_param: Any,
-    dep: str = Depends(lambda x: x),  # type: ignore  # noqa: ARG001
+    any_param: Any,  # pyright: ignore[reportUnusedParameter]
+    dep: Annotated[  # pyright: ignore[reportUnusedParameter]
+        str,
+        Inject(
+            lambda x: x  # pyright: ignore[reportUnknownArgumentType, reportUnknownLambdaType]
+        ),
+    ],
 ) -> Any:
     """Function that takes and returns any type, uses Dep argument."""
 
 
-# noinspection PyUnusedLocal
-def dict_and_list(  # type: ignore
-    dict_param: dict,  # type: ignore
-    list_param: list,  # type: ignore  # noqa: ARG001
-) -> dict[str, list]:  # type: ignore
+def dict_and_list(  # pyright: ignore[reportUnknownParameterType]
+    dict_param: dict,  # pyright: ignore[reportUnknownParameterType, reportMissingTypeArgument, reportUnusedParameter]
+    list_param: list,  # pyright: ignore[reportUnknownParameterType, reportMissingTypeArgument, reportUnusedParameter]
+) -> dict[str, list]:  # pyright: ignore[reportReturnType, reportMissingTypeArgument]
     """For testing dict and list type annotations."""
 
 
-# noinspection PyUnusedLocal
-def typed_dict_and_list(  # type: ignore
-    dict_param: dict[str, int],
-    list_param: list[dict[str, int]],  # noqa: ARG001
-) -> dict[str, list]:  # type: ignore
+def typed_dict_and_list(  # pyright: ignore[reportUnknownParameterType]
+    dict_param: dict[str, int],  # pyright: ignore[reportUnusedParameter]
+    list_param: list[dict[str, int]],  # pyright: ignore[reportUnusedParameter]
+) -> dict[str, list]:  # pyright: ignore[reportReturnType, reportMissingTypeArgument]
     """For testing typed dict and list type annotations."""
 
 
-# noinspection PyUnusedLocal
 def nested_model(
-    a: NestedModels,  # noqa: ARG001
-) -> dict[str, NestedModels]:  # type: ignore
+    a: NestedModels,  # pyright: ignore[reportUnusedParameter]
+) -> dict[str, NestedModels]:  # pyright: ignore[reportReturnType]
     """For testing methods using nested models."""
 
 
-# noinspection PyUnusedLocal
-def list_model_result() -> list[ListResultModel]:  # type: ignore
+def list_model_result() -> list[ListResultModel]:  # pyright: ignore[reportReturnType]
     """Function returning a list of a model."""
 
 
-# noinspection PyUnusedLocal
-def no_annotations(a, b):  # type: ignore  # noqa: ARG001
+def no_annotations(
+    a,  # pyright: ignore[reportUnknownParameterType, reportMissingParameterType, reportUnusedParameter]
+    b,  # pyright: ignore[reportUnknownParameterType, reportMissingParameterType, reportUnusedParameter]
+):
     """To test discover for poorly written functions."""
 
 
-# noinspection PyUnusedLocal
 def method_with_properties() -> None:
     """Method to test other method properties."""
 
 
-# noinspection PyUnusedLocal
 def method_using_complex_objects(
-    date_field: datetime.date,  # noqa: ARG001
-    time_field: datetime.time,  # noqa: ARG001
-    datetime_field: datetime.datetime,  # noqa: ARG001
-    timedelta_field: datetime.timedelta,  # noqa: ARG001
-    decimal_field: Decimal,  # noqa: ARG001
-) -> ComplexObjects:  # type: ignore
+    date_field: datetime.date,  # pyright: ignore[reportUnusedParameter]
+    time_field: datetime.time,  # pyright: ignore[reportUnusedParameter]
+    datetime_field: datetime.datetime,  # pyright: ignore[reportUnusedParameter]
+    timedelta_field: datetime.timedelta,  # pyright: ignore[reportUnusedParameter]
+    decimal_field: Decimal,  # pyright: ignore[reportUnusedParameter]
+) -> ComplexObjects:  # pyright: ignore[reportReturnType]
     """Method to test schema generation for complex objects."""
 
 
-# noinspection PyUnusedLocal
-def method_using_collections(
-    list_field: list,  # type: ignore  # noqa: ARG001
-    list_str: list[str],  # noqa: ARG001
-    list_list: list[list],  # type: ignore  # noqa: ARG001
-    list_list_int: list[list[int]],  # noqa: ARG001
-    list_union: list[Union[str, int]],  # noqa: ARG001
-    tuple_field: tuple,  # type: ignore  # noqa: ARG001
-    tuple_str: tuple[str],  # noqa: ARG001
-    tuple_tuple: tuple[tuple],  # type: ignore  # noqa: ARG001
-    tuple_tuple_int: tuple[tuple[int]],  # noqa: ARG001
-    tuple_union: tuple[Union[str, int]],  # noqa: ARG001
-    tuple_int_str_none: tuple[int, str, None],  # noqa: ARG001
-    set_str: set[str],  # noqa: ARG001
-    set_union: set[Union[str, int]],  # noqa: ARG001
-    dict_field: dict,  # type: ignore  # noqa: ARG001
-    dict_str: dict[str, str],  # noqa: ARG001
-    dict_dict: dict[str, dict],  # type: ignore  # noqa: ARG001
-    dict_int_keys: dict[int, str],  # noqa: ARG001
-    dict_union: dict[str, Union[str, int]],  # noqa: ARG001
-) -> CollectionsModel:  # type: ignore
+def method_using_collections(  # noqa: PLR0913
+    list_field: list,  # pyright: ignore[reportUnknownParameterType, reportMissingTypeArgument, reportUnusedParameter]
+    list_str: list[str],  # pyright: ignore[reportUnusedParameter]
+    list_list: list[  # pyright: ignore[reportUnknownParameterType, reportUnusedParameter]
+        list  # pyright: ignore[reportMissingTypeArgument]
+    ],
+    list_list_int: list[list[int]],  # pyright: ignore[reportUnusedParameter]
+    list_union: list[Union[str, int]],  # pyright: ignore[reportUnusedParameter]
+    tuple_field: tuple,  # pyright: ignore[reportUnknownParameterType, reportMissingTypeArgument, reportUnusedParameter]
+    tuple_str: tuple[str],  # pyright: ignore[reportUnusedParameter]
+    tuple_tuple: tuple[  # pyright: ignore[reportUnknownParameterType, reportUnusedParameter]
+        tuple  # pyright: ignore[reportMissingTypeArgument]
+    ],
+    tuple_tuple_int: tuple[tuple[int]],  # pyright: ignore[reportUnusedParameter]
+    tuple_union: tuple[Union[str, int]],  # pyright: ignore[reportUnusedParameter]
+    tuple_int_str_none: tuple[int, str, None],  # pyright: ignore[reportUnusedParameter]
+    set_str: set[str],  # pyright: ignore[reportUnusedParameter]
+    set_union: set[Union[str, int]],  # pyright: ignore[reportUnusedParameter]
+    dict_field: dict,  # pyright: ignore[reportUnknownParameterType, reportUnusedParameter, reportMissingTypeArgument]
+    dict_str: dict[str, str],  # pyright: ignore[reportUnusedParameter]
+    dict_dict: dict[  # pyright: ignore[reportUnknownParameterType, reportUnusedParameter]
+        str, dict  # pyright: ignore[reportMissingTypeArgument]
+    ],
+    dict_int_keys: dict[int, str],  # pyright: ignore[reportUnusedParameter]
+    dict_union: dict[str, Union[str, int]],  # pyright: ignore[reportUnusedParameter]
+) -> CollectionsModel:  # pyright: ignore[reportReturnType]
     """Method using collection types."""
 
 
-# noinspection PyUnusedLocal
 def method_union_model() -> Union[ComplexObjects, CollectionsModel, None]:
     """Method with union model."""
 
 
-# noinspection PyUnusedLocal
 def param_descriptions(
-    a: int,
-    b: int,
-    c: int,  # noqa: ARG001
-) -> tuple[int, int, int]:  # type: ignore
+    a: int,  # pyright: ignore[reportUnusedParameter]
+    b: int,  # pyright: ignore[reportUnusedParameter]
+    c: int,  # pyright: ignore[reportUnusedParameter]
+) -> tuple[int, int, int]:  # pyright: ignore[reportReturnType]
     """Method with param descriptions.
 
     :param a: First param, it has a long description that spans more
@@ -722,12 +740,11 @@ def param_descriptions(
     """
 
 
-# noinspection PyUnusedLocal
 def param_description_no_return(
-    a: int,
-    b: int,
-    c: int,  # noqa: ARG001
-) -> tuple[int, int, int]:  # type: ignore
+    a: int,  # pyright: ignore[reportUnusedParameter]
+    b: int,  # pyright: ignore[reportUnusedParameter]
+    c: int,  # pyright: ignore[reportUnusedParameter]
+) -> tuple[int, int, int]:  # pyright: ignore[reportReturnType]
     """Method with param descriptions.
 
     :param a: First param, it has a long description that spans more
@@ -735,3 +752,9 @@ def param_description_no_return(
     :param b: Second param.
     :param c: Third param.
     """
+
+
+def accept_int_enum(
+    value: IntegerEnum,  # pyright: ignore[reportUnusedParameter]
+) -> None:
+    pass

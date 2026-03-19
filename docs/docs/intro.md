@@ -18,44 +18,30 @@ developing [OpenRPC](https://open-rpc.org/) servers in Python.
 
 ## Requirements
 
-- Python 3.9+
+- Python 3.14+
 - [Pydantic](https://docs.pydantic.dev/latest/) for data models.
 
 ## Installation
 
-While Python OpenRPC is a transport agnostic framework, if you're going to expose your
-RPC API over websockets or HTTP it is recommended you
-use [Tabella](https://gitlab.com/mburkard/tabella) which wraps this framework.
-
 ```shell
-pip install tabella
+uv add openrpc
 ```
 
-Or with [Poetry](https://python-poetry.org/)
-
-```shell
-poetry add tabella
-```
-
-Or to use the framework directly.
+Or
 
 ```shell
 pip install openrpc
 ```
 
-```shell
-poetry add openrpc
-```
-
 ## Example
 
-This is a minimal OpenRPC server hosted over HTTP and WebSockets
-using [Tabella](https://gitlab.com/mburkard/tabella).
+This is a minimal OpenRPC server hosted over HTTP using [aiohttp](https://docs.aiohttp.org/en/stable/).
 
 ```python
-from tabella import Tabella
+from aiohttp import web
+from openrpc import RPCApp
 
-rpc = Tabella(title="DemoServer", version="1.0.0")
+rpc = RPCApp()
 
 
 @rpc.method()
@@ -63,8 +49,14 @@ async def add(a: int, b: int) -> int:
     return a + b
 
 
+async def api(request: web.Request) -> web.Response:
+    return web.Response(body=await rpc.process(await request.text()))
+
+
 if __name__ == "__main__":
-    rpc.run()
+    app = web.Application()
+    _ = app.router.add_post("/api", api)
+    web.run_app(app)
 ```
 
 Example In
@@ -90,11 +82,6 @@ Example Result Out
   "jsonrpc": "2.0"
 }
 ```
-
-## Template App
-
-A [template app](https://gitlab.com/mburkard/openrpc-app-template) is available as an
-example or to clone to bootstrap your RPC server.
 
 ## Support the Developer
 

@@ -26,19 +26,19 @@ leverages [JSON Schemas](https://json-schema.org/) to describe types.
 
 ## What Does This Framework Do?
 
-This framework provides a class, `RPCServer`, that is used to register python functions
+This framework provides a class, `RPCApp`, that is used to register python functions
 as methods in an OpenRPC server. Once methods are registered the framework can parse
 JSON-RPC requests, call the appropriate function, wrap the function's return value in
 a JSON-RPC response and return it.
 
 ### Usage
 
-To register a method with the RPCServer use the `@rpc.method()` decorator on a function.
+To register a method with the RPCApp use the `@rpc.method()` decorator on a function.
 
 ```python
-from openrpc import RPCServer
+from openrpc import RPCApp
 
-rpc = RPCServer(title="Demo Server", version="1.0.0")
+rpc = RPCApp()
 
 
 @rpc.method()
@@ -49,9 +49,9 @@ def add(a: int, b: int) -> int:
 ### Process JSON-RPC Request
 
 OpenRPC is transport agnostic. To use it, pass JSON-RPC requests as strings or byte
-strings to the `process_request` or `process_request_async` methods.
+strings to the `process` method.
 
-Calling `process_request` will parse
+Calling `process` will parse
 the [JSON-RPC request](https://www.jsonrpc.org/specification#request_object) and call
 the appropriate function based on method name. Then the result of that function will be
 wrapped in a [JSON-RPC response](https://www.jsonrpc.org/specification#response_object)
@@ -66,22 +66,22 @@ req = """
   "jsonrpc": "2.0"
 }
 """
-rpc.process_request(req)  # '{"id":1,"result":4,"jsonrpc":"2.0"}'
+await rpc.process(req)  # '{"id":1,"result":4,"jsonrpc":"2.0"}'
 ```
 
 ## Pydantic For Data Models
 
 For data classes to work properly use [Pydantic](https://docs.pydantic.dev/latest/).
-RPCServer will use Pydantic for JSON serialization/deserialization when calling methods
+RPCApp will use Pydantic for JSON serialization/deserialization when calling methods
 and for schema generation when getting docs with `rpc.discover`.
 
 ### Pydantic Example
 
 ```python
-from openrpc import RPCServer
+from openrpc import RPCApp
 from pydantic import BaseModel
 
-rpc = RPCServer(title="Demo Server", version="1.0.0")
+rpc = RPCApp()
 
 
 class Vector3(BaseModel):
@@ -107,5 +107,5 @@ req = """
   "jsonrpc": "2.0"
 }
 """
-rpc.process_request(req)  # '{"id":1,"result":{"x":2.0,"y":4.0,"z":6.0},"jsonrpc":"2.0"}'
+await rpc.process(req)  # '{"id":1,"result":{"x":2.0,"y":4.0,"z":6.0},"jsonrpc":"2.0"}'
 ```

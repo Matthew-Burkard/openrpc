@@ -8,7 +8,9 @@ from tests import util
 
 
 class Model(BaseModel):
-    pizza: str = Field(..., alias="calories")
+    pizza: str = Field(
+        ..., alias="calories"  # pyright: ignore[reportUnknownArgumentType]
+    )
 
 
 @pytest.mark.asyncio
@@ -16,7 +18,7 @@ async def test_alias() -> None:
     rpc = RPCServer()
 
     @rpc.method()
-    def method(type_: str) -> Model:  # type: ignore
+    def method(type_: str) -> Model:  # pyright: ignore[reportUnusedFunction]
         """Test method."""
         return Model(calories=type_)
 

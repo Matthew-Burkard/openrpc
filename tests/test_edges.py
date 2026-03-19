@@ -41,9 +41,9 @@ def test_resolve_reference() -> None:
 
 def test_get_schema() -> None:
     with pytest.raises(ValueError):
-        get_schema(None)
+        _ = get_schema(None)
     with pytest.raises(TypeError):
-        get_schema(value=True)
+        _ = get_schema(value=True)
 
 
 def test_schema_all_of() -> None:

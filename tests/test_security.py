@@ -1,6 +1,7 @@
 """Unit tests for permissions."""
 
-from typing import Mapping, Union
+from collections.abc import Mapping
+from typing import Union
 
 import pytest
 from jsonrpcobjects.objects import ErrorResponse, ResultResponse
@@ -23,7 +24,7 @@ security: Mapping[str, Union[OAuth2, BearerAuth, APIKeyAuth]] = {
 }
 rpc = RPCServer(
     security_schemes=security,
-    security_function=lambda x: x,  # type: ignore
+    security_function=lambda x: x,  # pyright: ignore[reportUnknownArgumentType, reportUnknownLambdaType]
     debug=True,
 )
 
@@ -59,7 +60,9 @@ def test_security_depends() -> None:
 
     def security_function(
         _headers: dict[str, str],
-        user: str = Depends(middleware),  # noqa: B008
+        user: str = Depends(
+            middleware
+        ),  # pyright: ignore[reportCallInDefaultInitializer]
     ) -> dict[str, list[str]]:
         """Typical security function."""
         return {"pizza": {"oauth2": ["coffee", "mocha"]}}[user]
@@ -69,7 +72,11 @@ def test_security_depends() -> None:
     )
 
     @security_rpc.method(security={"oauth2": ["coffee", "mocha"]})
-    def permission_method_with_depends(user: str = Depends(middleware)) -> str:  # type: ignore
+    def permission_method_with_depends(  # pyright: ignore[reportUnusedFunction]
+        user: str = Depends(
+            middleware
+        ),  # pyright: ignore[reportCallInDefaultInitializer]
+    ) -> str:
         """Method requiring a permission with `Depends`."""
         return user
 
@@ -182,7 +189,7 @@ def test_security_no_caller_details() -> None:
         return {"apikey": ["pickle"]}
 
     no_cd_rpc = RPCServer(security_schemes=security)
-    no_cd_rpc.method(security={"apikey": ["pickle"]})(add)
+    _ = no_cd_rpc.method(security={"apikey": ["pickle"]})(add)
     request = '{"id": 1, "method": "add", "params": [2, 2], "jsonrpc": "2.0"}'
     response = util.parse_error_response(no_cd_rpc.process_request(request))
     assert no_cd_rpc.security_function is None
@@ -202,14 +209,18 @@ def test_security_only_depends() -> None:
         return {"apikey": ["pickle"]}
 
     def _security(
-        depends: dict[str, list[str]] = Depends(_depends),  # noqa: B008
+        depends: dict[
+            str, list[str]
+        ] = Depends(  # noqa: B008  # pyright: ignore[reportCallInDefaultInitializer]
+            _depends
+        ),
     ) -> dict[str, list[str]]:
         return depends
 
     only_depends_rpc = RPCServer(
         security_schemes=security, security_function=_security, debug=True
     )
-    only_depends_rpc.method(security={"apikey": ["pickle"]})(add)
+    _ = only_depends_rpc.method(security={"apikey": ["pickle"]})(add)
     request = '{"id": 1, "method": "add", "params": [2, 2], "jsonrpc": "2.0"}'
     response = util.parse_result_response(only_depends_rpc.process_request(request))
     expected = 4
@@ -224,14 +235,19 @@ def test_nested_depends() -> None:
         counter += 1
         return 5
 
-    def _depends_b(a: int = Depends(_depends_a)) -> int:
+    def _depends_b(
+        a: int = Depends(_depends_a),  # pyright: ignore[reportCallInDefaultInitializer]
+    ) -> int:
         return a * 2
 
-    def _rpc_method(a: int = Depends(_depends_a), b: int = Depends(_depends_b)) -> int:
+    def _rpc_method(
+        a: int = Depends(_depends_a),  # pyright: ignore[reportCallInDefaultInitializer]
+        b: int = Depends(_depends_b),  # pyright: ignore[reportCallInDefaultInitializer]
+    ) -> int:
         return a + b
 
     nested_depends_rpc = RPCServer(debug=True)
-    nested_depends_rpc.method()(_rpc_method)
+    _ = nested_depends_rpc.method()(_rpc_method)
     request = '{"id": 1, "method": "_rpc_method", "jsonrpc": "2.0"}'
     response = util.parse_result_response(nested_depends_rpc.process_request(request))
     expected = 15
@@ -247,7 +263,7 @@ async def test_async_security_function() -> None:
         return caller_details
 
     async_rpc = RPCServer(security_schemes=security, debug=True)
-    async_rpc.method(security={"mocha": []})(add)
+    _ = async_rpc.method(security={"mocha": []})(add)
 
     request = '{"id": 1, "method": "add", "params": [2, 2], "jsonrpc": "2.0"}'
     response = util.parse_response(await async_rpc.process_request_async(request))
@@ -279,7 +295,7 @@ async def test_async_no_caller() -> None:
     async_rpc = RPCServer(
         security_schemes=security, security_function=_awaitable_security, debug=True
     )
-    async_rpc.method(security={"a": []})(add)
+    _ = async_rpc.method(security={"a": []})(add)
     request = '{"id": 1, "method": "add", "params": [2, 2], "jsonrpc": "2.0"}'
     response = util.parse_result_response(
         await async_rpc.process_request_async(request)
@@ -297,16 +313,19 @@ async def test_nested_depends_async() -> None:
         counter += 1
         return 5
 
-    async def _depends_b(a: int = Depends(_depends_a)) -> int:
+    async def _depends_b(
+        a: int = Depends(_depends_a),  # pyright: ignore[reportCallInDefaultInitializer]
+    ) -> int:
         return a * 2
 
     async def _rpc_method(
-        a: int = Depends(_depends_a), b: int = Depends(_depends_b)
+        a: int = Depends(_depends_a),  # pyright: ignore[reportCallInDefaultInitializer]
+        b: int = Depends(_depends_b),  # pyright: ignore[reportCallInDefaultInitializer]
     ) -> int:
         return a + b
 
     nested_depends_rpc = RPCServer(debug=True)
-    nested_depends_rpc.method()(_rpc_method)
+    _ = nested_depends_rpc.method()(_rpc_method)
     request = '{"id": 1, "method": "_rpc_method", "jsonrpc": "2.0"}'
     response = util.parse_result_response(
         await nested_depends_rpc.process_request_async(request)
@@ -316,12 +335,14 @@ async def test_nested_depends_async() -> None:
     assert response.result == expected
 
 
+@pytest.mark.filterwarnings(
+    "ignore:coroutine 'test_async_security_error.<locals>._security' was never awaited"
+)
 def test_async_security_error() -> None:
-    # noinspection PyUnusedLocal
     async def _security() -> dict[str, list[str]]: ...
 
     async_error_rpc = RPCServer(security_function=_security, debug=True)
-    async_error_rpc.method(security={"a": []})(add)
+    _ = async_error_rpc.method(security={"a": []})(add)
     request = '{"id": 1, "method": "add", "params": [2, 2], "jsonrpc": "2.0"}'
     response = util.parse_response(async_error_rpc.process_request(request))
     assert isinstance(response, ErrorResponse)

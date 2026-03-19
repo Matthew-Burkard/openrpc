@@ -1,0 +1,47 @@
+from typing import Annotated
+
+import pytest
+
+from openrpc import BaseContext, Info, Inject, RPCApp
+from tests.v11 import util
+
+AUTHORIZATION = "Authorization"
+rpc = RPCApp(Info(title="Test Custom Context", version="0.1.0"), debug=True)
+
+
+class Context(BaseContext):
+    """Context with added fields for my transport method."""
+
+    headers: dict[str, str] = {}
+
+
+def get_user(context: Context) -> str:
+    return context.headers[AUTHORIZATION]
+
+
+@rpc.method()
+def method_with_context(context: Context) -> str:
+    return context.headers[AUTHORIZATION]
+
+
+@rpc.method()
+def method_with_user(user: Annotated[str, Inject(get_user)]) -> str:
+    return user
+
+
+@pytest.mark.asyncio
+async def test_custom_context() -> None:
+    user = "spinach"
+    context = Context()
+    context.headers[AUTHORIZATION] = user
+    result = await util.get_result(rpc, method_with_context, [], context)
+    assert result == user
+
+
+@pytest.mark.asyncio
+async def test_custom_context_inject() -> None:
+    user = "spinach"
+    context = Context()
+    context.headers[AUTHORIZATION] = user
+    result = await util.get_result(rpc, method_with_user, [], context)
+    assert result == user
