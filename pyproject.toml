@@ -1,6 +1,6 @@
 [project]
 name = "openrpc"
-version = "11.0.0"
+version = "11.0.1"
 description = "Transport agnostic framework for developing OpenRPC servers."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -33,10 +33,12 @@ repository = "https://gitlab.com/mburkard/openrpc"
 
 [dependency-groups]
 dev = [
+  "basedpyright>=1.38.3",
   "black>=25.11.0",
   "pytest>=8.4.1",
   "pytest-asyncio>=1.0.0",
   "pytest-cov>=6.2.1",
+  "ruff>=0.15.6",
 ]
 
 [build-system]
