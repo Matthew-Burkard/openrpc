@@ -44,7 +44,7 @@ def _get_scopes_from_token(token: str) -> list[str]: ...
 
 async def api(request: web.Request) -> web.Response:
     context = BaseContext(
-        scopes=_get_scopes_from_auth(request.headers["Authorization"])
+        scopes=_get_scopes_from_token(request.headers["Authorization"])
     )
     return web.Response(body=await rpc.process(await request.text(), context))
 

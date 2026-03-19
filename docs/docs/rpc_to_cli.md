@@ -58,7 +58,7 @@ def summation(numbers: list[int | float]) -> int | float:
 
 
 if __name__ == "__main__":
-    cli(rpc).run()
+    cli(rpc, exclude_discover=True).run()
 ```
 
 You now have a CLI.
