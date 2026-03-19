@@ -33,6 +33,7 @@ repository = "https://gitlab.com/mburkard/openrpc"
 
 [dependency-groups]
 dev = [
+  "black>=25.11.0",
   "pytest>=8.4.1",
   "pytest-asyncio>=1.0.0",
   "pytest-cov>=6.2.1",
@@ -53,6 +54,10 @@ reportImplicitStringConcatenation = "none"  # In conflict with ruff `ISC003`
 
 [tool.coverage.run]
 source = ["src/openrpc"]
+
+[tool.hatch.build.targets.sdist]
+include = ["/src"]
+exclude = ["/tests", "/docs", "/.gitlab-ci.yml"]
 
 [tool.ruff]
 lint.select = [
