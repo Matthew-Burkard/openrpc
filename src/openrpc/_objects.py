@@ -253,6 +253,16 @@ class Method(BaseModel):
     Extension listing required permission scopes to call this method.
     """
 
+    x_scope_groups: list[list[Scope]] = Field(
+        default_factory=list, alias="x-scope-groups"
+    )
+    """
+    Extension listing groups of required permission scopes to call this method.
+
+    Access is granted if the caller holds every scope of ANY single group
+    (logical OR across groups, AND within each group).
+    """
+
 
 class ContentDescriptor(BaseModel):
     """Describes either parameters or result.

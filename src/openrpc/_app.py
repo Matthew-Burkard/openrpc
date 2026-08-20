@@ -267,11 +267,11 @@ class RPCApp(MethodRegistrar):
 
         def _wrapper(*args: Any, **kwargs: Any) -> None:
             method = self._method_by_function[function]
-            required = method.metadata.scope_names
-            missing = [scope for scope in required if scope not in scopes]
-            if missing:
-                msg = f"Request is missing permission scopes {missing}"
-                raise RPCPermissionError(msg)
+            groups = method.metadata.scope_name_groups
+            if groups and not any(
+                all(s in scopes for s in group) for group in groups
+            ):
+                raise RPCPermissionError(_scope_error_message(groups, scopes))
             return function(*args, **kwargs)
 
         return _wrapper  # pyright: ignore[reportReturnType]
@@ -292,13 +292,11 @@ class RPCApp(MethodRegistrar):
         params = params or []
         if not (rpc_method := self._rpc_methods.get(method)):
             raise MethodNotFoundError(method)
-        if rpc_method.metadata.scopes:
-            required = rpc_method.metadata.scope_names
-            scopes = context.scopes if context else []
-            missing = [scope for scope in required if scope not in scopes]
-            if missing:
-                msg = f"Request is missing permission scopes {missing}"
-                raise RPCPermissionError(msg)
+        groups = rpc_method.metadata.scope_name_groups
+        if groups:
+            caller = context.scopes if context else []
+            if not any(all(s in caller for s in group) for group in groups):
+                raise RPCPermissionError(_scope_error_message(groups, caller))
         if params:
             params = self._get_validated_params(params, rpc_method)
         elif rpc_method.params_model.model_fields:
@@ -411,6 +409,19 @@ class RPCApp(MethodRegistrar):
         else:
             error_object = Error(**INTERNAL_ERROR.model_dump())
         return ErrorResponse(id=None, error=error_object)
+
+
+def _scope_error_message(groups: list[list[str]], caller: list[str]) -> str:
+    """Build a permission error message for unsatisfied scope requirements.
+
+    For a single required group the regular message listing the missing scopes is
+    used. When multiple alternative groups are required a group-oriented message
+    is returned instead.
+    """
+    if len(groups) == 1:
+        missing = [scope for scope in groups[0] if scope not in caller]
+        return f"Request is missing permission scopes {missing}"
+    return "Request does not satisfy any required scope group"
 
 
 def _get_server_error(
