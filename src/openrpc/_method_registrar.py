@@ -105,7 +105,7 @@ class MethodRegistrar:
         if scopes:
             normalized_groups.append(scopes)
         if scope_groups:
-            normalized_groups.extend([group for group in scope_groups])
+            normalized_groups.extend(scope_groups)
 
         def _decorator(function: CallableType) -> CallableType:
             return self._method(
