@@ -876,7 +876,7 @@ class ExamplePairing(BaseModel):
         if isinstance(result, OpenRPCError):
             summary, description = _get_summary_and_description(result)
             result_example = Example(
-                name=result.__qualname__,
+                name=type(result).__qualname__,
                 summary=summary,
                 description=description,
                 value=result.get_error_object().model_dump(),

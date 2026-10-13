@@ -1,6 +1,6 @@
 [project]
 name = "openrpc"
-version = "11.1.0"
+version = "11.1.1"
 description = "Transport agnostic framework for developing OpenRPC servers."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -46,6 +46,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.basedpyright]
+pythonVersion = "3.9"
 strict = ["**"]
 venvPath = "./"
 venv = ".venv"
