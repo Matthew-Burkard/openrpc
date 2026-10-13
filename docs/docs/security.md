@@ -54,3 +54,35 @@ if __name__ == "__main__":
     _ = app.router.add_post("/api", api)
     web.run_app(app)
 ```
+
+## Scope Groups (OR of ANDs)
+
+The `scopes` argument requires the caller to hold **every** listed scope (logical
+AND). To allow **any one** of several alternative permission sets, use the
+`scope_groups` argument. Each group is an AND set, and access is granted if the
+caller satisfies **all** scopes of **any** single group (logical OR across groups).
+
+```python
+admin = Scope(name="admin")
+numbers_read = Scope(name="numbers:read")
+service = Scope(name="service")
+
+
+@rpc.method(
+    scope_groups=[
+        [admin, numbers_read],  # group 1: admin AND numbers:read
+        [service],              # group 2: service
+    ]
+)
+async def add(a: int, b: int) -> int:
+    return a + b
+```
+
+The call above is permitted when the caller holds both `admin` and
+`numbers:read`, **or** when it holds `service`. If neither group is fully
+satisfied an `RPCPermissionError` is raised.
+
+`scopes` and `scope_groups` can be combined; the legacy `scopes` list is treated
+as an additional group. The grouped requirement is serialized in `rpc.discover`
+under the `x-scope-groups` extension field, while `x-scopes` continues to expose
+the legacy flat `scopes` list unchanged.

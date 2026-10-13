@@ -68,6 +68,7 @@ class MethodRegistrar:
         examples: list[ExamplePairing] | None = None,
         security: dict[str, list[str]] | None = None,
         scopes: list[Scope] | None = None,
+        scope_groups: list[list[Scope]] | None = None,
     ) -> Callable[[CallableType], CallableType]:
         """Register a method with this OpenRPC server.
 
@@ -85,7 +86,12 @@ class MethodRegistrar:
         :param param_structure: The expected format of the parameters
         :param examples: Array of Example Pairing Objects.
         :param security: Scheme and scopes required to call this method.
-        :param scopes: Permissions required to call this method.
+        :param scopes: Permissions required to call this method. All listed scopes
+            must be held by the caller (logical AND).
+        :param scope_groups: Alternative permission groups. Access is granted if the
+            caller holds every scope of ANY single group (logical OR across groups,
+            AND within each group). When combined with `scopes`, the `scopes` list is
+            treated as an additional group.
         :return: The method decorator.
         """
         tag_objects = (
@@ -93,6 +99,13 @@ class MethodRegistrar:
             if tags is not None
             else None
         )
+        # Normalize `scopes` (AND) and `scope_groups` (OR of ANDs) into a single
+        # list of groups. Regular `scopes` is treated as one group.
+        normalized_groups: list[list[Scope]] = []
+        if scopes:
+            normalized_groups.append(scopes)
+        if scope_groups:
+            normalized_groups.extend(scope_groups)
 
         def _decorator(function: CallableType) -> CallableType:
             return self._method(
@@ -114,6 +127,10 @@ class MethodRegistrar:
                     security=security or {},
                     scopes=scopes or [],
                     scope_names=[s.name for s in scopes or []],
+                    scope_groups=normalized_groups,
+                    scope_name_groups=[
+                        [s.name for s in group] for group in normalized_groups
+                    ],
                 ),
             )
 

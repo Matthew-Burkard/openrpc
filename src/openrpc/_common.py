@@ -58,6 +58,8 @@ class MethodMetaData(BaseModel):
     security: dict[str, list[str]]
     scopes: list[Scope]
     scope_names: list[str]
+    scope_groups: list[list[Scope]] = []
+    scope_name_groups: list[list[str]] = []
 
 
 class RPCMethod(BaseModel):

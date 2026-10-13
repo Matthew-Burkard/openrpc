@@ -84,6 +84,7 @@ def get_methods(rpc_methods: Iterable[RPCMethod], api_schema: Schema) -> list[Me
                 "result": _get_result(rpc_method, api_schema),
                 "examples": rpc_method.metadata.examples or [_get_example(rpc_method)],
                 "x-scopes": rpc_method.metadata.scopes,
+                "x-scope-groups": rpc_method.metadata.scope_groups,
             }
         )
         # Delete param and result schemas.
