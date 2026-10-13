@@ -51,7 +51,7 @@ class MethodRegistrar:
     def debug(self, debug: bool) -> None:
         self._request_processor.debug = debug
 
-    def method(  # noqa: PLR0913
+    def method(  # noqa: PLR0913, PLR0917
         self,
         name: str | None = None,
         params: list[ContentDescriptor] | None = None,
@@ -210,7 +210,7 @@ class MethodRegistrar:
             elif param.default is inspect.Signature.empty:
                 required.append(param_name)
                 # Pyright has an issue with this only when running in Python 3.9
-                default = ...  # pyright: ignore[reportUnknownVariableType]
+                default = ...
             fields[param_name] = (
                 resolved_annotation(annotation, function),
                 default,
@@ -232,7 +232,7 @@ class MethodRegistrar:
             result=(
                 resolved_annotation(signature.return_annotation, function),
                 ...,
-            ),  # pyright: ignore[reportUnknownArgumentType]
+            ),
         )
 
         # Add method to processor method list.

@@ -268,9 +268,7 @@ class RPCApp(MethodRegistrar):
         def _wrapper(*args: Any, **kwargs: Any) -> None:
             method = self._method_by_function[function]
             groups = method.metadata.scope_name_groups
-            if groups and not any(
-                all(s in scopes for s in group) for group in groups
-            ):
+            if groups and not any(all(s in scopes for s in group) for group in groups):
                 raise RPCPermissionError(_scope_error_message(groups, scopes))
             return function(*args, **kwargs)
 
