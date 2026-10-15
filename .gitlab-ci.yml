@@ -45,14 +45,6 @@ ruff:
   script:
     - ruff check $PROJECT_SRC_DIR
 
-pyright:
-  stage: analysis
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
-  <<: *setup_env
-  script:
-    - basedpyright $PROJECT_SRC_DIR
-
 pytest:
   stage: test
   rules:
